@@ -17,14 +17,34 @@ engine_kwargs = {
     "future": True,
 }
 
+db_url = settings.DATABASE_URL
+
 if not is_sqlite:
+    connect_args = {}
+    # If SSL is requested or in production mode, configure SSL for asyncpg
+    if "ssl=" in db_url or "sslmode=" in db_url or settings.ENVIRONMENT.lower() == "production":
+        connect_args["ssl"] = "require"
+        # Normalize URL to strip libpq-specific params (sslmode, channel_binding) that asyncpg rejects
+        if "?" in db_url:
+            from urllib.parse import urlparse, parse_qs, urlencode
+            parsed = urlparse(db_url)
+            query_params = parse_qs(parsed.query)
+            filtered_params = {
+                k: v for k, v in query_params.items()
+                if k not in ("sslmode", "channel_binding", "ssl")
+            }
+            new_query = urlencode(filtered_params, doseq=True)
+            db_url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}" + (f"?{new_query}" if new_query else "")
+
     engine_kwargs.update({
         "pool_size": settings.DB_POOL_SIZE,
         "max_overflow": settings.DB_MAX_OVERFLOW,
         "pool_pre_ping": True,
+        "connect_args": connect_args,
     })
 
-engine = create_async_engine(settings.DATABASE_URL, **engine_kwargs)
+engine = create_async_engine(db_url, **engine_kwargs)
+
 
 async_session_factory = async_sessionmaker(
     bind=engine,
