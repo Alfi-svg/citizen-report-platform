@@ -1024,7 +1024,7 @@ export default function AdminEmergencyServicesPage() {
                     </div>
                     {log.verification_notes && (
                       <p className="text-zinc-600 dark:text-zinc-400 italic bg-white dark:bg-zinc-900 p-2 rounded-xl border border-zinc-100 dark:border-zinc-800">
-                        "{log.verification_notes}"
+                        &quot;{log.verification_notes}&quot;
                       </p>
                     )}
                     {log.source && (

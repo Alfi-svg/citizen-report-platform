@@ -3,11 +3,36 @@
 :root {
   --background: #f8fafc;
   --foreground: #0f172a;
+  
+  /* Brand Primary (Bangladesh Green) */
   --bd-green: #006a4e;
-  --bd-green-dark: #004d38;
+  --bd-green-hover: #00523d;
+  --bd-green-dark: #003d2d;
   --bd-green-light: #059669;
-  --bd-red: #f42a41;
-  --bd-red-dark: #dc2626;
+  --bd-green-subtle: #ecfdf5;
+
+  /* Accent Red (Emergency / Danger) */
+  --bd-red: #dc2626;
+  --bd-red-hover: #b91c1c;
+  --bd-red-dark: #991b1b;
+  --bd-red-subtle: #fef2f2;
+
+  /* Status Tokens */
+  --status-warning: #d97706;
+  --status-warning-subtle: #fffbeb;
+  --status-info: #2563eb;
+  --status-info-subtle: #eff6ff;
+  --status-success: #059669;
+  --status-success-subtle: #ecfdf5;
+
+  /* Neutral Surface & Border */
+  --surface: #ffffff;
+  --surface-muted: #f1f5f9;
+  --border: #e2e8f0;
+  --border-subtle: #f8fafc;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
   --card-bg: #ffffff;
   --card-border: #e2e8f0;
 }
@@ -15,14 +40,32 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-border: var(--border);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #09090b;
     --foreground: #f4f4f5;
+    --surface: #18181b;
+    --surface-muted: #27272a;
+    --border: #27272a;
+    --border-subtle: #1f1f23;
+    --text-primary: #f8fafc;
+    --text-secondary: #a1a1aa;
+    --text-muted: #71717a;
     --card-bg: #18181b;
     --card-border: #27272a;
+    --bd-green-subtle: rgba(0, 106, 78, 0.2);
+    --bd-red-subtle: rgba(220, 38, 38, 0.2);
+    --status-warning-subtle: rgba(217, 119, 6, 0.2);
+    --status-info-subtle: rgba(37, 99, 235, 0.2);
+    --status-success-subtle: rgba(5, 150, 105, 0.2);
   }
 }
 

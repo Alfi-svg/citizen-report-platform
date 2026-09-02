@@ -24,17 +24,21 @@ export default function Navbar() {
   const navLinks = [
     { href: "/", label: "Feed", bn: "ফিড" },
     { href: "/safety-map", label: "Safety Map", bn: "নিরাপত্তা মানচিত্র" },
+    { href: "/safety", label: "Find Help", bn: "জরুরি সেবা" },
     { href: "/missing-person", label: "Missing Persons", bn: "নিখোঁজ ব্যক্তি" },
-    { href: "/transparency", label: "Transparency", bn: "স্বচ্ছতা ড্যাশবোর্ড" },
+    { href: "/transparency", label: "Transparency", bn: "স্বচ্ছতা" },
   ];
 
   return (
-    <header className="border-b border-zinc-200/80 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md sticky top-0 z-50">
+    <header className="border-b border-zinc-200/90 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md sticky top-0 z-50">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-3 sm:px-6 lg:px-8 h-16">
         {/* Brand Logo & Title */}
         <div className="flex items-center gap-3 shrink-0">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="relative h-10 w-10 sm:h-11 sm:w-11 rounded-xl overflow-hidden shadow-xs border border-emerald-700/20 group-hover:scale-105 transition">
+          <Link
+            href="/"
+            className="flex items-center gap-2.5 group rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
+          >
+            <div className="relative h-10 w-10 sm:h-11 sm:w-11 rounded-xl overflow-hidden shadow-2xs border border-emerald-700/20 group-hover:scale-105 transition">
               <Image
                 src="/brand/logo-sm.jpg"
                 alt="Bangladesh Citizen Report Logo"
@@ -56,16 +60,16 @@ export default function Navbar() {
         </div>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden lg:flex items-center gap-1.5 xl:gap-2">
+        <nav className="hidden lg:flex items-center gap-1 xl:gap-1.5" aria-label="Main Navigation">
           {navLinks.map((item) => {
             const isActive = pathname === item.href;
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 ${
                   isActive
-                    ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+                    ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold"
                     : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:text-zinc-100 dark:hover:bg-zinc-800"
                 }`}
               >
@@ -80,17 +84,17 @@ export default function Navbar() {
           {/* Emergency SOS Shortcut */}
           <Link
             href="/safety"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white px-2.5 py-1.5 text-xs font-bold shadow-xs transition shrink-0"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white px-2.5 py-1.5 text-xs font-bold shadow-2xs transition shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600"
             title="Emergency Service & 999 Hotline"
           >
-            <span className="animate-pulse">🚨</span>
-            <span className="hidden sm:inline">{lang === "bn" ? "জরুরি সাহায্য" : "SOS 999"}</span>
+            <span className="h-2 w-2 rounded-full bg-white animate-ping" />
+            <span className="hidden sm:inline">{lang === "bn" ? "জরুরি ৯৯৯" : "SOS 999"}</span>
           </Link>
 
           {/* Primary Report CTA */}
           <Link
             href="/reports/create"
-            className="hidden sm:inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-1.5 text-xs font-bold shadow-xs transition shrink-0"
+            className="hidden sm:inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white px-3.5 py-1.5 text-xs font-bold shadow-2xs transition shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
           >
             <span>+</span>
             <span>{lang === "bn" ? "রিপোর্ট করুন" : "Report Incident"}</span>
@@ -100,7 +104,7 @@ export default function Navbar() {
           <button
             type="button"
             onClick={toggleLanguage}
-            className="px-2 py-1 text-xs font-bold rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 transition"
+            className="px-2 py-1 text-xs font-bold rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
             title="Switch Language / ভাষা পরিবর্তন"
           >
             {lang === "en" ? "বাংলা" : "EN"}

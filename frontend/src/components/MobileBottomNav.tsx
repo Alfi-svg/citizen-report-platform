@@ -18,7 +18,7 @@ export default function MobileBottomNav() {
   return (
     <nav
       aria-label="Mobile Navigation"
-      className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md border-t border-zinc-200 dark:border-zinc-800 pb-safe"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md border-t border-zinc-200 dark:border-zinc-800 pb-safe shadow-lg"
     >
       <div className="grid grid-cols-5 h-14 items-center px-1">
         {navItems.map((item) => {
@@ -29,7 +29,7 @@ export default function MobileBottomNav() {
               <div key={item.href} className="flex justify-center items-center">
                 <Link
                   href={item.href}
-                  className="flex flex-col items-center justify-center -mt-5 h-12 w-12 rounded-full bg-emerald-700 text-white shadow-lg shadow-emerald-700/30 ring-4 ring-white dark:ring-zinc-900 hover:bg-emerald-600 active:scale-95 transition"
+                  className="flex flex-col items-center justify-center -mt-5 h-12 w-12 rounded-full bg-emerald-700 text-white shadow-md shadow-emerald-700/30 ring-4 ring-white dark:ring-zinc-900 hover:bg-emerald-600 active:scale-95 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
                   aria-label="Create Incident Report"
                 >
                   <span className="text-xl leading-none font-bold">+</span>
@@ -42,7 +42,7 @@ export default function MobileBottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center justify-center py-1 text-center transition ${
+              className={`flex flex-col items-center justify-center min-h-[44px] py-1 text-center transition select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 rounded-lg ${
                 isActive
                   ? item.isEmergency
                     ? "text-red-600 font-bold"
@@ -54,6 +54,9 @@ export default function MobileBottomNav() {
               <span className="text-[10px] tracking-tight mt-0.5 font-medium">
                 {item.label}
               </span>
+              {isActive && !item.isEmergency && (
+                <span className="h-1 w-1 rounded-full bg-emerald-700 dark:bg-emerald-400 mt-0.5" />
+              )}
             </Link>
           );
         })}
