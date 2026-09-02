@@ -360,26 +360,37 @@ export interface NotificationPagination {
 
 export type ServiceType = "POLICE_STATION" | "POLICE_BOX" | "FIRE_SERVICE" | "EMERGENCY_SERVICE" | "OTHER";
 
-export type VerificationStatus = "VERIFIED" | "UNVERIFIED" | "PENDING_REVIEW";
+export type VerificationStatus =
+  | "UNVERIFIED"
+  | "PENDING_VERIFICATION"
+  | "VERIFIED"
+  | "NEEDS_REVIEW"
+  | "OUTDATED"
+  | "INACTIVE"
+  | "PENDING_REVIEW";
 
 export interface EmergencyService {
   id: string;
   name: string;
   name_bn?: string | null;
   service_type: ServiceType;
+  division?: string | null;
   district: string;
   area: string;
   address: string;
   address_bn?: string | null;
   phone: string;
   alternate_phone?: string | null;
-  latitude: number;
-  longitude: number;
+  latitude?: number | null;
+  longitude?: number | null;
   source: string;
   source_url?: string | null;
   verification_status: VerificationStatus;
   last_verified_at?: string | null;
+  verified_by_admin_id?: string | null;
+  verification_notes_internal?: string | null;
   is_active: boolean;
+  is_fresh?: boolean;
   created_at: string;
   updated_at?: string | null;
 }
@@ -389,15 +400,20 @@ export interface NearbyServiceResponse {
   name: string;
   name_bn?: string | null;
   service_type: ServiceType;
+  division?: string | null;
   district: string;
   area: string;
   address: string;
   address_bn?: string | null;
   phone: string;
   alternate_phone?: string | null;
-  latitude: number;
-  longitude: number;
+  latitude?: number | null;
+  longitude?: number | null;
+  source: string;
+  source_url?: string | null;
   verification_status: VerificationStatus;
+  last_verified_at?: string | null;
+  is_fresh: boolean;
   distance_km: number;
   distance_formatted: string;
   directions_url: string;
@@ -419,6 +435,7 @@ export interface NearbyEmergencyServicesResult {
   nearby_services: NearbyServiceResponse[];
   search_location?: { latitude: number; longitude: number } | null;
   total_found: number;
+  warning_message?: string | null;
 }
 
 export interface AreaReference {
@@ -436,6 +453,46 @@ export interface AdminEmergencyServicePagination {
   total: number;
   limit: number;
   offset: number;
+}
+
+export interface SafetyServiceVerificationAudit {
+  id: string;
+  service_id: string;
+  admin_id?: string | null;
+  previous_status: VerificationStatus;
+  new_status: VerificationStatus;
+  changed_fields?: string | null;
+  verification_notes?: string | null;
+  source?: string | null;
+  source_url?: string | null;
+  created_at: string;
+}
+
+export interface SafetyDirectoryMetrics {
+  total_services: number;
+  verified_count: number;
+  unverified_count: number;
+  needs_review_count: number;
+  outdated_count: number;
+  inactive_count: number;
+  recently_verified_count: number;
+}
+
+export interface SafetyServiceDuplicateCandidate {
+  service_id: string;
+  service_name: string;
+  district: string;
+  phone: string;
+  duplicate_with_id: string;
+  duplicate_with_name: string;
+  duplicate_with_phone: string;
+  reason: string;
+}
+
+export interface SafetyServiceVerifyPayload {
+  source: string;
+  source_url?: string | null;
+  verification_notes?: string | null;
 }
 
 export type AlertStatus = "ALERT_PENDING" | "ALERT_ACTIVE" | "FOUND" | "EXPIRED" | "CLOSED";

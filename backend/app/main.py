@@ -32,6 +32,14 @@ async def lifespan(app: FastAPI):
                 await conn.execute(text("ALTER TABLE missing_person_sightings ADD COLUMN IF NOT EXISTS clothing TEXT;"))
                 await conn.execute(text("ALTER TABLE missing_person_sightings ADD COLUMN IF NOT EXISTS direction VARCHAR(255);"))
                 await conn.execute(text("ALTER TABLE missing_person_sightings ADD COLUMN IF NOT EXISTS additional_information TEXT;"))
+                await conn.execute(text("ALTER TABLE emergency_services ADD COLUMN IF NOT EXISTS division VARCHAR(100);"))
+                await conn.execute(text("ALTER TABLE emergency_services ADD COLUMN IF NOT EXISTS verified_by_admin_id UUID;"))
+                await conn.execute(text("ALTER TABLE emergency_services ADD COLUMN IF NOT EXISTS verification_notes_internal TEXT;"))
+                try:
+                    await conn.execute(text("ALTER TABLE emergency_services ALTER COLUMN latitude DROP NOT NULL;"))
+                    await conn.execute(text("ALTER TABLE emergency_services ALTER COLUMN longitude DROP NOT NULL;"))
+                except Exception:
+                    pass
             except Exception:
                 pass
         logger.info("Database schema synchronized on startup.")

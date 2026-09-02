@@ -1,3 +1,4 @@
+import json
 import re
 import uuid
 from datetime import datetime, timezone
@@ -7,13 +8,19 @@ from sqlalchemy import select, func, and_, or_, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_current_active_admin
 from app.db.session import get_db
+from app.core.config import settings
 from app.models.notification import NotificationType
 from app.models.moderation import ModerationRecord, ModerationAction
 from app.models.report import Report, ReportStatus
 from app.models.comment import Comment, CommentStatus
 from app.models.flag import ContentFlag, FlagStatus
 from app.models.category import Category
-from app.models.emergency_service import EmergencyService, ServiceType, VerificationStatus
+from app.models.emergency_service import (
+    EmergencyService,
+    ServiceType,
+    VerificationStatus,
+    SafetyServiceVerificationAudit,
+)
 from app.models.missing_person import (
     MissingPersonProfile,
     MissingPersonAlert,
@@ -48,6 +55,14 @@ from app.schemas.emergency_service import (
     EmergencyServiceUpdate,
     EmergencyServiceResponse,
     AdminEmergencyServicePagination,
+    SafetyServiceVerificationAuditResponse,
+    SafetyServiceVerifyRequest,
+    SafetyServiceReviewRequest,
+    SafetyDirectoryMetricsResponse,
+    SafetyDirectoryBulkActionRequest,
+    SafetyServiceImportRequest,
+    SafetyServiceImportResponse,
+    SafetyServiceDuplicateCandidate,
 )
 from app.schemas.missing_person import (
     MissingPersonAlertActivateRequest,
@@ -995,8 +1010,300 @@ async def update_comment_status(
 
 
 # ==============================================================================
-# 6. EMERGENCY SERVICES DIRECTORY MANAGEMENT
+# 6. OFFICIAL SAFETY DIRECTORY VERIFICATION & MANAGEMENT
 # ==============================================================================
+
+async def record_safety_service_audit(
+    db: AsyncSession,
+    service_id: uuid.UUID,
+    admin_id: Optional[uuid.UUID],
+    previous_status: VerificationStatus,
+    new_status: VerificationStatus,
+    verification_notes: Optional[str] = None,
+    source: Optional[str] = None,
+    source_url: Optional[str] = None,
+    changed_fields: Optional[dict] = None,
+) -> SafetyServiceVerificationAudit:
+    """Creates an immutable verification audit record."""
+    audit = SafetyServiceVerificationAudit(
+        service_id=service_id,
+        admin_id=admin_id,
+        previous_status=previous_status,
+        new_status=new_status,
+        changed_fields=json.dumps(changed_fields) if changed_fields else None,
+        verification_notes=verification_notes,
+        source=source,
+        source_url=source_url,
+    )
+    db.add(audit)
+    return audit
+
+
+def detect_safety_service_duplicates(services: List[EmergencyService]) -> List[SafetyServiceDuplicateCandidate]:
+    """Detects potential duplicate service candidates without destructive merges."""
+    candidates: List[SafetyServiceDuplicateCandidate] = []
+    seen = set()
+
+    for i in range(len(services)):
+        for j in range(i + 1, len(services)):
+            s1 = services[i]
+            s2 = services[j]
+            pair_key = tuple(sorted([str(s1.id), str(s2.id)]))
+            if pair_key in seen:
+                continue
+
+            reason = None
+            p1 = re.sub(r"\D", "", s1.phone) if s1.phone else ""
+            p2 = re.sub(r"\D", "", s2.phone) if s2.phone else ""
+
+            # Check matching phone
+            if p1 and p2 and len(p1) >= 7 and len(p2) >= 7 and p1[-7:] == p2[-7:]:
+                reason = f"Matching phone number ({s1.phone})"
+            # Check same district + similar name
+            elif s1.district.lower() == s2.district.lower():
+                n1 = re.sub(r"[^a-zA-Z0-9]", "", s1.name.lower())
+                n2 = re.sub(r"[^a-zA-Z0-9]", "", s2.name.lower())
+                if n1 == n2 or (len(n1) > 6 and len(n2) > 6 and (n1 in n2 or n2 in n1)):
+                    reason = f"Same district ({s1.district}) with highly similar name"
+                elif (
+                    s1.latitude is not None
+                    and s1.longitude is not None
+                    and s2.latitude is not None
+                    and s2.longitude is not None
+                    and s1.service_type == s2.service_type
+                ):
+                    from app.api.v1.endpoints.safety import calculate_haversine_distance
+                    dist_km = calculate_haversine_distance(s1.latitude, s1.longitude, s2.latitude, s2.longitude)
+                    if dist_km <= 0.3:
+                        reason = f"Same service type within 300m ({int(dist_km * 1000)}m)"
+
+            if reason:
+                seen.add(pair_key)
+                candidates.append(
+                    SafetyServiceDuplicateCandidate(
+                        service_id=s1.id,
+                        service_name=s1.name,
+                        district=s1.district,
+                        phone=s1.phone,
+                        duplicate_with_id=s2.id,
+                        duplicate_with_name=s2.name,
+                        duplicate_with_phone=s2.phone,
+                        reason=reason,
+                    )
+                )
+
+    return candidates
+
+
+@router.get(
+    "/safety/services/metrics",
+    response_model=SafetyDirectoryMetricsResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get directory verification metrics for KPI cards",
+)
+@router.get(
+    "/emergency-services/metrics",
+    response_model=SafetyDirectoryMetricsResponse,
+    status_code=status.HTTP_200_OK,
+    include_in_schema=False,
+)
+async def get_admin_safety_directory_metrics(
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    stmt = select(EmergencyService)
+    res = await db.execute(stmt)
+    all_s = res.scalars().all()
+
+    total = len(all_s)
+    verified = sum(1 for s in all_s if s.verification_status == VerificationStatus.VERIFIED and s.is_active)
+    unverified = sum(1 for s in all_s if s.verification_status == VerificationStatus.UNVERIFIED and s.is_active)
+    needs_review = sum(1 for s in all_s if s.verification_status == VerificationStatus.NEEDS_REVIEW and s.is_active)
+    outdated = sum(1 for s in all_s if s.verification_status == VerificationStatus.OUTDATED and s.is_active)
+    inactive = sum(1 for s in all_s if not s.is_active or s.verification_status == VerificationStatus.INACTIVE)
+
+    now = datetime.now(timezone.utc)
+    from datetime import timedelta
+    recently_verified = 0
+    for s in all_s:
+        if s.last_verified_at:
+            lva = s.last_verified_at
+            if lva.tzinfo is None:
+                lva = lva.replace(tzinfo=timezone.utc)
+            if (now - lva) <= timedelta(days=30):
+                recently_verified += 1
+
+    return SafetyDirectoryMetricsResponse(
+        total_services=total,
+        verified_count=verified,
+        unverified_count=unverified,
+        needs_review_count=needs_review,
+        outdated_count=outdated,
+        inactive_count=inactive,
+        recently_verified_count=recently_verified,
+    )
+
+
+@router.get(
+    "/safety/services/duplicates",
+    response_model=List[SafetyServiceDuplicateCandidate],
+    status_code=status.HTTP_200_OK,
+    summary="Detect potential duplicate safety service directory records",
+)
+@router.get(
+    "/emergency-services/duplicates",
+    response_model=List[SafetyServiceDuplicateCandidate],
+    status_code=status.HTTP_200_OK,
+    include_in_schema=False,
+)
+async def get_admin_safety_service_duplicates(
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    stmt = select(EmergencyService).where(EmergencyService.is_active == True)
+    res = await db.execute(stmt)
+    services = res.scalars().all()
+    return detect_safety_service_duplicates(list(services))
+
+
+@router.post(
+    "/safety/services/bulk-action",
+    status_code=status.HTTP_200_OK,
+    summary="Execute safe bulk review or deactivation (bulk verify forbidden)",
+)
+@router.post(
+    "/emergency-services/bulk-action",
+    status_code=status.HTTP_200_OK,
+    include_in_schema=False,
+)
+async def bulk_action_safety_services(
+    payload: SafetyDirectoryBulkActionRequest,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    stmt = select(EmergencyService).where(EmergencyService.id.in_(payload.service_ids))
+    res = await db.execute(stmt)
+    services = res.scalars().all()
+
+    updated_count = 0
+    for service in services:
+        prev_status = service.verification_status
+        if payload.action == "NEEDS_REVIEW":
+            service.verification_status = VerificationStatus.NEEDS_REVIEW
+            if payload.admin_notes:
+                service.verification_notes_internal = payload.admin_notes
+            await record_safety_service_audit(
+                db=db,
+                service_id=service.id,
+                admin_id=current_admin.id,
+                previous_status=prev_status,
+                new_status=VerificationStatus.NEEDS_REVIEW,
+                verification_notes=payload.admin_notes or "Bulk marked for review",
+            )
+            updated_count += 1
+        elif payload.action == "DEACTIVATE":
+            service.is_active = False
+            service.verification_status = VerificationStatus.INACTIVE
+            if payload.admin_notes:
+                service.verification_notes_internal = payload.admin_notes
+            await record_safety_service_audit(
+                db=db,
+                service_id=service.id,
+                admin_id=current_admin.id,
+                previous_status=prev_status,
+                new_status=VerificationStatus.INACTIVE,
+                verification_notes=payload.admin_notes or "Bulk deactivated",
+            )
+            updated_count += 1
+
+    await db.commit()
+    return {"status": "ok", "updated_count": updated_count, "action": payload.action}
+
+
+@router.post(
+    "/safety/services/import",
+    response_model=SafetyServiceImportResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Safely batch import safety service rows into unverified queue",
+)
+@router.post(
+    "/emergency-services/import",
+    response_model=SafetyServiceImportResponse,
+    status_code=status.HTTP_200_OK,
+    include_in_schema=False,
+)
+async def import_safety_services(
+    payload: SafetyServiceImportRequest,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    imported_count = 0
+    duplicate_count = 0
+    error_count = 0
+    errors: List[str] = []
+
+    for idx, row in enumerate(payload.rows, start=1):
+        try:
+            # Duplicate check
+            stmt = select(EmergencyService).where(
+                or_(
+                    and_(
+                        EmergencyService.name.ilike(row.name.strip()),
+                        EmergencyService.district.ilike(row.district.strip()),
+                    ),
+                    EmergencyService.phone == row.phone.strip(),
+                )
+            )
+            existing = (await db.execute(stmt)).scalar_one_or_none()
+            if existing:
+                duplicate_count += 1
+                continue
+
+            service = EmergencyService(
+                name=row.name.strip(),
+                name_bn=row.name_bn.strip() if row.name_bn else None,
+                service_type=row.service_type,
+                division=row.division.strip() if row.division else None,
+                district=row.district.strip(),
+                area=row.area.strip(),
+                address=row.address.strip(),
+                address_bn=row.address_bn.strip() if row.address_bn else None,
+                phone=row.phone.strip(),
+                alternate_phone=row.alternate_phone.strip() if row.alternate_phone else None,
+                latitude=row.latitude,
+                longitude=row.longitude,
+                source=row.source.strip() if row.source else "Official Import Dataset",
+                source_url=row.source_url.strip() if row.source_url else None,
+                verification_status=VerificationStatus.UNVERIFIED,
+                is_active=True,
+            )
+            db.add(service)
+            await db.flush()
+
+            await record_safety_service_audit(
+                db=db,
+                service_id=service.id,
+                admin_id=current_admin.id,
+                previous_status=VerificationStatus.UNVERIFIED,
+                new_status=VerificationStatus.UNVERIFIED,
+                verification_notes="Imported via official dataset ingest",
+                source=service.source,
+                source_url=service.source_url,
+            )
+            imported_count += 1
+        except Exception as e:
+            error_count += 1
+            errors.append(f"Row {idx} ({row.name}): {str(e)}")
+
+    await db.commit()
+    return SafetyServiceImportResponse(
+        total_rows=len(payload.rows),
+        imported_count=imported_count,
+        duplicate_count=duplicate_count,
+        error_count=error_count,
+        errors=errors[:10],
+    )
+
 
 @router.get(
     "/emergency-services",
@@ -1004,11 +1311,20 @@ async def update_comment_status(
     status_code=status.HTTP_200_OK,
     summary="List and filter emergency services directory records",
 )
+@router.get(
+    "/safety/services",
+    response_model=AdminEmergencyServicePagination,
+    status_code=status.HTTP_200_OK,
+    include_in_schema=False,
+)
 async def list_admin_emergency_services(
     service_type: Optional[ServiceType] = Query(None),
+    division: Optional[str] = Query(None),
     district: Optional[str] = Query(None),
     verification_status: Optional[VerificationStatus] = Query(None),
     is_active: Optional[bool] = Query(None),
+    freshness: Optional[str] = Query(None, description="'fresh', 'outdated', or 'unverified'"),
+    sort_by: Optional[str] = Query("newest", description="'newest', 'oldest', 'verification_oldest', 'verification_newest', 'district'"),
     search: Optional[str] = Query(None, min_length=1),
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
@@ -1018,12 +1334,35 @@ async def list_admin_emergency_services(
     conditions = []
     if service_type:
         conditions.append(EmergencyService.service_type == service_type)
+    if division:
+        conditions.append(EmergencyService.division.ilike(f"%{division.strip()}%"))
     if district:
         conditions.append(EmergencyService.district.ilike(f"%{district.strip()}%"))
     if verification_status:
         conditions.append(EmergencyService.verification_status == verification_status)
     if is_active is not None:
         conditions.append(EmergencyService.is_active == is_active)
+
+    # Freshness filter
+    if freshness:
+        from datetime import timedelta
+        cutoff = datetime.now(timezone.utc) - timedelta(days=settings.SAFETY_DIRECTORY_FRESHNESS_DAYS)
+        if freshness == "fresh":
+            conditions.append(EmergencyService.last_verified_at >= cutoff)
+            conditions.append(EmergencyService.verification_status == VerificationStatus.VERIFIED)
+        elif freshness == "outdated":
+            conditions.append(
+                or_(
+                    EmergencyService.verification_status == VerificationStatus.OUTDATED,
+                    and_(
+                        EmergencyService.verification_status == VerificationStatus.VERIFIED,
+                        EmergencyService.last_verified_at < cutoff,
+                    ),
+                )
+            )
+        elif freshness == "unverified":
+            conditions.append(EmergencyService.verification_status.in_([VerificationStatus.UNVERIFIED, VerificationStatus.NEEDS_REVIEW]))
+
     if search:
         p = f"%{search.strip()}%"
         conditions.append(
@@ -1038,10 +1377,20 @@ async def list_admin_emergency_services(
     where_clause = and_(*conditions) if conditions else True
     total = await db.scalar(select(func.count(EmergencyService.id)).where(where_clause)) or 0
 
+    order_expr = EmergencyService.created_at.desc()
+    if sort_by == "oldest":
+        order_expr = EmergencyService.created_at.asc()
+    elif sort_by == "verification_oldest":
+        order_expr = EmergencyService.last_verified_at.asc().nulls_first()
+    elif sort_by == "verification_newest":
+        order_expr = EmergencyService.last_verified_at.desc().nulls_last()
+    elif sort_by == "district":
+        order_expr = EmergencyService.district.asc()
+
     stmt = (
         select(EmergencyService)
         .where(where_clause)
-        .order_by(EmergencyService.created_at.desc())
+        .order_by(order_expr)
         .limit(limit)
         .offset(offset)
     )
@@ -1060,17 +1409,27 @@ async def list_admin_emergency_services(
     "/emergency-services",
     response_model=EmergencyServiceResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="Create a new verified emergency service directory entry",
+    summary="Create a new emergency service directory entry",
+)
+@router.post(
+    "/safety/services",
+    response_model=EmergencyServiceResponse,
+    status_code=status.HTTP_201_CREATED,
+    include_in_schema=False,
 )
 async def create_admin_emergency_service(
     payload: EmergencyServiceCreate,
     current_admin: User = Depends(get_current_active_admin),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
+    now = datetime.now(timezone.utc)
+    is_verified = payload.verification_status == VerificationStatus.VERIFIED
+
     service = EmergencyService(
         name=payload.name,
         name_bn=payload.name_bn,
         service_type=payload.service_type,
+        division=payload.division,
         district=payload.district,
         area=payload.area,
         address=payload.address,
@@ -1082,9 +1441,24 @@ async def create_admin_emergency_service(
         source=payload.source,
         source_url=payload.source_url,
         verification_status=payload.verification_status,
+        last_verified_at=now if is_verified else None,
+        verified_by_admin_id=current_admin.id if is_verified else None,
         is_active=payload.is_active,
     )
     db.add(service)
+    await db.flush()
+
+    await record_safety_service_audit(
+        db=db,
+        service_id=service.id,
+        admin_id=current_admin.id,
+        previous_status=VerificationStatus.UNVERIFIED,
+        new_status=service.verification_status,
+        verification_notes="Service created by administrator",
+        source=service.source,
+        source_url=service.source_url,
+    )
+
     await db.commit()
     await db.refresh(service)
     return service
@@ -1095,6 +1469,12 @@ async def create_admin_emergency_service(
     response_model=EmergencyServiceResponse,
     status_code=status.HTTP_200_OK,
     summary="Get detailed emergency service record",
+)
+@router.get(
+    "/safety/services/{service_id}",
+    response_model=EmergencyServiceResponse,
+    status_code=status.HTTP_200_OK,
+    include_in_schema=False,
 )
 async def get_admin_emergency_service(
     service_id: uuid.UUID,
@@ -1118,6 +1498,12 @@ async def get_admin_emergency_service(
     status_code=status.HTTP_200_OK,
     summary="Update emergency service directory entry",
 )
+@router.patch(
+    "/safety/services/{service_id}",
+    response_model=EmergencyServiceResponse,
+    status_code=status.HTTP_200_OK,
+    include_in_schema=False,
+)
 async def update_admin_emergency_service(
     service_id: uuid.UUID,
     payload: EmergencyServiceUpdate,
@@ -1133,9 +1519,264 @@ async def update_admin_emergency_service(
             detail="Emergency service record not found.",
         )
 
+    prev_status = service.verification_status
     update_data = payload.model_dump(exclude_unset=True)
+    changed_fields = {}
+
+    critical_fields = {"phone", "address", "latitude", "longitude", "source"}
+    critical_changed = False
+
     for field, value in update_data.items():
-        setattr(service, field, value)
+        old_val = getattr(service, field, None)
+        if old_val != value:
+            changed_fields[field] = {"old": str(old_val), "new": str(value)}
+            if field in critical_fields:
+                critical_changed = True
+            setattr(service, field, value)
+
+    # If critical information like phone changed on a verified record, flag for review
+    if critical_changed and service.verification_status == VerificationStatus.VERIFIED:
+        service.verification_status = VerificationStatus.NEEDS_REVIEW
+
+    if changed_fields:
+        await record_safety_service_audit(
+            db=db,
+            service_id=service.id,
+            admin_id=current_admin.id,
+            previous_status=prev_status,
+            new_status=service.verification_status,
+            verification_notes="Service details edited by administrator",
+            changed_fields=changed_fields,
+            source=service.source,
+            source_url=service.source_url,
+        )
+
+    await db.commit()
+    await db.refresh(service)
+    return service
+
+
+@router.post(
+    "/safety/services/{service_id}/verify",
+    response_model=EmergencyServiceResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Admin verify safety service with official source information",
+)
+@router.post(
+    "/emergency-services/{service_id}/verify",
+    response_model=EmergencyServiceResponse,
+    status_code=status.HTTP_200_OK,
+    include_in_schema=False,
+)
+async def verify_admin_safety_service(
+    service_id: uuid.UUID,
+    payload: SafetyServiceVerifyRequest,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    stmt = select(EmergencyService).where(EmergencyService.id == service_id)
+    service = (await db.execute(stmt)).scalar_one_or_none()
+    if not service:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Emergency service record not found.",
+        )
+
+    prev_status = service.verification_status
+    now = datetime.now(timezone.utc)
+
+    service.verification_status = VerificationStatus.VERIFIED
+    service.last_verified_at = now
+    service.verified_by_admin_id = current_admin.id
+    service.source = payload.source.strip()
+    if payload.source_url is not None:
+        service.source_url = payload.source_url.strip() or None
+    if payload.verification_notes is not None:
+        service.verification_notes_internal = payload.verification_notes.strip() or None
+    service.is_active = True
+
+    await record_safety_service_audit(
+        db=db,
+        service_id=service.id,
+        admin_id=current_admin.id,
+        previous_status=prev_status,
+        new_status=VerificationStatus.VERIFIED,
+        verification_notes=payload.verification_notes,
+        source=service.source,
+        source_url=service.source_url,
+    )
+
+    await db.commit()
+    await db.refresh(service)
+    return service
+
+
+@router.post(
+    "/safety/services/{service_id}/needs-review",
+    response_model=EmergencyServiceResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Mark safety service as requiring review",
+)
+@router.post(
+    "/emergency-services/{service_id}/needs-review",
+    response_model=EmergencyServiceResponse,
+    status_code=status.HTTP_200_OK,
+    include_in_schema=False,
+)
+async def mark_safety_service_needs_review(
+    service_id: uuid.UUID,
+    payload: SafetyServiceReviewRequest,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    stmt = select(EmergencyService).where(EmergencyService.id == service_id)
+    service = (await db.execute(stmt)).scalar_one_or_none()
+    if not service:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Emergency service record not found.",
+        )
+
+    prev_status = service.verification_status
+    service.verification_status = VerificationStatus.NEEDS_REVIEW
+    service.verification_notes_internal = payload.verification_notes.strip()
+
+    await record_safety_service_audit(
+        db=db,
+        service_id=service.id,
+        admin_id=current_admin.id,
+        previous_status=prev_status,
+        new_status=VerificationStatus.NEEDS_REVIEW,
+        verification_notes=payload.verification_notes,
+    )
+
+    await db.commit()
+    await db.refresh(service)
+    return service
+
+
+@router.post(
+    "/safety/services/{service_id}/mark-outdated",
+    response_model=EmergencyServiceResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Mark safety service as outdated",
+)
+@router.post(
+    "/emergency-services/{service_id}/mark-outdated",
+    response_model=EmergencyServiceResponse,
+    status_code=status.HTTP_200_OK,
+    include_in_schema=False,
+)
+async def mark_safety_service_outdated(
+    service_id: uuid.UUID,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    stmt = select(EmergencyService).where(EmergencyService.id == service_id)
+    service = (await db.execute(stmt)).scalar_one_or_none()
+    if not service:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Emergency service record not found.",
+        )
+
+    prev_status = service.verification_status
+    service.verification_status = VerificationStatus.OUTDATED
+
+    await record_safety_service_audit(
+        db=db,
+        service_id=service.id,
+        admin_id=current_admin.id,
+        previous_status=prev_status,
+        new_status=VerificationStatus.OUTDATED,
+        verification_notes="Marked as outdated by administrator",
+    )
+
+    await db.commit()
+    await db.refresh(service)
+    return service
+
+
+@router.post(
+    "/safety/services/{service_id}/deactivate",
+    response_model=EmergencyServiceResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Deactivate safety service directory entry",
+)
+@router.post(
+    "/emergency-services/{service_id}/deactivate",
+    response_model=EmergencyServiceResponse,
+    status_code=status.HTTP_200_OK,
+    include_in_schema=False,
+)
+async def deactivate_safety_service(
+    service_id: uuid.UUID,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    stmt = select(EmergencyService).where(EmergencyService.id == service_id)
+    service = (await db.execute(stmt)).scalar_one_or_none()
+    if not service:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Emergency service record not found.",
+        )
+
+    prev_status = service.verification_status
+    service.is_active = False
+    service.verification_status = VerificationStatus.INACTIVE
+
+    await record_safety_service_audit(
+        db=db,
+        service_id=service.id,
+        admin_id=current_admin.id,
+        previous_status=prev_status,
+        new_status=VerificationStatus.INACTIVE,
+        verification_notes="Service deactivated",
+    )
+
+    await db.commit()
+    await db.refresh(service)
+    return service
+
+
+@router.post(
+    "/safety/services/{service_id}/reactivate",
+    response_model=EmergencyServiceResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Reactivate safety service for verification",
+)
+@router.post(
+    "/emergency-services/{service_id}/reactivate",
+    response_model=EmergencyServiceResponse,
+    status_code=status.HTTP_200_OK,
+    include_in_schema=False,
+)
+async def reactivate_safety_service(
+    service_id: uuid.UUID,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    stmt = select(EmergencyService).where(EmergencyService.id == service_id)
+    service = (await db.execute(stmt)).scalar_one_or_none()
+    if not service:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Emergency service record not found.",
+        )
+
+    prev_status = service.verification_status
+    service.is_active = True
+    service.verification_status = VerificationStatus.PENDING_VERIFICATION
+
+    await record_safety_service_audit(
+        db=db,
+        service_id=service.id,
+        admin_id=current_admin.id,
+        previous_status=prev_status,
+        new_status=VerificationStatus.PENDING_VERIFICATION,
+        verification_notes="Service reactivated for verification",
+    )
 
     await db.commit()
     await db.refresh(service)
@@ -1162,10 +1803,50 @@ async def delete_admin_emergency_service(
             detail="Emergency service record not found.",
         )
 
+    prev_status = service.verification_status
     service.is_active = False
+    service.verification_status = VerificationStatus.INACTIVE
+
+    await record_safety_service_audit(
+        db=db,
+        service_id=service.id,
+        admin_id=current_admin.id,
+        previous_status=prev_status,
+        new_status=VerificationStatus.INACTIVE,
+        verification_notes="Service soft-deleted / deactivated via DELETE endpoint",
+    )
+
     await db.commit()
     await db.refresh(service)
     return service
+
+
+@router.get(
+    "/safety/services/{service_id}/history",
+    response_model=List[SafetyServiceVerificationAuditResponse],
+    status_code=status.HTTP_200_OK,
+    summary="Get verification audit history for a safety service",
+)
+@router.get(
+    "/emergency-services/{service_id}/history",
+    response_model=List[SafetyServiceVerificationAuditResponse],
+    status_code=status.HTTP_200_OK,
+    include_in_schema=False,
+)
+async def get_admin_safety_service_history(
+    service_id: uuid.UUID,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    stmt = (
+        select(SafetyServiceVerificationAudit)
+        .where(SafetyServiceVerificationAudit.service_id == service_id)
+        .order_by(SafetyServiceVerificationAudit.created_at.desc())
+    )
+    result = await db.execute(stmt)
+    audits = result.scalars().all()
+    return list(audits)
+
 
 
 # ==============================================================================

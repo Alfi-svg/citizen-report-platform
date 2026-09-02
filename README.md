@@ -87,6 +87,17 @@ The **"I Saw This Person" / "আমি এই ব্যক্তিকে দে
 - **Chronological Sightings Timeline:** Displays platform-reviewed sightings in chronological order with date/time, approximate area, clothing notes, and direction.
 - **Admin Moderation Portal:** Dedicated moderation console (`/admin/missing-person/sightings`) to review attached evidence, inspect duplicate signals, and Approve, Reject, or Flag sightings.
 
+### 1.6. Official Bangladesh Safety Directory Verification & Management
+The **Official Safety Directory Verification & Management** system upgrades the Citizen Safety Navigator directory into an auditable, verified-data system:
+- **Controlled Verification Lifecycle:** Every directory record progresses through explicit states: `UNVERIFIED`, `PENDING_VERIFICATION`, `VERIFIED`, `NEEDS_REVIEW`, `OUTDATED`, and `INACTIVE`.
+- **Source Attribution & Freshness Policy:** Verified records require confirmed official sources (e.g. Bangladesh Police, Fire Service & Civil Defence) with source URLs and timestamps. Freshness is tracked against a 90-day threshold (`SAFETY_DIRECTORY_FRESHNESS_DAYS`).
+- **Zero Fabrication Policy:** Phone numbers, addresses, and GPS coordinates are never invented. Services without verified coordinates remain accessible in directory searches but are cleanly excluded from proximity calculations.
+- **Strict Public Privacy:** Internal administrator notes, reviewer IDs, and audit logs are strictly shielded from public APIs.
+- **Verification-Preferred Ranking:** Nearby search ranks verified active units first before distance sorting, and displays a prominent warning (*"Contact information may require verification."*) when unverified units are present.
+- **999 First-Class Priority:** The national 24/7 toll-free emergency hotline remains permanently anchored at the top of the interface.
+- **Admin Verification Console:** Real-time KPI summary bar, filters (type, division, status, freshness), duplicate candidate detection, and audit history modals.
+- **Bulk Safeguards:** Bulk review and deactivation supported; bulk 'VERIFIED' is strictly prohibited to ensure every verified service has recorded source rationale.
+
 ---
 
 ## 2. Production Deployment Checklist

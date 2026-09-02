@@ -244,12 +244,31 @@ export default function SafetyNavigatorPage() {
       {/* 3. EMERGENCY SERVICES RESULTS */}
       {result && (
         <section className="space-y-6">
+          {/* Overall Warning Banner if directory has unverified contacts */}
+          {result.warning_message && (
+            <div className="rounded-2xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 p-4 text-xs font-semibold text-amber-800 dark:text-amber-200 flex items-center gap-3">
+              <span className="text-lg">⚠️</span>
+              <span>{t.contact_unverified_warning}</span>
+            </div>
+          )}
+
           {/* Nearest Police Station Card */}
           {result.nearest_police_station && (
             <div className="rounded-3xl border-2 border-emerald-500/40 bg-white dark:bg-zinc-900 p-6 shadow-md relative overflow-hidden">
               <div className="flex items-center justify-between gap-2 mb-3">
-                <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 px-3 py-1 text-xs font-bold text-emerald-800 dark:text-emerald-300">
-                  <span>🚓</span> {t.nearest_police}
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 px-3 py-1 text-xs font-bold text-emerald-800 dark:text-emerald-300">
+                    <span>🚓</span> {t.nearest_police}
+                  </div>
+                  {result.nearest_police_station.verification_status === "VERIFIED" ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-950/80 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800 dark:text-emerald-300">
+                      ✓ {t.status_verified}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-950/80 px-2.5 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-300">
+                      ⚠️ {t.contact_unverified_warning}
+                    </span>
+                  )}
                 </div>
                 <div className="rounded-full bg-zinc-100 dark:bg-zinc-800 px-3 py-1 text-xs font-extrabold text-zinc-900 dark:text-zinc-100">
                   📍 {result.nearest_police_station.distance_formatted}
@@ -266,6 +285,27 @@ export default function SafetyNavigatorPage() {
                   ? result.nearest_police_station.address_bn
                   : result.nearest_police_station.address}
               </p>
+
+              {/* Source & Freshness Metadata */}
+              <div className="text-[11px] text-zinc-500 mt-2 flex flex-wrap items-center gap-2">
+                <span>{t.source_label}: {result.nearest_police_station.source}</span>
+                {result.nearest_police_station.source_url && (
+                  <a
+                    href={result.nearest_police_station.source_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-emerald-600 dark:text-emerald-400 hover:underline"
+                  >
+                    ↗
+                  </a>
+                )}
+                {result.nearest_police_station.last_verified_at && (
+                  <span>• {t.last_verified}: {new Date(result.nearest_police_station.last_verified_at).toLocaleDateString()}</span>
+                )}
+                {result.nearest_police_station.is_fresh === false && (
+                  <span className="text-amber-600 dark:text-amber-400">({t.status_outdated})</span>
+                )}
+              </div>
 
               <div className="mt-5 flex flex-wrap items-center gap-3">
                 <a
@@ -292,8 +332,19 @@ export default function SafetyNavigatorPage() {
           {result.nearest_police_box && (
             <div className="rounded-3xl border border-blue-200 dark:border-blue-900/50 bg-white dark:bg-zinc-900 p-6 shadow-sm">
               <div className="flex items-center justify-between gap-2 mb-3">
-                <div className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 dark:bg-blue-950/60 px-3 py-1 text-xs font-bold text-blue-800 dark:text-blue-300">
-                  <span>👮‍♂️</span> {t.nearest_police_box}
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 dark:bg-blue-950/60 px-3 py-1 text-xs font-bold text-blue-800 dark:text-blue-300">
+                    <span>👮‍♂️</span> {t.nearest_police_box}
+                  </div>
+                  {result.nearest_police_box.verification_status === "VERIFIED" ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-950/80 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800 dark:text-emerald-300">
+                      ✓ {t.status_verified}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-950/80 px-2.5 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-300">
+                      ⚠️ {t.contact_unverified_warning}
+                    </span>
+                  )}
                 </div>
                 <div className="rounded-full bg-zinc-100 dark:bg-zinc-800 px-3 py-1 text-xs font-extrabold text-zinc-900 dark:text-zinc-100">
                   📍 {result.nearest_police_box.distance_formatted}
@@ -310,6 +361,24 @@ export default function SafetyNavigatorPage() {
                   ? result.nearest_police_box.address_bn
                   : result.nearest_police_box.address}
               </p>
+
+              {/* Source & Freshness */}
+              <div className="text-[11px] text-zinc-500 mt-2 flex flex-wrap items-center gap-2">
+                <span>{t.source_label}: {result.nearest_police_box.source}</span>
+                {result.nearest_police_box.source_url && (
+                  <a
+                    href={result.nearest_police_box.source_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    ↗
+                  </a>
+                )}
+                {result.nearest_police_box.last_verified_at && (
+                  <span>• {t.last_verified}: {new Date(result.nearest_police_box.last_verified_at).toLocaleDateString()}</span>
+                )}
+              </div>
 
               <div className="mt-4 flex flex-wrap items-center gap-3">
                 <a
@@ -345,9 +414,20 @@ export default function SafetyNavigatorPage() {
                     className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 space-y-2 shadow-xs"
                   >
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-semibold text-zinc-500 uppercase tracking-wider text-[10px]">
-                        {s.service_type.replace("_", " ")}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-semibold text-zinc-500 uppercase tracking-wider text-[10px]">
+                          {s.service_type.replace("_", " ")}
+                        </span>
+                        {s.verification_status === "VERIFIED" ? (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 font-bold">
+                            ✓ {t.status_verified}
+                          </span>
+                        ) : (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 font-bold">
+                            ⚠️ {t.status_unverified}
+                          </span>
+                        )}
+                      </div>
                       <span className="font-bold text-emerald-600 dark:text-emerald-400">
                         {s.distance_formatted}
                       </span>
@@ -358,6 +438,12 @@ export default function SafetyNavigatorPage() {
                     <p className="text-[11px] text-zinc-500 line-clamp-1">
                       {lang === "bn" && s.address_bn ? s.address_bn : s.address}
                     </p>
+                    <div className="text-[10px] text-zinc-400 flex items-center gap-1.5">
+                      <span>{s.source}</span>
+                      {s.last_verified_at && (
+                        <span>• {new Date(s.last_verified_at).toLocaleDateString()}</span>
+                      )}
+                    </div>
                     <div className="pt-2 flex items-center justify-between gap-2 border-t border-zinc-100 dark:border-zinc-800">
                       <a
                         href={`tel:${s.phone}`}

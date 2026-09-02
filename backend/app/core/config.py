@@ -51,6 +51,9 @@ class Settings(BaseSettings):
     MAX_DOCUMENT_SIZE_BYTES: int = 20 * 1024 * 1024  # 20 MB
     MAX_MEDIA_PER_REPORT: int = 10
 
+    # Safety Directory Verification Freshness Policy (in days)
+    SAFETY_DIRECTORY_FRESHNESS_DAYS: int = 90
+
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
     def assemble_database_url(cls, v: str) -> str:
