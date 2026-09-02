@@ -123,6 +123,20 @@ class Report(Base, TimestampMixin):
         cascade="all, delete-orphan",
         lazy="selectin",
     )
+    missing_person_profile: Mapped[Optional["MissingPersonProfile"]] = relationship(
+        "MissingPersonProfile",
+        back_populates="report",
+        uselist=False,
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+    missing_person_alert: Mapped[Optional["MissingPersonAlert"]] = relationship(
+        "MissingPersonAlert",
+        back_populates="report",
+        uselist=False,
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
 
     __table_args__ = (
         Index("ix_reports_status_created_at", "status", "created_at"),

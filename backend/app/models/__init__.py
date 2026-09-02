@@ -9,6 +9,15 @@ from app.models.reaction import Reaction, ReactionType
 from app.models.flag import ContentFlag, FlagTargetType, FlagStatus, ReportFlagReason, CommentFlagReason
 from app.models.notification import Notification, NotificationType
 from app.models.emergency_service import EmergencyService, ServiceType, VerificationStatus
+from app.models.missing_person import (
+    MissingPersonProfile,
+    MissingPersonAlert,
+    MissingPersonSighting,
+    UserNotificationPreference,
+    AlertNotificationDelivery,
+    AlertStatus,
+    SightingStatus,
+)
 
 __all__ = [
     "Base",
@@ -36,4 +45,11 @@ __all__ = [
     "EmergencyService",
     "ServiceType",
     "VerificationStatus",
+    "MissingPersonProfile",
+    "MissingPersonAlert",
+    "MissingPersonSighting",
+    "UserNotificationPreference",
+    "AlertNotificationDelivery",
+    "AlertStatus",
+    "SightingStatus",
 ]

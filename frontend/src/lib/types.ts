@@ -436,3 +436,127 @@ export interface AdminEmergencyServicePagination {
   offset: number;
 }
 
+export type AlertStatus = "ALERT_PENDING" | "ALERT_ACTIVE" | "FOUND" | "EXPIRED" | "CLOSED";
+
+export type SightingStatus = "PENDING" | "APPROVED" | "REJECTED" | "REQUEST_MORE_INFO";
+
+export interface MissingPersonProfile {
+  id: string;
+  report_id: string;
+  full_name: string;
+  name_bn?: string | null;
+  age?: number | null;
+  approximate_age?: string | null;
+  gender?: string | null;
+  photo_url?: string | null;
+  height?: string | null;
+  clothing?: string | null;
+  clothing_bn?: string | null;
+  identifying_features?: string | null;
+  identifying_features_bn?: string | null;
+  last_seen_location: string;
+  last_seen_location_bn?: string | null;
+  last_seen_latitude?: number | null;
+  last_seen_longitude?: number | null;
+  last_seen_time?: string | null;
+  description?: string | null;
+  contact_information?: string | null;
+  reporting_authority?: string | null;
+  source?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MissingPersonProfileCreate {
+  full_name: string;
+  name_bn?: string;
+  age?: number | null;
+  approximate_age?: string;
+  gender?: string;
+  photo_url?: string;
+  height?: string;
+  clothing?: string;
+  clothing_bn?: string;
+  identifying_features?: string;
+  identifying_features_bn?: string;
+  last_seen_location: string;
+  last_seen_location_bn?: string;
+  last_seen_latitude?: number | null;
+  last_seen_longitude?: number | null;
+  last_seen_time?: string | null;
+  description?: string;
+  contact_information?: string;
+  reporting_authority?: string;
+  source?: string;
+}
+
+export interface PublicMissingPersonSightingResponse {
+  id: string;
+  alert_id: string;
+  approximate_location: string;
+  sighting_date?: string | null;
+  sighting_time?: string | null;
+  description: string;
+  photo_url?: string | null;
+  status: SightingStatus;
+  created_at: string;
+}
+
+export interface AdminMissingPersonSightingResponse extends PublicMissingPersonSightingResponse {
+  user_id?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  reviewed_by_admin_id?: string | null;
+  reviewed_at?: string | null;
+  admin_notes?: string | null;
+}
+
+export interface PublicMissingPersonAlertResponse {
+  id: string;
+  report_id: string;
+  status: AlertStatus;
+  is_active: boolean;
+  alert_radius_km: number;
+  alert_expiry?: string | null;
+  activated_at?: string | null;
+  found_at?: string | null;
+  profile: MissingPersonProfile;
+  approved_sightings: PublicMissingPersonSightingResponse[];
+  approved_sightings_count: number;
+  created_at: string;
+}
+
+export interface AdminMissingPersonAlertResponse extends PublicMissingPersonAlertResponse {
+  activated_by_admin_id?: string | null;
+  activation_notes?: string | null;
+  found_by_admin_id?: string | null;
+  found_notes?: string | null;
+  total_sightings_count: number;
+  pending_sightings_count: number;
+  duplicate_candidates_count: number;
+}
+
+export interface PublicMissingPersonAlertPagination {
+  items: PublicMissingPersonAlertResponse[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface AdminMissingPersonAlertPagination {
+  items: AdminMissingPersonAlertResponse[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface UserNotificationPreference {
+  user_id: string;
+  missing_person_alerts: boolean;
+  nearby_safety_alerts: boolean;
+  last_known_latitude?: number | null;
+  last_known_longitude?: number | null;
+  last_location_updated_at?: string | null;
+}
+
+

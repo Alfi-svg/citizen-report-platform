@@ -36,6 +36,13 @@ export default function Navbar() {
           >
             Public Feed
           </Link>
+
+          <Link
+            href="/missing-person"
+            className="text-sm font-medium text-zinc-700 hover:text-red-600 dark:text-zinc-300 dark:hover:text-red-400"
+          >
+            Missing Persons
+          </Link>
           {isLoading ? (
             <div className="h-8 w-20 animate-pulse rounded bg-zinc-200 dark:bg-zinc-800" />
           ) : isAuthenticated && user ? (

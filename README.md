@@ -47,6 +47,15 @@ The **Citizen Safety Navigator** (`/safety`) provides an instant, mobile-first e
 - **Bilingual Interface:** Full English and Bangla (বাংলা) support.
 - **Admin Directory Management:** Administrative CRUD interface (`/admin/emergency-services`) to maintain official phone numbers, addresses, verification badges, and active directory status.
 
+### 1.2. Missing Person Alert Network
+The **Missing Person Alert Network** (`/missing-person`) enables verified community search coordination across Bangladesh:
+- **Citizen Report & Profile Attachment:** Citizens submit structured missing person profiles (photo, age, clothing, last seen area, official contact) attached to reports.
+- **Strict Admin Verification & Activation:** Reports never auto-publish. An administrator must verify authority records and explicitly activate the alert with a configurable geospatial radius (1 km, 3 km, 5 km, 10 km, 25 km) and expiry.
+- **Geospatial & Deduplicated Notifications:** Eligible opted-in citizens within the alert radius receive concise, deduplicated in-app notifications.
+- **"I Saw This Person" Community Sightings:** Citizens submit sighting tips with approximate location and description. Sightings route to an admin moderation queue (`/admin/missing-person/sightings`) before safe approximate updates are displayed publicly.
+- **Found & Resolution Lifecycle:** Admins can mark individuals as `FOUND` with resolution notes, automatically updating public status and notifying community participants.
+- **Zero-Doxxing Privacy Guarantee:** Reporter personal contact info, private metadata, and unreviewed citizen locations are strictly shielded.
+
 ---
 
 ## 2. Production Deployment Checklist

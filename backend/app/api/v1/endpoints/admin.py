@@ -1,5 +1,6 @@
 import re
 import uuid
+from datetime import datetime, timezone
 from typing import Any, Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select, func, and_, or_, delete
@@ -13,6 +14,13 @@ from app.models.comment import Comment, CommentStatus
 from app.models.flag import ContentFlag, FlagStatus
 from app.models.category import Category
 from app.models.emergency_service import EmergencyService, ServiceType, VerificationStatus
+from app.models.missing_person import (
+    MissingPersonProfile,
+    MissingPersonAlert,
+    MissingPersonSighting,
+    AlertStatus,
+    SightingStatus,
+)
 from app.models.user import User, UserRole
 from app.schemas.moderation import (
     AdminDashboardStats,
@@ -41,7 +49,22 @@ from app.schemas.emergency_service import (
     EmergencyServiceResponse,
     AdminEmergencyServicePagination,
 )
+from app.schemas.missing_person import (
+    MissingPersonAlertActivateRequest,
+    MissingPersonFoundRequest,
+    AdminMissingPersonAlertResponse,
+    AdminMissingPersonAlertPagination,
+    AdminMissingPersonSightingResponse,
+    AdminSightingModerationRequest,
+    MissingPersonProfileResponse,
+    PublicMissingPersonSightingResponse,
+)
 from app.services.notification import notify_report_owner, create_notification
+from app.services.missing_person import (
+    dispatch_missing_person_alert_notifications,
+    notify_missing_person_found,
+    check_duplicate_missing_person_candidates,
+)
 
 router = APIRouter()
 
@@ -1129,4 +1152,357 @@ async def delete_admin_emergency_service(
     await db.commit()
     await db.refresh(service)
     return service
+
+
+# ==============================================================================
+# 7. MISSING PERSON ALERT NETWORK MODERATION & ACTIVATION
+# ==============================================================================
+
+@router.get(
+    "/missing-person/alerts",
+    response_model=AdminMissingPersonAlertPagination,
+    status_code=status.HTTP_200_OK,
+    summary="List all missing person alerts for admin moderation",
+)
+async def list_admin_missing_person_alerts(
+    alert_status: Optional[AlertStatus] = Query(None),
+    search: Optional[str] = Query(None, min_length=1),
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    stmt = (
+        select(MissingPersonAlert)
+        .join(MissingPersonProfile, MissingPersonProfile.report_id == MissingPersonAlert.report_id)
+    )
+    if alert_status:
+        stmt = stmt.where(MissingPersonAlert.status == alert_status)
+    if search:
+        p = f"%{search.strip()}%"
+        stmt = stmt.where(
+            or_(
+                MissingPersonProfile.full_name.ilike(p),
+                MissingPersonProfile.last_seen_location.ilike(p),
+                MissingPersonProfile.contact_information.ilike(p),
+            )
+        )
+
+    count_stmt = select(func.count()).select_from(stmt.subquery())
+    total = (await db.scalar(count_stmt)) or 0
+
+    stmt = stmt.order_by(MissingPersonAlert.created_at.desc()).limit(limit).offset(offset)
+    result = await db.execute(stmt)
+    alerts = result.scalars().all()
+
+    items = []
+    for alert in alerts:
+        prof_stmt = select(MissingPersonProfile).where(MissingPersonProfile.report_id == alert.report_id)
+        prof_res = await db.execute(prof_stmt)
+        profile = prof_res.scalar_one_or_none()
+        if not profile:
+            continue
+
+        # Count total and pending sightings
+        total_sightings_stmt = select(func.count(MissingPersonSighting.id)).where(
+            MissingPersonSighting.alert_id == alert.id
+        )
+        total_sightings = (await db.scalar(total_sightings_stmt)) or 0
+
+        pending_sightings_stmt = select(func.count(MissingPersonSighting.id)).where(
+            and_(
+                MissingPersonSighting.alert_id == alert.id,
+                MissingPersonSighting.status == SightingStatus.PENDING,
+            )
+        )
+        pending_sightings = (await db.scalar(pending_sightings_stmt)) or 0
+
+        # Check duplicate candidates
+        dup_count = await check_duplicate_missing_person_candidates(
+            db, profile.full_name, profile.age, exclude_profile_id=profile.id
+        )
+
+        items.append(
+            AdminMissingPersonAlertResponse(
+                id=alert.id,
+                report_id=alert.report_id,
+                status=alert.status,
+                is_active=alert.is_active,
+                alert_radius_km=alert.alert_radius_km,
+                alert_expiry=alert.alert_expiry,
+                activated_at=alert.activated_at,
+                found_at=alert.found_at,
+                activated_by_admin_id=alert.activated_by_admin_id,
+                activation_notes=alert.activation_notes,
+                found_by_admin_id=alert.found_by_admin_id,
+                found_notes=alert.found_notes,
+                profile=MissingPersonProfileResponse.model_validate(profile),
+                approved_sightings=[],
+                approved_sightings_count=total_sightings - pending_sightings,
+                total_sightings_count=total_sightings,
+                pending_sightings_count=pending_sightings,
+                duplicate_candidates_count=dup_count,
+                created_at=alert.created_at,
+            )
+        )
+
+    return AdminMissingPersonAlertPagination(
+        items=items,
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
+
+
+@router.post(
+    "/missing-person/alerts/{alert_id}/activate",
+    response_model=AdminMissingPersonAlertResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Explicitly activate a missing person alert and dispatch radius-based notifications",
+)
+async def activate_missing_person_alert(
+    alert_id: uuid.UUID,
+    payload: MissingPersonAlertActivateRequest,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    stmt = select(MissingPersonAlert).where(MissingPersonAlert.id == alert_id)
+    res = await db.execute(stmt)
+    alert = res.scalar_one_or_none()
+    if not alert:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Missing person alert not found.",
+        )
+
+    prof_stmt = select(MissingPersonProfile).where(MissingPersonProfile.report_id == alert.report_id)
+    prof_res = await db.execute(prof_stmt)
+    profile = prof_res.scalar_one_or_none()
+    if not profile:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Missing person profile not found.",
+        )
+
+    # Calculate expiry
+    from datetime import timedelta
+    now = datetime.now(timezone.utc)
+    expiry = now + timedelta(days=payload.alert_expiry_days or 30)
+
+    # Update alert record
+    alert.status = AlertStatus.ALERT_ACTIVE
+    alert.is_active = True
+    alert.alert_radius_km = payload.alert_radius_km
+    alert.alert_expiry = expiry
+    alert.activated_by_admin_id = current_admin.id
+    alert.activated_at = now
+    alert.activation_notes = payload.activation_notes
+
+    # Update associated report status to APPROVED so it is visible in public feeds
+    rep_stmt = select(Report).where(Report.id == alert.report_id)
+    rep_res = await db.execute(rep_stmt)
+    report = rep_res.scalar_one_or_none()
+    if report and report.status != ReportStatus.APPROVED:
+        report.status = ReportStatus.APPROVED
+
+    await db.commit()
+    await db.refresh(alert)
+
+    # Dispatch geotargeted deduplicated notifications
+    await dispatch_missing_person_alert_notifications(db, alert, profile)
+
+    return AdminMissingPersonAlertResponse(
+        id=alert.id,
+        report_id=alert.report_id,
+        status=alert.status,
+        is_active=alert.is_active,
+        alert_radius_km=alert.alert_radius_km,
+        alert_expiry=alert.alert_expiry,
+        activated_at=alert.activated_at,
+        found_at=alert.found_at,
+        activated_by_admin_id=alert.activated_by_admin_id,
+        activation_notes=alert.activation_notes,
+        found_by_admin_id=alert.found_by_admin_id,
+        found_notes=alert.found_notes,
+        profile=MissingPersonProfileResponse.model_validate(profile),
+        created_at=alert.created_at,
+    )
+
+
+@router.post(
+    "/missing-person/alerts/{alert_id}/found",
+    response_model=AdminMissingPersonAlertResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Mark missing person as FOUND and resolve alert",
+)
+async def mark_missing_person_found(
+    alert_id: uuid.UUID,
+    payload: MissingPersonFoundRequest,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    stmt = select(MissingPersonAlert).where(MissingPersonAlert.id == alert_id)
+    res = await db.execute(stmt)
+    alert = res.scalar_one_or_none()
+    if not alert:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Missing person alert not found.",
+        )
+
+    prof_stmt = select(MissingPersonProfile).where(MissingPersonProfile.report_id == alert.report_id)
+    prof_res = await db.execute(prof_stmt)
+    profile = prof_res.scalar_one_or_none()
+
+    alert.status = AlertStatus.FOUND
+    alert.is_active = False
+    alert.found_by_admin_id = current_admin.id
+    alert.found_at = datetime.now(timezone.utc)
+    alert.found_notes = payload.found_notes
+
+    await db.commit()
+    await db.refresh(alert)
+
+    if profile:
+        await notify_missing_person_found(db, alert, profile)
+
+    return AdminMissingPersonAlertResponse(
+        id=alert.id,
+        report_id=alert.report_id,
+        status=alert.status,
+        is_active=alert.is_active,
+        alert_radius_km=alert.alert_radius_km,
+        alert_expiry=alert.alert_expiry,
+        activated_at=alert.activated_at,
+        found_at=alert.found_at,
+        activated_by_admin_id=alert.activated_by_admin_id,
+        activation_notes=alert.activation_notes,
+        found_by_admin_id=alert.found_by_admin_id,
+        found_notes=alert.found_notes,
+        profile=MissingPersonProfileResponse.model_validate(profile) if profile else None,
+        created_at=alert.created_at,
+    )
+
+
+@router.post(
+    "/missing-person/alerts/{alert_id}/close",
+    response_model=AdminMissingPersonAlertResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Close missing person alert manually",
+)
+async def close_missing_person_alert(
+    alert_id: uuid.UUID,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    stmt = select(MissingPersonAlert).where(MissingPersonAlert.id == alert_id)
+    res = await db.execute(stmt)
+    alert = res.scalar_one_or_none()
+    if not alert:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Missing person alert not found.",
+        )
+
+    alert.status = AlertStatus.CLOSED
+    alert.is_active = False
+    await db.commit()
+    await db.refresh(alert)
+
+    prof_stmt = select(MissingPersonProfile).where(MissingPersonProfile.report_id == alert.report_id)
+    prof_res = await db.execute(prof_stmt)
+    profile = prof_res.scalar_one_or_none()
+
+    return AdminMissingPersonAlertResponse(
+        id=alert.id,
+        report_id=alert.report_id,
+        status=alert.status,
+        is_active=alert.is_active,
+        alert_radius_km=alert.alert_radius_km,
+        alert_expiry=alert.alert_expiry,
+        activated_at=alert.activated_at,
+        found_at=alert.found_at,
+        activated_by_admin_id=alert.activated_by_admin_id,
+        activation_notes=alert.activation_notes,
+        found_by_admin_id=alert.found_by_admin_id,
+        found_notes=alert.found_notes,
+        profile=MissingPersonProfileResponse.model_validate(profile) if profile else None,
+        created_at=alert.created_at,
+    )
+
+
+@router.get(
+    "/missing-person/sightings",
+    response_model=List[AdminMissingPersonSightingResponse],
+    status_code=status.HTTP_200_OK,
+    summary="List community sightings for moderation",
+)
+async def list_admin_missing_person_sightings(
+    alert_id: Optional[uuid.UUID] = Query(None),
+    status_filter: Optional[SightingStatus] = Query(None),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    conditions = []
+    if alert_id:
+        conditions.append(MissingPersonSighting.alert_id == alert_id)
+    if status_filter:
+        conditions.append(MissingPersonSighting.status == status_filter)
+
+    stmt = (
+        select(MissingPersonSighting)
+        .where(and_(*conditions) if conditions else True)
+        .order_by(MissingPersonSighting.created_at.desc())
+        .limit(limit)
+        .offset(offset)
+    )
+    res = await db.execute(stmt)
+    sightings = res.scalars().all()
+
+    return [AdminMissingPersonSightingResponse.model_validate(s) for s in sightings]
+
+
+@router.post(
+    "/missing-person/sightings/{sighting_id}/moderate",
+    response_model=AdminMissingPersonSightingResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Approve or reject a community sighting",
+)
+async def moderate_missing_person_sighting(
+    sighting_id: uuid.UUID,
+    payload: AdminSightingModerationRequest,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    stmt = select(MissingPersonSighting).where(MissingPersonSighting.id == sighting_id)
+    res = await db.execute(stmt)
+    sighting = res.scalar_one_or_none()
+    if not sighting:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Sighting record not found.",
+        )
+
+    sighting.status = payload.status
+    sighting.reviewed_by_admin_id = current_admin.id
+    sighting.reviewed_at = datetime.now(timezone.utc)
+    sighting.admin_notes = payload.admin_notes
+
+    # If the submitter is an authenticated user, notify them
+    if sighting.user_id:
+        status_text = "অনুমোদিত হয়েছে (Approved)" if payload.status == SightingStatus.APPROVED else "প্রত্যাখ্যাত হয়েছে (Rejected)"
+        await create_notification(
+            db=db,
+            user_id=sighting.user_id,
+            notification_type=NotificationType.MISSING_PERSON_SIGHTING_REVIEWED,
+            title="Sighting Review Notice / দেখার তথ্য পর্যালোচনা",
+            message=f"আপনার সাবমিট করা নিখোঁজ ব্যক্তির দেখার তথ্য মডারেশন টিম দ্বারা {status_text}।",
+        )
+
+    await db.commit()
+    await db.refresh(sighting)
+    return AdminMissingPersonSightingResponse.model_validate(sighting)
+
 

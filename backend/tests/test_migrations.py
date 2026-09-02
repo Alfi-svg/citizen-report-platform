@@ -16,7 +16,7 @@ def test_alembic_config_and_revisions():
     # Verify head revision is discoverable
     heads = script_directory.get_heads()
     assert len(heads) == 1
-    assert heads[0] == "0006_add_emergency_services"
+    assert heads[0] == "0007_add_missing_person_network"
 
 
 
