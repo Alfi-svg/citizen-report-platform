@@ -5,6 +5,14 @@ from app.schemas.report_media import ReportMediaBase, ReportMediaCreate, ReportM
 from app.schemas.report import ReportBase, ReportCreate, ReportUpdate, ReportResponse, ReportPublicResponse
 from app.schemas.comment import CommentCreate, CommentStatusUpdate, PublicCommentResponse, AdminCommentResponse, CommentPagination
 from app.schemas.reaction import ReactionCreate, ReactionSummaryResponse, ReactionToggleResponse
+from app.schemas.flag import (
+    ReportFlagCreate,
+    CommentFlagCreate,
+    FlagResponse,
+    AdminFlagUpdate,
+    AdminFlagResponse,
+    AdminFlagPagination,
+)
 
 __all__ = [
     "UserBase",
@@ -36,4 +44,10 @@ __all__ = [
     "ReactionCreate",
     "ReactionSummaryResponse",
     "ReactionToggleResponse",
+    "ReportFlagCreate",
+    "CommentFlagCreate",
+    "FlagResponse",
+    "AdminFlagUpdate",
+    "AdminFlagResponse",
+    "AdminFlagPagination",
 ]

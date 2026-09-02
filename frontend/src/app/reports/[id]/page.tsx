@@ -10,6 +10,7 @@ import EvidenceGallery from "@/components/EvidenceGallery";
 import EvidenceUploader from "@/components/EvidenceUploader";
 import ReactionControls from "@/components/ReactionControls";
 import CommentsSection from "@/components/CommentsSection";
+import FlagModal from "@/components/FlagModal";
 
 const STATUS_BADGES: Record<
   ReportStatus,
@@ -71,6 +72,7 @@ export default function ReportDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [deletingMediaId, setDeletingMediaId] = useState<string | null>(null);
+  const [isFlagModalOpen, setIsFlagModalOpen] = useState(false);
 
   // Edit mode state
   const [isEditing, setIsEditing] = useState(false);
@@ -344,9 +346,17 @@ export default function ReportDetailPage() {
             </div>
           )}
 
-          {/* Reaction Controls */}
-          <div className="pt-2">
+          {/* Reaction Controls & Report Safety Flagging */}
+          <div className="pt-2 flex flex-wrap items-center justify-between gap-3">
             <ReactionControls reportId={publicReport.id} />
+            <button
+              type="button"
+              onClick={() => setIsFlagModalOpen(true)}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-500 hover:text-red-600 dark:text-zinc-400 dark:hover:text-red-400 transition py-1 px-2.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            >
+              <span>🚩</span>
+              <span>Flag Report / রিপোর্টটি ফ্ল্যাগ করুন</span>
+            </button>
           </div>
 
           {/* Verification Disclaimer */}
@@ -356,6 +366,15 @@ export default function ReportDetailPage() {
 
           {/* Citizen Comments & Discussion */}
           <CommentsSection reportId={publicReport.id} />
+
+          {/* Flag Modal */}
+          <FlagModal
+            isOpen={isFlagModalOpen}
+            onClose={() => setIsFlagModalOpen(false)}
+            targetType="REPORT"
+            targetId={publicReport.id}
+            targetTitleOrSnippet={publicReport.title}
+          />
         </div>
       </article>
     );

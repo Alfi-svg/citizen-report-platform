@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
 import { CommentPagination, PublicComment } from "@/lib/types";
+import FlagModal from "@/components/FlagModal";
 
 interface CommentsSectionProps {
   reportId: string;
@@ -22,6 +23,7 @@ export default function CommentsSection({ reportId }: CommentsSectionProps) {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [flagTargetComment, setFlagTargetComment] = useState<PublicComment | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -184,6 +186,15 @@ export default function CommentsSection({ reportId }: CommentsSectionProps) {
                   <span className="text-[11px] text-zinc-400">
                     {new Date(comment.created_at).toLocaleString()}
                   </span>
+                  {!comment.is_own_comment && (
+                    <button
+                      type="button"
+                      onClick={() => setFlagTargetComment(comment)}
+                      className="text-zinc-400 hover:text-red-500 font-medium text-[11px] hover:underline"
+                    >
+                      🚩 Flag
+                    </button>
+                  )}
                   {(comment.is_own_comment || user?.role === "ADMIN") && (
                     <button
                       type="button"
@@ -202,6 +213,16 @@ export default function CommentsSection({ reportId }: CommentsSectionProps) {
             </div>
           ))}
         </div>
+      )}
+
+      {flagTargetComment && (
+        <FlagModal
+          isOpen={true}
+          onClose={() => setFlagTargetComment(null)}
+          targetType="COMMENT"
+          targetId={flagTargetComment.id}
+          targetTitleOrSnippet={flagTargetComment.body}
+        />
       )}
     </section>
   );

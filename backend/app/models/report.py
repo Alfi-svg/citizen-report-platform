@@ -117,6 +117,12 @@ class Report(Base, TimestampMixin):
         cascade="all, delete-orphan",
         lazy="selectin",
     )
+    flags: Mapped[List["ContentFlag"]] = relationship(
+        "ContentFlag",
+        back_populates="report",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
 
     __table_args__ = (
         Index("ix_reports_status_created_at", "status", "created_at"),

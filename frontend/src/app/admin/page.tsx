@@ -109,6 +109,12 @@ export default function AdminDashboardPage() {
             📋 Moderation Queue ({stats?.pending_reports || 0})
           </Link>
           <Link
+            href="/admin/flags"
+            className="rounded-lg bg-amber-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-amber-500 transition"
+          >
+            🚩 Safety & Flags Queue
+          </Link>
+          <Link
             href="/dashboard"
             className="rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3.5 py-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50"
           >

@@ -233,3 +233,61 @@ export interface AdminReportPagination {
 export interface ApiError {
   detail: string | Array<{ msg: string; loc: string[] }>;
 }
+
+export type FlagTargetType = "REPORT" | "COMMENT";
+
+export type FlagStatus = "PENDING" | "REVIEWED" | "DISMISSED" | "ACTION_TAKEN";
+
+export type ReportFlagReason =
+  | "FALSE_OR_MISLEADING"
+  | "SPAM"
+  | "DUPLICATE"
+  | "PRIVACY_CONCERN"
+  | "HARASSMENT_OR_ABUSE"
+  | "INAPPROPRIATE_CONTENT"
+  | "OTHER";
+
+export type CommentFlagReason =
+  | "SPAM"
+  | "HARASSMENT_OR_ABUSE"
+  | "HATEFUL_OR_OFFENSIVE"
+  | "PERSONAL_INFORMATION"
+  | "THREATENING_CONTENT"
+  | "INAPPROPRIATE_CONTENT"
+  | "OTHER";
+
+export interface FlagResponse {
+  id: string;
+  target_type: FlagTargetType;
+  report_id?: string | null;
+  comment_id?: string | null;
+  reason: string;
+  status: FlagStatus;
+  created_at: string;
+  message: string;
+}
+
+export interface AdminFlag {
+  id: string;
+  user_id: string;
+  target_type: FlagTargetType;
+  report_id?: string | null;
+  comment_id?: string | null;
+  reason: string;
+  details?: string | null;
+  status: FlagStatus;
+  reviewed_by?: string | null;
+  reviewed_at?: string | null;
+  admin_notes?: string | null;
+  created_at: string;
+  updated_at: string;
+  flagger_username?: string | null;
+  target_snippet?: string | null;
+}
+
+export interface AdminFlagPagination {
+  items: AdminFlag[];
+  total: number;
+  limit: number;
+  offset: number;
+}

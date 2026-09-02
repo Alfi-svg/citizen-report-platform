@@ -6,6 +6,7 @@ from app.models.report_media import ReportMedia
 from app.models.moderation import ModerationRecord, ModerationAction
 from app.models.comment import Comment, CommentStatus
 from app.models.reaction import Reaction, ReactionType
+from app.models.flag import ContentFlag, FlagTargetType, FlagStatus, ReportFlagReason, CommentFlagReason
 
 __all__ = [
     "Base",
@@ -23,4 +24,9 @@ __all__ = [
     "CommentStatus",
     "Reaction",
     "ReactionType",
+    "ContentFlag",
+    "FlagTargetType",
+    "FlagStatus",
+    "ReportFlagReason",
+    "CommentFlagReason",
 ]
