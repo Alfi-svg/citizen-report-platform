@@ -1,14 +1,21 @@
 import argparse
 import asyncio
+import getpass
 import os
 import sys
 from sqlalchemy import select
+from app.core.config import settings
 from app.core.security import get_password_hash
 from app.db.session import async_session_factory
 from app.models.user import User, UserRole
 
 
-async def create_or_update_admin(email: str, username: str, password: str, full_name: str = "System Administrator"):
+async def create_or_update_admin(
+    email: str,
+    username: str,
+    password: str,
+    full_name: str = "System Administrator",
+):
     """Bootstraps or updates an initial administrator account."""
     normalized_email = email.lower().strip()
     normalized_username = username.lower().strip()
@@ -48,22 +55,36 @@ def main():
     parser = argparse.ArgumentParser(description="Bootstrap an initial administrator user.")
     parser.add_argument("--email", default=os.getenv("ADMIN_EMAIL", "admin@citizenreport.gov.bd"), help="Admin email")
     parser.add_argument("--username", default=os.getenv("ADMIN_USERNAME", "admin"), help="Admin username")
-    parser.add_argument("--password", default=os.getenv("ADMIN_PASSWORD", "Admin@Secure2026!"), help="Admin password")
+    parser.add_argument("--password", default=os.getenv("ADMIN_PASSWORD"), help="Admin password (or prompted securely if omitted)")
     parser.add_argument("--name", default=os.getenv("ADMIN_NAME", "Lead Administrator"), help="Admin full name")
 
     args = parser.parse_args()
 
-    if len(args.password) < 8:
+    password = args.password
+    if not password:
+        if sys.stdin.isatty():
+            password = getpass.getpass("Enter secure password for admin: ")
+        else:
+            # Fallback for dev / automated test pipelines
+            if settings.ENVIRONMENT.lower() == "production":
+                print("Error: In production, --password or ADMIN_PASSWORD environment variable must be explicitly provided.")
+                sys.exit(1)
+            password = "Admin@Secure2026!"
+
+    if len(password) < 8:
         print("Error: Admin password must be at least 8 characters.")
         sys.exit(1)
 
-    asyncio.run(create_or_update_admin(
-        email=args.email,
-        username=args.username,
-        password=args.password,
-        full_name=args.name,
-    ))
+    asyncio.run(
+        create_or_update_admin(
+            email=args.email,
+            username=args.username,
+            password=password,
+            full_name=args.name,
+        )
+    )
 
 
 if __name__ == "__main__":
     main()
+

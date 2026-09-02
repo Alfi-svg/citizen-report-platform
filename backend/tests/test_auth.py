@@ -255,3 +255,42 @@ async def test_end_to_end_auth_flow(async_client: AsyncClient):
     logout_resp = await async_client.post("/api/v1/auth/logout", headers=headers)
     assert logout_resp.status_code == 200
 
+
+@pytest.mark.asyncio
+async def test_create_or_update_admin_bootstrap(db_session: AsyncSession, async_client: AsyncClient):
+    from app.db.create_admin import create_or_update_admin
+
+    # 1. Create a regular user first
+    reg_user = User(
+        email="bootstrap_candidate@example.com",
+        username="candidate_user",
+        hashed_password=get_password_hash("oldpassword123"),
+        role=UserRole.USER,
+        is_active=False,
+    )
+    db_session.add(reg_user)
+    await db_session.commit()
+
+    # 2. Upgrade to ADMIN using bootstrap helper
+    from unittest.mock import patch
+    with patch("app.db.create_admin.async_session_factory") as mock_factory:
+        mock_factory.return_value.__aenter__.return_value = db_session
+        mock_factory.return_value.__aexit__.return_value = None
+
+        await create_or_update_admin(
+            email="bootstrap_candidate@example.com",
+            username="candidate_user",
+            password="NewAdminPassword2026!",
+            full_name="Upgraded Admin",
+        )
+
+    # 3. Verify user is now active ADMIN
+    from sqlalchemy import select
+    result = await db_session.execute(select(User).where(User.username == "candidate_user"))
+    user = result.scalar_one()
+    assert user.role == UserRole.ADMIN
+    assert user.is_active is True
+    assert user.is_verified is True
+    assert user.full_name == "Upgraded Admin"
+
+
