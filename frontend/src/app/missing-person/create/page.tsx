@@ -30,11 +30,39 @@ export default function CreateMissingPersonPage() {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+  const [detectingLocation, setDetectingLocation] = useState(false);
 
   // UI State
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successResponse, setSuccessResponse] = useState<MissingPersonSubmissionResponse | null>(null);
+
+  const handleDetectLocation = () => {
+    if (typeof window === "undefined" || !navigator.geolocation) {
+      setError("Geolocation is not supported by your device/browser.");
+      return;
+    }
+    setDetectingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = parseFloat(pos.coords.latitude.toFixed(6));
+        const lng = parseFloat(pos.coords.longitude.toFixed(6));
+        setLatitude(lat);
+        setLongitude(lng);
+        if (!lastSeenLocation.trim()) {
+          setLastSeenLocation(`GPS Location (${lat}, ${lng})`);
+        }
+        setDetectingLocation(false);
+      },
+      (err) => {
+        setError(`Could not retrieve GPS: ${err.message}. You can still type the location name.`);
+        setDetectingLocation(false);
+      },
+      { timeout: 10000, enableHighAccuracy: true }
+    );
+  };
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -80,6 +108,8 @@ export default function CreateMissingPersonPage() {
         identifying_features_bn: identifyingFeaturesBn.trim() || undefined,
         last_seen_location: lastSeenLocation.trim(),
         last_seen_location_bn: lastSeenLocationBn.trim() || undefined,
+        last_seen_latitude: latitude !== null ? latitude : undefined,
+        last_seen_longitude: longitude !== null ? longitude : undefined,
         last_seen_time: lastSeenTime ? new Date(lastSeenTime).toISOString() : undefined,
         contact_information: contactInformation.trim(),
         reporting_authority: reportingAuthority.trim() || undefined,
@@ -220,9 +250,15 @@ export default function CreateMissingPersonPage() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
             <Link
               href={`/missing-person/${successResponse.alert_id}`}
+              className="w-full sm:w-auto rounded-xl bg-red-600 px-6 py-2.5 text-xs font-bold text-white hover:bg-red-500 transition shadow-sm"
+            >
+              🚨 View Alert Details →
+            </Link>
+            <Link
+              href="/safety-map"
               className="w-full sm:w-auto rounded-xl bg-emerald-700 px-6 py-2.5 text-xs font-bold text-white hover:bg-emerald-600 transition shadow-sm"
             >
-              View Missing Person Alert →
+              🗺️ View on Safety Map →
             </Link>
             <Link
               href="/missing-person"
@@ -415,17 +451,38 @@ export default function CreateMissingPersonPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
-                  <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                    Last Seen Location (সর্বশেষ দেখার স্থান) *
-                  </label>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1">
+                    <label className="block font-semibold text-zinc-700 dark:text-zinc-300">
+                      Last Seen Location (সর্বশেষ দেখার স্থান) *
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleDetectLocation}
+                      disabled={detectingLocation}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 transition self-start sm:self-auto disabled:opacity-50 shadow-2xs"
+                    >
+                      <span>{detectingLocation ? "⏳" : "📍"}</span>
+                      <span>{detectingLocation ? "অটো-লোকেশন শনাক্ত হচ্ছে..." : "আমার লোকেশন নিন (Auto-Detect GPS)"}</span>
+                    </button>
+                  </div>
                   <input
                     type="text"
                     required
                     value={lastSeenLocation}
                     onChange={(e) => setLastSeenLocation(e.target.value)}
-                    placeholder="e.g. Near Mirpur 10 roundabout, Dhaka"
+                    placeholder="e.g. Near Mirpur 10 roundabout, Dhaka / ধানমন্ডি লেক, ঢাকা"
                     className="w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3.5 py-2.5 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-emerald-600"
                   />
+                  {latitude && longitude ? (
+                    <div className="mt-2 flex items-center gap-2 text-[11px] text-emerald-700 dark:text-emerald-300 bg-emerald-50/80 dark:bg-emerald-950/50 px-3 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                      <span>✅</span>
+                      <span>GPS স্থানাঙ্ক নিশ্চিত: <strong>{latitude}, {longitude}</strong> (এটি লাইভ সেফটি ম্যাপ এবং ক্লাস্টারে রিয়েল-টাইমে প্রদর্শিত হবে)</span>
+                    </div>
+                  ) : (
+                    <p className="mt-1 text-[11px] text-zinc-400">
+                      লোকেশন লিখলে সিস্টেম স্বয়ংক্রিয়ভাবে বাংলাদেশে এর মানচিত্রের অবস্থান (GPS) বের করে নিবে।
+                    </p>
+                  )}
                 </div>
 
                 <div>

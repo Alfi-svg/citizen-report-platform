@@ -20,24 +20,37 @@ export default function MissingPersonsFeedPage() {
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 12;
 
-  const loadAlerts = () => {
-    setLoading(true);
+  const loadAlerts = (isBackground = false) => {
+    if (!isBackground) setLoading(true);
     const params = new URLSearchParams();
     if (statusFilter) params.append("alert_status", statusFilter);
     if (search.trim()) params.append("search", search.trim());
     params.append("limit", PAGE_SIZE.toString());
     params.append("offset", (page * PAGE_SIZE).toString());
+    params.append("_t", Date.now().toString());
 
     apiFetch<PublicMissingPersonAlertPagination>(`/missing-person/alerts?${params.toString()}`)
-      .then((res) => setData(res))
-      .catch((err: unknown) => {
-        if (err instanceof Error) setError(err.message);
+      .then((res) => {
+        setData(res);
+        setError(null);
       })
-      .finally(() => setLoading(false));
+      .catch((err: unknown) => {
+        if (!isBackground && err instanceof Error) setError(err.message);
+      })
+      .finally(() => {
+        if (!isBackground) setLoading(false);
+      });
   };
 
   useEffect(() => {
     loadAlerts();
+    // Real-time live polling every 6 seconds
+    const interval = setInterval(() => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        loadAlerts(true);
+      }
+    }, 6000);
+    return () => clearInterval(interval);
   }, [statusFilter, search, page]);
 
   const getStatusBadge = (status: AlertStatus) => {
@@ -90,6 +103,15 @@ export default function MissingPersonsFeedPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+          <button
+            onClick={() => loadAlerts(false)}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/60 px-3 py-2 text-xs font-bold text-red-800 dark:text-red-300 hover:bg-red-100 transition shadow-xs shrink-0"
+            title="Refresh Live Alerts"
+          >
+            <span className="h-2 w-2 rounded-full bg-red-500 animate-ping" />
+            <span>{lang === "bn" ? "লাইভ আপডেট" : "Live Sync"}</span>
+          </button>
+
           <Link
             href="/missing-person/create"
             className="inline-flex items-center gap-1.5 rounded-xl bg-red-600 hover:bg-red-500 px-4 py-2 text-xs font-bold text-white transition shadow-sm shrink-0"

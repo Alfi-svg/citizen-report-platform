@@ -39,9 +39,9 @@ export default function SafetyMapPage() {
       .catch(() => {});
   }, []);
 
-  // Fetch map data
-  const loadMapData = () => {
-    setLoading(true);
+  // Fetch map data with real-time background sync
+  const loadMapData = (isBackground = false) => {
+    if (!isBackground) setLoading(true);
     const params = new URLSearchParams();
     if (selectedCategory) params.append("category_slug", selectedCategory);
     if (search.trim()) params.append("search", search.trim());
@@ -61,6 +61,7 @@ export default function SafetyMapPage() {
     }
 
     params.append("limit", "300");
+    params.append("_t", Date.now().toString());
 
     apiFetch<PublicSafetyMapResponse>(`/safety/map?${params.toString()}`)
       .then((res) => {
@@ -68,13 +69,22 @@ export default function SafetyMapPage() {
         setError(null);
       })
       .catch((err: unknown) => {
-        if (err instanceof Error) setError(err.message);
+        if (!isBackground && err instanceof Error) setError(err.message);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!isBackground) setLoading(false);
+      });
   };
 
   useEffect(() => {
     loadMapData();
+    // Real-time live polling every 8 seconds
+    const interval = setInterval(() => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        loadMapData(true);
+      }
+    }, 8000);
+    return () => clearInterval(interval);
   }, [selectedCategory, search, dateFilter]);
 
   // Leaflet dynamic injection & map initialization
@@ -252,7 +262,16 @@ export default function SafetyMapPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => loadMapData(false)}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 transition shadow-xs"
+            title="Refresh Live Data"
+          >
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
+            <span>Live Sync</span>
+          </button>
+
           {/* View Mode Toggle: Map vs List */}
           <button
             onClick={() => setIsListView(!isListView)}

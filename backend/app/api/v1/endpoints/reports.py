@@ -58,14 +58,20 @@ async def create_report(
     initial_status = report_in.status or ReportStatus.DRAFT
     submitted_at = datetime.now(timezone.utc) if initial_status == ReportStatus.SUBMITTED else None
 
+    lat = report_in.latitude
+    lng = report_in.longitude
+    if (lat is None or lng is None) and report_in.location_text:
+        from app.api.v1.endpoints.missing_person import resolve_bd_coordinates
+        lat, lng = resolve_bd_coordinates(report_in.location_text)
+
     report = Report(
         user_id=current_user.id,
         category_id=report_in.category_id,
         title=report_in.title,
         description=report_in.description,
         location_text=report_in.location_text,
-        latitude=report_in.latitude,
-        longitude=report_in.longitude,
+        latitude=lat,
+        longitude=lng,
         incident_date=report_in.incident_date,
         is_anonymous=report_in.is_anonymous,
         status=initial_status,

@@ -14,6 +14,7 @@ api_router.include_router(flags.router, tags=["flags"])
 api_router.include_router(notifications.router, prefix="/notifications", tags=["notifications"])
 api_router.include_router(safety.router, prefix="/safety", tags=["safety"])
 api_router.include_router(safety_map.router, prefix="/safety", tags=["safety-map"])
+api_router.include_router(safety_map.router, prefix="/safety-map", tags=["safety-map"])
 api_router.include_router(missing_person.router, prefix="/missing-person", tags=["missing-person"])
 api_router.include_router(analytics.router, prefix="/analytics", tags=["analytics"])
 

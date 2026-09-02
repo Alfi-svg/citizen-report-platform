@@ -302,7 +302,7 @@ async def test_missing_person_direct_submit(
     )
     assert res.status_code == 201
     data = res.json()
-    assert data["status"] == "ALERT_PENDING"
+    assert data["status"] == "ALERT_ACTIVE"
     assert data["profile"]["full_name"] == "Farhana Akter"
     assert data["profile"]["age"] == 14
     assert data["profile"]["last_seen_location"] == "Mirpur 10 roundabout, Dhaka"

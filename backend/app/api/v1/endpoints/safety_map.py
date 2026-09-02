@@ -44,9 +44,9 @@ async def get_public_safety_map(
     limit: int = Query(200, ge=1, le=500, description="Max incidents to return"),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
-    # 1. Build query for APPROVED reports with usable geographic coordinates
+    # 1. Build query for reports with usable geographic coordinates (real-time live map)
     conditions = [
-        Report.status == ReportStatus.APPROVED,
+        Report.status.in_([ReportStatus.APPROVED, ReportStatus.SUBMITTED]),
         Report.latitude.isnot(None),
         Report.longitude.isnot(None),
     ]
