@@ -1,3 +1,4 @@
+"""Import all models here for Alembic and metadata auto-detection."""
 from app.models.base import Base, GUID, TimestampMixin
 from app.models.user import User, UserRole
 from app.models.category import Category

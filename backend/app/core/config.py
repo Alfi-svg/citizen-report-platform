@@ -8,10 +8,14 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     ENVIRONMENT: str = "development"
 
-    # Database configuration placeholder for PostgreSQL
+    # Database Configuration (PostgreSQL async engine)
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/citizen_report_db"
+    DB_ECHO: bool = False
+    DB_POOL_SIZE: int = 5
+    DB_MAX_OVERFLOW: int = 10
+    DB_TIMEOUT: int = 10
 
-    # Security placeholders
+    # Security & Tokens
     SECRET_KEY: str = "development_secret_key_change_in_production"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
 
