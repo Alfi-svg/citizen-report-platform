@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
 import { Category, Report } from "@/lib/types";
+import EvidenceUploader, { SelectedFileItem } from "@/components/EvidenceUploader";
 
 export default function CreateReportPage() {
   const router = useRouter();
@@ -23,9 +24,11 @@ export default function CreateReportPage() {
     isAnonymous: false,
   });
 
+  const [selectedFiles, setSelectedFiles] = useState<SelectedFileItem[]>([]);
   const [isReviewMode, setIsReviewMode] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -109,6 +112,11 @@ export default function CreateReportPage() {
     if (!validateForm()) return;
 
     setSubmitting(true);
+    setUploadStatus("Creating report record...");
+
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
     try {
       const payload = {
         title: formData.title.trim(),
@@ -125,6 +133,31 @@ export default function CreateReportPage() {
         body: JSON.stringify(payload),
       });
 
+      // Upload attached files if any
+      if (selectedFiles.length > 0) {
+        for (let i = 0; i < selectedFiles.length; i++) {
+          const item = selectedFiles[i];
+          setUploadStatus(`Uploading evidence ${i + 1} of ${selectedFiles.length}: ${item.file.name}...`);
+
+          const formDataFile = new FormData();
+          formDataFile.append("file", item.file);
+          if (item.caption.trim()) formDataFile.append("caption", item.caption.trim());
+
+          const res = await fetch(`${apiBase}/reports/${created.id}/media`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token || ""}`,
+            },
+            body: formDataFile,
+          });
+
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({ detail: res.statusText }));
+            throw new Error(errData.detail || `Upload failed for ${item.file.name}`);
+          }
+        }
+      }
+
       router.push(`/reports/${created.id}`);
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -132,8 +165,8 @@ export default function CreateReportPage() {
       } else {
         setError("Failed to create report. Please verify your inputs.");
       }
-    } finally {
       setSubmitting(false);
+      setUploadStatus(null);
     }
   };
 
@@ -166,7 +199,7 @@ export default function CreateReportPage() {
           </h1>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
             {isReviewMode
-              ? "Verify all incident information before saving as a draft or submitting for moderation."
+              ? "Verify all incident information and evidence attachments before submitting."
               : "Provide clear and factual details regarding the incident."}
           </p>
         </div>
@@ -221,6 +254,30 @@ export default function CreateReportPage() {
               {formData.description}
             </div>
           </div>
+
+          {/* Attached Evidence Summary */}
+          {selectedFiles.length > 0 && (
+            <div className="pt-2">
+              <span className="text-xs font-medium text-zinc-500 block mb-2">
+                Attached Evidence Files ({selectedFiles.length})
+              </span>
+              <ul className="space-y-1.5 text-xs text-zinc-700 dark:text-zinc-300">
+                {selectedFiles.map((item, idx) => (
+                  <li key={idx} className="flex items-center gap-2 p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800">
+                    <span>📎</span>
+                    <span className="font-semibold truncate">{item.file.name}</span>
+                    {item.caption && <span className="text-zinc-500 italic">(&quot;{item.caption}&quot;)</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {uploadStatus && (
+            <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-900 text-xs font-semibold text-emerald-800 dark:text-emerald-200 animate-pulse">
+              {uploadStatus}
+            </div>
+          )}
 
           <div className="pt-6 border-t border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-3">
             <button
@@ -338,6 +395,14 @@ export default function CreateReportPage() {
               placeholder="Provide a factual, comprehensive description of what occurred, key individuals involved (if known), and public impact..."
               className="mt-1 block w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
             />
+          </div>
+
+          {/* Evidence Attachments Uploader */}
+          <div>
+            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
+              Supporting Evidence Attachments (Optional)
+            </label>
+            <EvidenceUploader onFilesChange={(files) => setSelectedFiles(files)} />
           </div>
 
           {/* Privacy & Identity Selector */}

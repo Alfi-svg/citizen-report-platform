@@ -5,7 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
-import { Report, Category, ReportStatus } from "@/lib/types";
+import { Report, Category, ReportStatus, ReportMedia } from "@/lib/types";
+import EvidenceGallery from "@/components/EvidenceGallery";
+import EvidenceUploader from "@/components/EvidenceUploader";
 
 const STATUS_BADGES: Record<
   ReportStatus,
@@ -66,6 +68,7 @@ export default function ReportDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [deletingMediaId, setDeletingMediaId] = useState<string | null>(null);
 
   // Edit mode state
   const [isEditing, setIsEditing] = useState(false);
@@ -177,6 +180,35 @@ export default function ReportDetailPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleDeleteMedia = async (mediaId: string) => {
+    if (!report) return;
+    setDeletingMediaId(mediaId);
+    setError(null);
+    try {
+      await apiFetch(`/reports/${report.id}/media/${mediaId}`, {
+        method: "DELETE",
+      });
+      setReport({
+        ...report,
+        media: report.media?.filter((m) => m.id !== mediaId) || [],
+      });
+      setSuccessMessage("Evidence file removed successfully.");
+    } catch (err: unknown) {
+      if (err instanceof Error) setError(err.message);
+    } finally {
+      setDeletingMediaId(null);
+    }
+  };
+
+  const handleUploadComplete = (newMedia: ReportMedia) => {
+    if (!report) return;
+    setReport({
+      ...report,
+      media: [...(report.media || []), newMedia],
+    });
+    setSuccessMessage("Supporting evidence uploaded successfully.");
   };
 
   if (authLoading || loading) {
@@ -341,6 +373,27 @@ export default function ReportDetailPage() {
             </label>
           </div>
 
+          {/* Manage Attachments in Edit Mode */}
+          <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800">
+            <h3 className="text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-3">
+              Supporting Evidence Attachments
+            </h3>
+            {report.media && report.media.length > 0 && (
+              <div className="mb-4">
+                <EvidenceGallery
+                  media={report.media}
+                  canDelete={canEdit}
+                  onDelete={handleDeleteMedia}
+                  deletingId={deletingMediaId}
+                />
+              </div>
+            )}
+            <EvidenceUploader
+              reportId={report.id}
+              onUploadComplete={handleUploadComplete}
+            />
+          </div>
+
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
             <button
               type="button"
@@ -420,7 +473,7 @@ export default function ReportDetailPage() {
 
             {/* Moderator Feedback for Reporter */}
             {report.moderation_records && report.moderation_records.some((m) => m.user_message) && (
-              <div className="rounded-xl border border-purple-200 bg-purple-50/70 dark:border-purple-900 dark:bg-purple-950/30 p-4 space-y-2">
+              <div className="rounded-xl border border-purple-200 bg-purple-50/70 dark:border-purple-900 dark:bg-purple-950/30 p-4 space-y-2 mb-6">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-purple-900 dark:text-purple-200">
                   <span>💬 Official Moderation Feedback</span>
                 </div>
@@ -441,13 +494,26 @@ export default function ReportDetailPage() {
               </div>
             )}
 
-            <div>
+            <div className="mb-6">
               <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
                 Incident Description
               </h3>
               <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm leading-relaxed text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap">
                 {report.description}
               </div>
+            </div>
+
+            {/* Evidence Gallery View */}
+            <div>
+              <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">
+                Supporting Evidence ({report.media?.length || 0})
+              </h3>
+              <EvidenceGallery
+                media={report.media || []}
+                canDelete={canEdit}
+                onDelete={handleDeleteMedia}
+                deletingId={deletingMediaId}
+              />
             </div>
           </div>
 

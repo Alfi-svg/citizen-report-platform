@@ -1,4 +1,5 @@
-from typing import List
+import os
+from typing import List, Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -24,6 +25,21 @@ class Settings(BaseSettings):
         "http://localhost:3000",
         "http://127.0.0.1:3000",
     ]
+
+    # Cloud Object Storage & Media Configuration
+    STORAGE_BACKEND: str = "local"  # "local" or "s3"
+    STORAGE_LOCAL_ROOT: str = "data/storage"
+    STORAGE_ENDPOINT: Optional[str] = None
+    STORAGE_BUCKET: str = "citizen-report-evidence"
+    STORAGE_REGION: str = "auto"
+    STORAGE_ACCESS_KEY: Optional[str] = None
+    STORAGE_SECRET_KEY: Optional[str] = None
+
+    # Evidence File Size Limits (in bytes)
+    MAX_IMAGE_SIZE_BYTES: int = 10 * 1024 * 1024  # 10 MB
+    MAX_VIDEO_SIZE_BYTES: int = 50 * 1024 * 1024  # 50 MB
+    MAX_DOCUMENT_SIZE_BYTES: int = 20 * 1024 * 1024  # 20 MB
+    MAX_MEDIA_PER_REPORT: int = 10
 
     model_config = SettingsConfigDict(
         env_file=".env",

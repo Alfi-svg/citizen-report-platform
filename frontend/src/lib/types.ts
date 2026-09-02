@@ -45,6 +45,19 @@ export interface Category {
   updated_at: string;
 }
 
+export interface ReportMedia {
+  id: string;
+  report_id: string;
+  file_name: string;
+  mime_type: string;
+  file_size: number;
+  storage_path: string;
+  caption: string | null;
+  media_type: "image" | "video" | "document";
+  download_url: string;
+  created_at: string;
+}
+
 export interface ModerationRecord {
   id: string;
   report_id: string;
@@ -73,6 +86,7 @@ export interface Report {
   updated_at: string;
   category?: Category | null;
   user?: User | null;
+  media?: ReportMedia[];
   moderation_records?: ModerationRecord[];
 }
 

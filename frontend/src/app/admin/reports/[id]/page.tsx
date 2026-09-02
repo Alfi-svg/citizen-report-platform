@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
 import { Report, ReportStatus } from "@/lib/types";
+import EvidenceGallery from "@/components/EvidenceGallery";
 
 const STATUS_BADGES: Record<
   ReportStatus,
@@ -66,6 +67,7 @@ export default function AdminReportDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [deletingMediaId, setDeletingMediaId] = useState<string | null>(null);
 
   // Modal dialog state
   const [activeModal, setActiveModal] = useState<"APPROVE" | "REJECT" | "REQUEST_INFO" | null>(null);
@@ -143,6 +145,26 @@ export default function AdminReportDetailPage() {
       if (err instanceof Error) setError(err.message);
     } finally {
       setProcessing(false);
+    }
+  };
+
+  const handleDeleteEvidenceAdmin = async (mediaId: string) => {
+    if (!report) return;
+    setDeletingMediaId(mediaId);
+    setError(null);
+    try {
+      await apiFetch(`/reports/${report.id}/media/${mediaId}`, {
+        method: "DELETE",
+      });
+      setReport({
+        ...report,
+        media: report.media?.filter((m) => m.id !== mediaId) || [],
+      });
+      setActionSuccess("Evidence attachment removed by administrator.");
+    } catch (err: unknown) {
+      if (err instanceof Error) setError(err.message);
+    } finally {
+      setDeletingMediaId(null);
     }
   };
 
@@ -265,7 +287,7 @@ export default function AdminReportDetailPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column: Report Details */}
+        {/* Left Column: Report Details & Evidence */}
         <div className="lg:col-span-2 space-y-6">
           <div className="rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 p-6 shadow-sm">
             <div className="flex items-center justify-between gap-2 border-b border-zinc-100 dark:border-zinc-800 pb-3 mb-4">
@@ -308,13 +330,26 @@ export default function AdminReportDetailPage() {
               </div>
             </div>
 
-            <div>
+            <div className="mb-6">
               <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
                 Incident Description
               </h3>
               <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-800 text-sm leading-relaxed text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap">
                 {report.description}
               </div>
+            </div>
+
+            {/* Evidence Inspection Gallery */}
+            <div>
+              <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3">
+                Supporting Evidence Inspection ({report.media?.length || 0})
+              </h3>
+              <EvidenceGallery
+                media={report.media || []}
+                canDelete={true}
+                onDelete={handleDeleteEvidenceAdmin}
+                deletingId={deletingMediaId}
+              />
             </div>
           </div>
 

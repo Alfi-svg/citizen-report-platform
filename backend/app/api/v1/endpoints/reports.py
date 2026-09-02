@@ -1,15 +1,24 @@
 import uuid
 from datetime import datetime, timezone
-from typing import Any, List
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Any, List, Optional
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_current_user
+from app.core.config import settings
+from app.core.storage_validation import (
+    validate_upload_file,
+    generate_storage_path,
+)
 from app.db.session import get_db
 from app.models.category import Category
 from app.models.report import Report, ReportStatus
+from app.models.report_media import ReportMedia
 from app.models.user import User, UserRole
 from app.schemas.report import ReportCreate, ReportUpdate, ReportResponse
+from app.schemas.report_media import ReportMediaResponse
+from app.services.storage import get_storage_service
 
 router = APIRouter()
 
@@ -32,7 +41,6 @@ async def create_report(
     - Supports saving as DRAFT or direct SUBMITTED state.
     - Sets submitted_at if submitted.
     """
-    # 1. Validate category existence and active state
     cat_stmt = select(Category).where(
         Category.id == report_in.category_id,
         Category.is_active == True,
@@ -45,11 +53,9 @@ async def create_report(
             detail="The selected category does not exist or is inactive.",
         )
 
-    # 2. Determine initial status and submission timestamp
     initial_status = report_in.status or ReportStatus.DRAFT
     submitted_at = datetime.now(timezone.utc) if initial_status == ReportStatus.SUBMITTED else None
 
-    # 3. Create report model instance
     report = Report(
         user_id=current_user.id,
         category_id=report_in.category_id,
@@ -118,7 +124,6 @@ async def get_report_by_id(
             detail="Report not found.",
         )
 
-    # Ownership / Admin check
     if report.user_id != current_user.id and current_user.role != UserRole.ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -167,7 +172,6 @@ async def update_report(
             detail=f"Reports in '{report.status.value}' status cannot be edited.",
         )
 
-    # Validate category if being updated
     if report_in.category_id is not None and report_in.category_id != report.category_id:
         cat_stmt = select(Category).where(
             Category.id == report_in.category_id,
@@ -181,7 +185,6 @@ async def update_report(
             )
         report.category_id = report_in.category_id
 
-    # Update provided fields
     if report_in.title is not None:
         report.title = report_in.title
     if report_in.description is not None:
@@ -197,7 +200,6 @@ async def update_report(
     if report_in.is_anonymous is not None:
         report.is_anonymous = report_in.is_anonymous
 
-    # Handle explicit submission during update
     if report_in.status == ReportStatus.SUBMITTED:
         report.status = ReportStatus.SUBMITTED
         report.submitted_at = datetime.now(timezone.utc)
@@ -222,7 +224,6 @@ async def submit_report(
     Submits a draft report for moderation review.
     - Transitions status from DRAFT / NEEDS_MORE_INFORMATION -> SUBMITTED.
     - Records submitted_at timestamp.
-    - Prevents duplicate submission of already submitted/reviewed reports.
     """
     stmt = select(Report).where(Report.id == report_id)
     result = await db.execute(stmt)
@@ -252,3 +253,214 @@ async def submit_report(
     await db.commit()
     await db.refresh(report)
     return report
+
+
+# ==============================================================================
+# EVIDENCE UPLOAD, ACCESS & DELETION ENDPOINTS
+# ==============================================================================
+
+
+@router.post(
+    "/{report_id}/media",
+    response_model=ReportMediaResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Upload and attach supporting evidence to a report",
+)
+async def upload_report_media(
+    report_id: uuid.UUID,
+    file: UploadFile = File(...),
+    caption: Optional[str] = Form(None),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """
+    Uploads an image, video, or document evidence file to object storage
+    and creates metadata in PostgreSQL.
+    - Requires ownership or ADMIN role.
+    - Allowed only while report is in DRAFT or NEEDS_MORE_INFORMATION status.
+    - Strictly validates file signatures and size limits.
+    """
+    stmt = select(Report).where(Report.id == report_id)
+    result = await db.execute(stmt)
+    report = result.scalar_one_or_none()
+
+    if not report:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Report not found.",
+        )
+
+    if report.user_id != current_user.id and current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to attach evidence to this report.",
+        )
+
+    if report.status not in (ReportStatus.DRAFT, ReportStatus.NEEDS_MORE_INFORMATION) and current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot attach new evidence while report is in '{report.status.value}' status.",
+        )
+
+    # Check maximum attachments count
+    if len(report.media or []) >= settings.MAX_MEDIA_PER_REPORT:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Report has reached maximum limit of {settings.MAX_MEDIA_PER_REPORT} attachments.",
+        )
+
+    # Validate file type, size, signature, and extension
+    file_bytes, safe_filename, mime_type, _ = await validate_upload_file(file)
+
+    # Generate unique, non-guessable storage path
+    storage_path = generate_storage_path(report.id, safe_filename)
+
+    # Save to storage service
+    storage = get_storage_service()
+    try:
+        await storage.upload_file(file_bytes, storage_path, mime_type)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to persist file in storage: {str(exc)}",
+        )
+
+    # Record metadata in database
+    media = ReportMedia(
+        report_id=report.id,
+        file_name=safe_filename,
+        mime_type=mime_type,
+        file_size=len(file_bytes),
+        storage_path=storage_path,
+        caption=caption.strip() if caption else None,
+    )
+    db.add(media)
+    try:
+        await db.commit()
+        await db.refresh(media)
+    except Exception as db_exc:
+        # Rollback DB and remove orphaned storage object
+        await storage.delete_file(storage_path)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to record media metadata: {str(db_exc)}",
+        )
+
+    return media
+
+
+@router.get(
+    "/{report_id}/media/{media_id}",
+    summary="Securely stream or download an uploaded evidence file",
+)
+async def get_report_media_file(
+    report_id: uuid.UUID,
+    media_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """
+    Streams the evidence file content to authorized users.
+    - Owner or Administrator access only.
+    """
+    stmt = select(Report).where(Report.id == report_id)
+    res_report = await db.execute(stmt)
+    report = res_report.scalar_one_or_none()
+
+    if not report:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Report not found.",
+        )
+
+    if report.user_id != current_user.id and current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to access this evidence file.",
+        )
+
+    media_stmt = select(ReportMedia).where(
+        ReportMedia.id == media_id,
+        ReportMedia.report_id == report_id,
+    )
+    res_media = await db.execute(media_stmt)
+    media = res_media.scalar_one_or_none()
+
+    if not media:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Evidence file not found on this report.",
+        )
+
+    storage = get_storage_service()
+    stream = storage.get_file_stream(media.storage_path)
+
+    return StreamingResponse(
+        stream,
+        media_type=media.mime_type,
+        headers={
+            "Content-Disposition": f'inline; filename="{media.file_name}"',
+            "Content-Length": str(media.file_size),
+        },
+    )
+
+
+@router.delete(
+    "/{report_id}/media/{media_id}",
+    status_code=status.HTTP_200_OK,
+    summary="Delete an attached evidence file",
+)
+async def delete_report_media(
+    report_id: uuid.UUID,
+    media_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """
+    Deletes an attached evidence file from storage and database.
+    - Only allowed when report is in DRAFT or NEEDS_MORE_INFORMATION status, or by ADMIN.
+    """
+    stmt = select(Report).where(Report.id == report_id)
+    res_report = await db.execute(stmt)
+    report = res_report.scalar_one_or_none()
+
+    if not report:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Report not found.",
+        )
+
+    if report.user_id != current_user.id and current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to delete this evidence file.",
+        )
+
+    if report.status not in (ReportStatus.DRAFT, ReportStatus.NEEDS_MORE_INFORMATION) and current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot delete evidence while report is in '{report.status.value}' status.",
+        )
+
+    media_stmt = select(ReportMedia).where(
+        ReportMedia.id == media_id,
+        ReportMedia.report_id == report_id,
+    )
+    res_media = await db.execute(media_stmt)
+    media = res_media.scalar_one_or_none()
+
+    if not media:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Evidence file not found on this report.",
+        )
+
+    # 1. Delete object from storage
+    storage = get_storage_service()
+    await storage.delete_file(media.storage_path)
+
+    # 2. Delete database record
+    await db.delete(media)
+    await db.commit()
+
+    return {"detail": "Evidence file deleted successfully."}
