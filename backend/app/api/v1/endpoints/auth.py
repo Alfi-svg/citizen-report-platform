@@ -109,9 +109,10 @@ async def login(
             detail="User account is deactivated.",
         )
 
+    role_val = user.role.value if hasattr(user.role, "value") else str(user.role)
     access_token = create_access_token(
         subject=user.id,
-        role=user.role.value,
+        role=role_val,
     )
 
     return {
