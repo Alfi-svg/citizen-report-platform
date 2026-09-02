@@ -9,6 +9,14 @@ export type ReportStatus =
   | "NEEDS_MORE_INFORMATION"
   | "ARCHIVED";
 
+export type ModerationAction =
+  | "SUBMITTED"
+  | "STARTED_REVIEW"
+  | "APPROVED"
+  | "REJECTED"
+  | "REQUESTED_INFORMATION"
+  | "ARCHIVED";
+
 export interface User {
   id: string;
   email: string;
@@ -37,6 +45,17 @@ export interface Category {
   updated_at: string;
 }
 
+export interface ModerationRecord {
+  id: string;
+  report_id: string;
+  admin_id: string | null;
+  action: ModerationAction;
+  user_message: string | null;
+  internal_notes?: string | null;
+  created_at: string;
+  admin?: User | null;
+}
+
 export interface Report {
   id: string;
   user_id: string | null;
@@ -54,6 +73,7 @@ export interface Report {
   updated_at: string;
   category?: Category | null;
   user?: User | null;
+  moderation_records?: ModerationRecord[];
 }
 
 export interface ReportCreatePayload {
@@ -80,7 +100,31 @@ export interface ReportUpdatePayload {
   status?: ReportStatus;
 }
 
+export interface ModerationActionPayload {
+  user_message?: string;
+  internal_notes?: string;
+}
+
+export interface AdminDashboardStats {
+  total_reports: number;
+  pending_reports: number;
+  under_review_reports: number;
+  approved_reports: number;
+  rejected_reports: number;
+  needs_more_info_reports: number;
+  archived_reports: number;
+  draft_reports: number;
+  total_users: number;
+  anonymous_reports_count: number;
+}
+
+export interface AdminReportPagination {
+  items: Report[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 export interface ApiError {
   detail: string | Array<{ msg: string; loc: string[] }>;
 }
-

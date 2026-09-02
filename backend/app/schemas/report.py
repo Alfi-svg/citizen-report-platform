@@ -6,6 +6,7 @@ from app.models.report import ReportStatus
 from app.schemas.category import CategoryResponse
 from app.schemas.report_media import ReportMediaResponse
 from app.schemas.user import UserResponse
+from app.schemas.moderation import UserFacingModerationResponse, ModerationRecordResponse
 
 
 class ReportBase(BaseModel):
@@ -48,11 +49,9 @@ class ReportBase(BaseModel):
     def validate_incident_date(cls, v: Optional[datetime]) -> Optional[datetime]:
         if v is not None:
             now = datetime.now(timezone.utc)
-            # Ensure timezone awareness if naive
             if v.tzinfo is None:
                 v = v.replace(tzinfo=timezone.utc)
             if v > now:
-                # Incident cannot happen in the future
                 raise ValueError("Incident date and time cannot be in the future.")
         return v
 
@@ -105,7 +104,7 @@ class ReportUpdate(BaseModel):
 
 
 class ReportResponse(ReportBase):
-    """Internal & Administrative report view with full reporter details."""
+    """User-facing report view. Only includes user-visible feedback."""
     id: uuid.UUID
     user_id: Optional[uuid.UUID] = None
     category_id: uuid.UUID
@@ -116,6 +115,24 @@ class ReportResponse(ReportBase):
     category: Optional[CategoryResponse] = None
     user: Optional[UserResponse] = None
     media: Optional[List[ReportMediaResponse]] = None
+    moderation_records: Optional[List[UserFacingModerationResponse]] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AdminReportResponse(ReportBase):
+    """Full administrative report view with complete moderation audit records."""
+    id: uuid.UUID
+    user_id: Optional[uuid.UUID] = None
+    category_id: uuid.UUID
+    status: ReportStatus
+    submitted_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+    category: Optional[CategoryResponse] = None
+    user: Optional[UserResponse] = None
+    media: Optional[List[ReportMediaResponse]] = None
+    moderation_records: Optional[List[ModerationRecordResponse]] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -134,3 +151,10 @@ class ReportPublicResponse(ReportBase):
     reporter_username: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class AdminReportPagination(BaseModel):
+    items: List[AdminReportResponse]
+    total: int
+    limit: int
+    offset: int

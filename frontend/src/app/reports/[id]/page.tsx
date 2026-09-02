@@ -418,6 +418,29 @@ export default function ReportDetailPage() {
               </div>
             </div>
 
+            {/* Moderator Feedback for Reporter */}
+            {report.moderation_records && report.moderation_records.some((m) => m.user_message) && (
+              <div className="rounded-xl border border-purple-200 bg-purple-50/70 dark:border-purple-900 dark:bg-purple-950/30 p-4 space-y-2">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-purple-900 dark:text-purple-200">
+                  <span>💬 Official Moderation Feedback</span>
+                </div>
+                {report.moderation_records
+                  .filter((m) => m.user_message)
+                  .map((m) => (
+                    <div key={m.id} className="text-xs text-purple-800 dark:text-purple-300">
+                      <p className="font-semibold">
+                        {m.action === "REQUESTED_INFORMATION"
+                          ? "Information Requested:"
+                          : m.action === "REJECTED"
+                          ? "Rejection Reason:"
+                          : "Moderator Note:"}
+                      </p>
+                      <p className="mt-0.5">{m.user_message}</p>
+                    </div>
+                  ))}
+              </div>
+            )}
+
             <div>
               <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
                 Incident Description

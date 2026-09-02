@@ -1,6 +1,6 @@
 # Bangladesh Citizen Report Platform
 
-> **Current Stage:** `STEP 3 — Report Creation & Submission System`
+> **Current Stage:** `STEP 4 — Admin Moderation & Approval Workflow`
 
 ---
 
@@ -11,9 +11,9 @@ The **Bangladesh Citizen Report Platform** is a secure, production-grade citizen
 ### Core Architectural Principles
 - **Privacy by Design:** Supports anonymous reporting where reporter identity is protected from the public view while retaining internal links for moderation and abuse prevention.
 - **Secure Authentication & RBAC:** JWT Bearer tokens with bcrypt password hashing and backend-enforced Role-Based Access Control (`USER`, `ADMIN`, `MODERATOR`).
-- **Controlled Report Lifecycle:** State-enforced transitions (`DRAFT` → `SUBMITTED` → `UNDER_REVIEW` → `APPROVED` / `REJECTED` / `NEEDS_MORE_INFORMATION` → `ARCHIVED`). Submitted reports never auto-publish.
-- **Extensible Modular Monolith:** Clean separation into domain models, schemas, database access, dependencies, and API routers.
-- **Resilient & Async:** Modern async database session lifecycle using SQLAlchemy 2.0 and Alembic migrations.
+- **Comprehensive Moderation Lifecycle:** Multi-stage moderation workflow (`SUBMITTED` → `UNDER_REVIEW` → `APPROVED` / `REJECTED` / `NEEDS_MORE_INFORMATION`).
+- **Moderation History & Audit Trail:** Immutable audit records tracking moderation actions, timestamps, administrator IDs, user-facing explanations, and private internal notes.
+- **Strict Separation of Public vs Internal Data:** User-facing requests are surfaced to reporters, while internal investigation remarks remain strictly confidential to administrators.
 
 ---
 
@@ -31,7 +31,7 @@ The **Bangladesh Citizen Report Platform** is a secure, production-grade citizen
 +------------------------------v------------------------------+
 |                      Backend (Server)                       |
 |                       FastAPI + Python                      |
-|           Modular Monolith (api, core, db, models)          |
+|      Modular Monolith (api, core, db, models, schemas)      |
 +------------------------------+------------------------------+
                                |
         +----------------------+----------------------+
@@ -53,79 +53,86 @@ The **Bangladesh Citizen Report Platform** is a secure, production-grade citizen
 
 ---
 
-## 3. Report Creation & Submission Workflow (Step 3)
+## 3. Moderation Architecture & Workflow (Step 4)
 
 ```
-+-------------------+
-| Authenticated     |
-| Citizen User      |
-+---------+---------+
+[Citizen Submits Report]
           |
           v
-+-------------------+
-| Fill Incident     |
-| Information       |  (Title, Category, Location, Date/Time, Description, Privacy Mode)
-+---------+---------+
+    (SUBMITTED)
           |
     +-----+-----+
     |           |
-    v           v
-[Save Draft] [Submit Report]
+    | [Start Review]
     |           |
-    v           v
-+---------+ +-------------+
-|  DRAFT  | |  SUBMITTED  |
-+----+----+ +------+------+
-     |             |
-     | [Submit]    | (Locked from further user modification)
-     +------>------+
-                   v
-            +--------------+
-            | Admin Review |  (Awaiting Step 4 moderation)
-            +--------------+
+    |           v
+    |    (UNDER_REVIEW)
+    |           |
+    +-----+-----+-----+
+          |           |
+          v           v
+      [Approve]   [Reject]   [Request More Info]
+          |           |               |
+          v           v               v
+     (APPROVED)  (REJECTED) (NEEDS_MORE_INFORMATION)
+                                      |
+                             [Citizen Edits Draft]
+                                      |
+                                      v
+                                 (SUBMITTED)
 ```
 
-### Report Status Transitions
-1. **`DRAFT`:** Editable by the owner. Not visible to the public. Not queued for moderation.
-2. **`SUBMITTED`:** Formally submitted by the citizen with `submitted_at` timestamp. Locked from modifications by ordinary users.
-3. **`UNDER_REVIEW`:** Currently being investigated/moderated by administrators.
-4. **`APPROVED`:** Verified and approved by administrators for public display.
-5. **`NEEDS_MORE_INFORMATION`:** Returned to the citizen for clarification. The owner can edit and re-submit.
-6. **`REJECTED`:** Rejected by moderation for policy violations or unverifiable information.
+### Status Lifecycle
+1. **`DRAFT`:** Citizen draft in progress. Not queued for moderation.
+2. **`SUBMITTED`:** Enters the moderation queue. Ordinary user cannot edit.
+3. **`UNDER_REVIEW`:** Administrator has claimed or started active review.
+4. **`APPROVED`:** Platform-reviewed and verified by administrators (eligible for future public feeds).
+5. **`REJECTED`:** Marked ineligible or violating terms. Rejection reason logged.
+6. **`NEEDS_MORE_INFORMATION`:** Returned to the citizen with official feedback. Unlocks user editing to provide required details and re-submit.
 7. **`ARCHIVED`:** Closed historical record.
 
-### Anonymous Reporting Privacy Guarantee
-- When `is_anonymous = True`:
-  - Public response schemas (`ReportPublicResponse`) sanitize the reporter's username and full name.
-  - The internal database retains `user_id` for accountability, abuse prevention, and administrative audit.
-  - Anonymous means **anonymous to the public**, not anonymous from administrators.
+### Moderation Notes & Audit Trail
+- **`moderation_records` Table:**
+  - `id`: GUID Primary Key
+  - `report_id`: Foreign Key to `reports.id` (on delete cascade)
+  - `admin_id`: Foreign Key to `users.id` (attributed automatically from authenticated JWT token)
+  - `action`: `STARTED_REVIEW`, `APPROVED`, `REJECTED`, `REQUESTED_INFORMATION`, `ARCHIVED`
+  - `user_message`: Official message visible to the reporter on their dashboard
+  - `internal_notes`: Confidential notes visible exclusively to administrators
 
 ---
 
 ## 4. API Endpoints
 
-### Categories
+### Administrative Endpoints (`role = ADMIN` Required)
+| Method | Path | Description |
+| :--- | :--- | :--- |
+| `GET` | `/api/v1/admin/dashboard` | Aggregated platform and moderation statistics from real DB data |
+| `GET` | `/api/v1/admin/reports` | Paginated moderation queue with status, category, search, and anonymous filters |
+| `GET` | `/api/v1/admin/reports/{id}` | Detailed moderation view including reporter profile and audit history |
+| `POST` | `/api/v1/admin/reports/{id}/review` | Transitions report to `UNDER_REVIEW` |
+| `POST` | `/api/v1/admin/reports/{id}/approve` | Transitions report to `APPROVED` |
+| `POST` | `/api/v1/admin/reports/{id}/reject` | Transitions report to `REJECTED` with user message & internal notes |
+| `POST` | `/api/v1/admin/reports/{id}/request-information` | Transitions report to `NEEDS_MORE_INFORMATION` with required user message |
+
+### Citizen Report Endpoints
 | Method | Path | Access | Description |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/v1/categories` | Public / Auth | List all active incident categories |
+| `GET` | `/api/v1/categories` | Public / Auth | Lists active incident categories |
+| `POST` | `/api/v1/reports` | Authenticated | Creates report (`DRAFT` or `SUBMITTED`) |
+| `GET` | `/api/v1/reports/mine` | Authenticated | Lists citizen's own reports |
+| `GET` | `/api/v1/reports/{id}` | Owner / Admin | Gets report details + user-facing moderation feedback |
+| `PATCH` | `/api/v1/reports/{id}` | Owner / Admin | Updates editable report (`DRAFT` / `NEEDS_MORE_INFORMATION`) |
+| `POST` | `/api/v1/reports/{id}/submit` | Owner / Admin | Submits report for moderation |
 
-### Authentication
+### Authentication Endpoints
 | Method | Path | Access | Description |
 | :--- | :--- | :--- | :--- |
 | `POST` | `/api/v1/auth/register` | Public | Registers a new citizen account (`USER` role) |
-| `POST` | `/api/v1/auth/login` | Public | Authenticates credentials and returns JWT bearer token |
+| `POST` | `/api/v1/auth/login` | Public | Authenticates credentials and returns JWT token |
 | `POST` | `/api/v1/auth/logout` | Authenticated | Invalidates client session |
 | `GET` | `/api/v1/auth/me` | Authenticated | Returns current authenticated user profile |
-| `GET` | `/api/v1/auth/admin-check` | Admin (`ADMIN`) | Backend-enforced administrative authorization check |
-
-### Reports
-| Method | Path | Access | Description |
-| :--- | :--- | :--- | :--- |
-| `POST` | `/api/v1/reports` | Authenticated | Creates a new report as `DRAFT` or `SUBMITTED` |
-| `GET` | `/api/v1/reports/mine` | Authenticated | Lists all reports owned by the authenticated citizen |
-| `GET` | `/api/v1/reports/{id}` | Owner / Admin | Retrieves report details (enforces ownership) |
-| `PATCH` | `/api/v1/reports/{id}` | Owner / Admin | Updates editable report (`DRAFT` / `NEEDS_MORE_INFORMATION`) |
-| `POST` | `/api/v1/reports/{id}/submit` | Owner / Admin | Submits a draft report for moderation review |
+| `GET` | `/api/v1/auth/admin-check` | Admin (`ADMIN`) | Backend-enforced administrative check |
 
 ---
 
@@ -135,21 +142,12 @@ The **Bangladesh Citizen Report Platform** is a secure, production-grade citizen
 - **Sign In (`/login`):** Authentication page with input validation and error feedback.
 - **Register (`/register`):** Citizen registration page with auto-login.
 - **Dashboard (`/dashboard`):** Citizen dashboard with submission metrics and quick action links.
-- **Create Report (`/reports/create`):**
-  - Dynamic category selector from database.
-  - Title, description, location, incident occurrence time.
-  - Explicit privacy selector: **Public Identity** vs **Anonymous Whistleblower Mode**.
-  - Interactive two-step Review & Confirmation screen.
-  - Dedicated **Save Draft** and **Submit for Moderation** actions.
-- **My Reports (`/reports/mine`):**
-  - List of user's incident reports with status filter tabs (All, Draft, Submitted, Under Review, Approved).
-  - Status badges, category labels, location, and privacy indicators.
-  - Empty states and quick access to report creation.
-- **Report Detail (`/reports/[id]`):**
-  - Complete incident overview and metadata timeline.
-  - Inline draft editing mode with live updates for `DRAFT` and `NEEDS_MORE_INFORMATION` reports.
-  - Submission action for unsubmitted drafts.
-- **Admin Console (`/admin`):** Protected administrative verification dashboard.
+- **Create Report (`/reports/create`):** Report creation form with dynamic categories and anonymous whistleblowing option.
+- **My Reports (`/reports/mine`):** Citizen's report list with status filters and progress tracking.
+- **Report Detail (`/reports/[id]`):** Incident breakdown, official moderator feedback callout, and draft re-submission.
+- **Admin Console (`/admin`):** Operations dashboard displaying real-time metrics and pending queues.
+- **Admin Moderation Queue (`/admin/reports`):** Paginated moderation table with status tabs, category filter, and search.
+- **Admin Report Console (`/admin/reports/[id]`):** Moderation decision interface (Start Review, Approve, Reject, Request More Info), reporter inspection card, and audit history timeline.
 
 ---
 
