@@ -24,7 +24,7 @@ services:
       - key: DATABASE_URL
         sync: false
       - key: CORS_ORIGINS
-        value: '["http://localhost:3000", "https://localhost:3000"]'
+        value: '["https://frontend-ten-delta-a5irgspmf7.vercel.app", "https://frontend-kcdpp90wd-alfi-s-projects.vercel.app", "http://localhost:3000"]'
       - key: STORAGE_BACKEND
         value: local
       - key: STORAGE_BUCKET
