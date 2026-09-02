@@ -88,11 +88,11 @@ export default function CommentsSection({ reportId }: CommentsSectionProps) {
   };
 
   return (
-    <section className="space-y-6 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+    <section id="comments" className="space-y-6 pt-6 border-t border-zinc-200 dark:border-zinc-800">
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-          <span>💬 Citizen Discussion / নাগরিক প্রতিক্রিয়া</span>
-          <span className="rounded-full bg-zinc-100 dark:bg-zinc-800 px-2.5 py-0.5 text-xs text-zinc-600 dark:text-zinc-400 font-semibold">
+        <h2 className="text-base sm:text-lg font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+          <span>💬 Citizen Discussion</span>
+          <span className="rounded-full bg-zinc-100 dark:bg-zinc-800 px-2.5 py-0.5 text-xs text-zinc-600 dark:text-zinc-400 font-bold border border-zinc-200/60 dark:border-zinc-700/60">
             {total}
           </span>
         </h2>
@@ -100,7 +100,7 @@ export default function CommentsSection({ reportId }: CommentsSectionProps) {
 
       {/* Comment Input Box (Authenticated) or Prompt */}
       {isAuthenticated ? (
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form onSubmit={handleSubmit} className="space-y-3 bg-zinc-50/50 dark:bg-zinc-800/30 p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800">
           <div>
             <textarea
               rows={3}
@@ -108,7 +108,7 @@ export default function CommentsSection({ reportId }: CommentsSectionProps) {
               onChange={(e) => setBody(e.target.value)}
               maxLength={1000}
               placeholder="Contribute factual updates, local witness context, or community feedback..."
-              className="w-full rounded-2xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/80 p-3.5 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3.5 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-600"
             />
           </div>
 
@@ -125,27 +125,27 @@ export default function CommentsSection({ reportId }: CommentsSectionProps) {
             <button
               type="submit"
               disabled={submitting || !body.trim()}
-              className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-500 transition disabled:opacity-40 shadow-sm"
+              className="rounded-xl bg-emerald-700 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-800 transition disabled:opacity-40 shadow-2xs"
             >
-              {submitting ? "Posting..." : "Post Comment / মন্তব্য করুন"}
+              {submitting ? "Posting..." : "Post Comment"}
             </button>
           </div>
         </form>
       ) : (
-        <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-800/40 p-5 text-center space-y-3">
-          <p className="text-xs text-zinc-600 dark:text-zinc-400">
-            Sign in to participate in the civic discussion, provide on-the-ground updates, or verify community impact.
+        <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40 p-6 text-center space-y-3">
+          <p className="text-xs text-zinc-600 dark:text-zinc-400 max-w-md mx-auto">
+            Sign in to participate in the verified civic discussion, provide on-the-ground updates, or confirm incident details.
           </p>
           <div className="flex items-center justify-center gap-3">
             <Link
-              href="/login"
-              className="rounded-xl bg-zinc-900 dark:bg-zinc-100 px-4 py-2 text-xs font-semibold text-white dark:text-zinc-900 hover:bg-zinc-800"
+              href={`/login?redirect=/reports/${reportId}`}
+              className="rounded-xl bg-emerald-700 hover:bg-emerald-800 px-4 py-2 text-xs font-bold text-white shadow-2xs transition"
             >
               Sign In to Comment
             </Link>
             <Link
               href="/register"
-              className="rounded-xl border border-zinc-300 dark:border-zinc-700 px-4 py-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100"
+              className="rounded-xl border border-zinc-300 dark:border-zinc-700 px-4 py-2 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
             >
               Register
             </Link>
@@ -155,8 +155,16 @@ export default function CommentsSection({ reportId }: CommentsSectionProps) {
 
       {/* Comments List */}
       {loading ? (
-        <div className="flex justify-center py-6">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-emerald-600 border-t-transparent" />
+        <div className="space-y-3">
+          {[...Array(2)].map((_, i) => (
+            <div
+              key={i}
+              className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 space-y-2 animate-pulse"
+            >
+              <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-1/4" />
+              <div className="h-10 bg-zinc-100 dark:bg-zinc-800/60 rounded w-full" />
+            </div>
+          ))}
         </div>
       ) : error ? (
         <p className="text-xs text-red-600">{error}</p>
@@ -169,7 +177,7 @@ export default function CommentsSection({ reportId }: CommentsSectionProps) {
           {comments.map((comment) => (
             <div
               key={comment.id}
-              className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/40 p-4 space-y-2 text-xs"
+              className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 space-y-2 text-xs shadow-2xs"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -190,7 +198,7 @@ export default function CommentsSection({ reportId }: CommentsSectionProps) {
                     <button
                       type="button"
                       onClick={() => setFlagTargetComment(comment)}
-                      className="text-zinc-400 hover:text-red-500 font-medium text-[11px] hover:underline"
+                      className="text-zinc-400 hover:text-red-600 dark:hover:text-red-400 font-medium text-[11px]"
                     >
                       🚩 Flag
                     </button>
@@ -200,14 +208,14 @@ export default function CommentsSection({ reportId }: CommentsSectionProps) {
                       type="button"
                       onClick={() => handleDelete(comment.id)}
                       disabled={deletingId === comment.id}
-                      className="text-red-500 hover:text-red-700 font-medium text-[11px] hover:underline"
+                      className="text-red-500 hover:text-red-700 font-medium text-[11px]"
                     >
                       {deletingId === comment.id ? "Deleting..." : "Delete"}
                     </button>
                   )}
                 </div>
               </div>
-              <p className="text-zinc-800 dark:text-zinc-200 leading-relaxed whitespace-pre-wrap">
+              <p className="text-zinc-800 dark:text-zinc-200 leading-relaxed whitespace-pre-wrap text-xs">
                 {comment.body}
               </p>
             </div>
