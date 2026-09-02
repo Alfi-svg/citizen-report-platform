@@ -2,6 +2,7 @@
 
 import React from "react";
 import { ReportMedia } from "@/lib/types";
+import { getApiBaseUrl } from "@/lib/api";
 
 interface EvidenceGalleryProps {
   media: ReportMedia[];
@@ -37,7 +38,7 @@ export default function EvidenceGallery({
   );
 
   const getFullUrl = (downloadUrl: string) => {
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+    const apiBase = getApiBaseUrl();
     if (downloadUrl.startsWith("http")) return downloadUrl;
     // Strip redundant /api/v1 prefix if already in apiBase
     const normalizedPath = downloadUrl.replace(/^\/api\/v1/, "");

@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import { ReportMedia } from "@/lib/types";
+import { getApiBaseUrl } from "@/lib/api";
 
 export interface SelectedFileItem {
   file: File;
@@ -94,7 +95,7 @@ export default function EvidenceUploader({
     setUploading(true);
     setError(null);
 
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+    const apiBase = getApiBaseUrl();
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
     try {

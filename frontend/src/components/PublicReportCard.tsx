@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { PublicReport } from "@/lib/types";
+import { getApiBaseUrl } from "@/lib/api";
 
 interface PublicReportCardProps {
   report: PublicReport;
@@ -13,7 +14,7 @@ export default function PublicReportCard({ report }: PublicReportCardProps) {
   const firstImage = report.media?.find(
     (m) => m.media_type === "image" || m.mime_type.startsWith("image/")
   );
-  const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+  const apiBase = getApiBaseUrl();
 
   const getFullUrl = (downloadUrl: string) => {
     if (downloadUrl.startsWith("http")) return downloadUrl;

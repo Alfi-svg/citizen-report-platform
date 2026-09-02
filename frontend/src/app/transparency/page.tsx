@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, getApiBaseUrl } from "@/lib/api";
 import {
   PublicTransparencyOverviewResponse,
   CategoryResponse,
@@ -45,7 +45,7 @@ export default function TransparencyDashboardPage() {
   }, []);
 
   const handleExport = (format: "csv" | "json") => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://citizen-report-backend.onrender.com/api/v1";
+    const apiUrl = getApiBaseUrl();
     window.open(`${apiUrl}/analytics/export?format=${format}&year=${selectedYear}`, "_blank");
   };
 
