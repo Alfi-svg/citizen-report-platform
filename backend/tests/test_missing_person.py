@@ -258,3 +258,52 @@ async def test_missing_person_full_lifecycle_and_rbac(
     )
     assert r_pref_update.status_code == 200
     assert r_pref_update.json()["missing_person_alerts"] is False
+
+
+@pytest.mark.asyncio
+async def test_missing_person_direct_submit(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+):
+    """
+    Test the new unified citizen/admin submission endpoint:
+    POST /api/v1/missing-person/submit
+    """
+    citizen_user = User(
+        email="citizen_submit@example.com",
+        username="citizen_submit",
+        hashed_password=get_password_hash("Pass123!"),
+        role=UserRole.USER,
+        is_active=True,
+    )
+    db_session.add(citizen_user)
+    await db_session.commit()
+    await db_session.refresh(citizen_user)
+
+    headers = {"Authorization": f"Bearer {create_access_token(subject=citizen_user.id, role='USER')}"}
+
+    payload = {
+        "full_name": "Farhana Akter",
+        "name_bn": "ফারহানা আক্তার",
+        "age": 14,
+        "gender": "FEMALE",
+        "height": "5 ft 0 in",
+        "clothing": "Green salwar kameez",
+        "clothing_bn": "সবুজ সালোয়ার কামিজ",
+        "last_seen_location": "Mirpur 10 roundabout, Dhaka",
+        "contact_information": "Parent: 01700000000, Mirpur Police GD 1234",
+        "description": "Student of class 8, last seen returning from school.",
+    }
+
+    res = await async_client.post(
+        "/api/v1/missing-person/submit",
+        json=payload,
+        headers=headers,
+    )
+    assert res.status_code == 201
+    data = res.json()
+    assert data["status"] == "ALERT_PENDING"
+    assert data["profile"]["full_name"] == "Farhana Akter"
+    assert data["profile"]["age"] == 14
+    assert data["profile"]["last_seen_location"] == "Mirpur 10 roundabout, Dhaka"
+

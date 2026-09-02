@@ -116,12 +116,21 @@ export default function AdminMissingPersonPage() {
           </p>
         </div>
 
-        <Link
-          href="/admin/missing-person/sightings"
-          className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 transition shrink-0"
-        >
-          👁️ Sightings Moderation Queue →
-        </Link>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Link
+            href="/missing-person/create"
+            className="rounded-xl bg-red-600 hover:bg-red-500 px-4 py-2.5 text-xs font-bold text-white transition shadow-sm shrink-0 flex items-center gap-1.5"
+          >
+            <span>🚨</span>
+            <span>+ Add Missing Person Alert</span>
+          </Link>
+          <Link
+            href="/admin/missing-person/sightings"
+            className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 transition shrink-0"
+          >
+            👁️ Sightings Queue →
+          </Link>
+        </div>
       </div>
 
       {/* Filters Bar */}

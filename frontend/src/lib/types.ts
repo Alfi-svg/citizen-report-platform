@@ -636,6 +636,38 @@ export interface UserNotificationPreference {
   last_location_updated_at?: string | null;
 }
 
+export interface MissingPersonSubmissionCreate {
+  full_name: string;
+  name_bn?: string;
+  age?: number | null;
+  approximate_age?: string;
+  gender?: string;
+  photo_url?: string;
+  height?: string;
+  clothing?: string;
+  clothing_bn?: string;
+  identifying_features?: string;
+  identifying_features_bn?: string;
+  last_seen_location: string;
+  last_seen_location_bn?: string;
+  last_seen_latitude?: number | null;
+  last_seen_longitude?: number | null;
+  last_seen_time?: string | null;
+  description?: string;
+  contact_information?: string;
+  reporting_authority?: string;
+  source?: string;
+  is_anonymous?: boolean;
+}
+
+export interface MissingPersonSubmissionResponse {
+  report_id: string;
+  alert_id: string;
+  status: AlertStatus;
+  profile: MissingPersonProfile;
+  message: string;
+}
+
 export interface PublicMapIncidentPoint {
   id: string;
   title: string;

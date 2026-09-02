@@ -197,3 +197,43 @@ class UserNotificationPreferenceUpdate(BaseModel):
     nearby_safety_alerts: Optional[bool] = None
     latitude: Optional[float] = Field(None, ge=-90.0, le=90.0)
     longitude: Optional[float] = Field(None, ge=-180.0, le=180.0)
+
+
+# ------------------------------------------------------------------------------
+# 5. DIRECT MISSING PERSON SUBMISSION SCHEMAS
+# ------------------------------------------------------------------------------
+
+class MissingPersonSubmissionCreate(BaseModel):
+    full_name: str = Field(..., min_length=1, max_length=200)
+    name_bn: Optional[str] = Field(None, max_length=200)
+    age: Optional[int] = Field(None, ge=0, le=130)
+    approximate_age: Optional[str] = Field(None, max_length=50)
+    gender: Optional[str] = Field(None, max_length=50)
+    photo_url: Optional[str] = Field(None, max_length=1000)
+    height: Optional[str] = Field(None, max_length=100)
+    clothing: Optional[str] = None
+    clothing_bn: Optional[str] = None
+    identifying_features: Optional[str] = None
+    identifying_features_bn: Optional[str] = None
+    last_seen_location: str = Field(..., min_length=1, max_length=255)
+    last_seen_location_bn: Optional[str] = Field(None, max_length=255)
+    last_seen_latitude: Optional[float] = Field(None, ge=-90.0, le=90.0)
+    last_seen_longitude: Optional[float] = Field(None, ge=-180.0, le=180.0)
+    last_seen_time: Optional[datetime] = None
+    description: Optional[str] = None
+    contact_information: Optional[str] = Field(None, max_length=255)
+    reporting_authority: Optional[str] = Field(None, max_length=255)
+    source: Optional[str] = Field(None, max_length=255)
+    division: Optional[str] = None
+    district: Optional[str] = None
+    upazila: Optional[str] = None
+    is_anonymous: bool = False
+
+
+class MissingPersonSubmissionResponse(BaseModel):
+    report_id: uuid.UUID
+    alert_id: uuid.UUID
+    status: AlertStatus
+    profile: MissingPersonProfileResponse
+    message: str
+

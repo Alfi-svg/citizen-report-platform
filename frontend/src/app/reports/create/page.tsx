@@ -243,6 +243,23 @@ export default function CreateReportPage() {
                 ))}
               </select>
             )}
+
+            {selectedCategoryObj && (selectedCategoryObj.slug?.includes("missing-person") || selectedCategoryObj.name?.toLowerCase().includes("missing person")) && (
+              <div className="rounded-2xl border border-red-200 dark:border-red-900 bg-red-50/80 dark:bg-red-950/50 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs mt-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">🚨</span>
+                  <span className="text-red-900 dark:text-red-200 font-medium">
+                    Reporting a missing person? Use our dedicated alert form to include photo, age, clothing, and physical markings.
+                  </span>
+                </div>
+                <Link
+                  href="/missing-person/create"
+                  className="rounded-xl bg-red-600 hover:bg-red-500 px-3.5 py-1.5 text-xs font-bold text-white transition shadow-sm shrink-0 self-start sm:self-auto"
+                >
+                  Open Missing Person Form →
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Title */}

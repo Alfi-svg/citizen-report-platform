@@ -14,7 +14,8 @@ from app.models.missing_person import (
     AlertStatus,
     SightingStatus,
 )
-from app.models.report import Report
+from app.models.category import Category
+from app.models.report import Report, ReportStatus
 from app.models.user import User, UserRole
 from app.schemas.missing_person import (
     MissingPersonProfileCreate,
@@ -26,6 +27,8 @@ from app.schemas.missing_person import (
     PublicMissingPersonAlertPagination,
     UserNotificationPreferenceResponse,
     UserNotificationPreferenceUpdate,
+    MissingPersonSubmissionCreate,
+    MissingPersonSubmissionResponse,
 )
 
 router = APIRouter()
@@ -371,6 +374,114 @@ async def attach_missing_person_profile(
     await db.commit()
     await db.refresh(profile)
     return profile
+
+
+@router.post(
+    "/submit",
+    response_model=MissingPersonSubmissionResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Submit a missing person report & create alert",
+)
+async def submit_missing_person_report(
+    payload: MissingPersonSubmissionCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """
+    Unified citizen/admin submission endpoint to file a missing person report,
+    attach their biographical & physical profile, and generate a missing person alert.
+    """
+    # 1. Resolve or create 'Missing Person' category
+    cat_stmt = select(Category).where(
+        or_(Category.slug == "missing-person", Category.name == "Missing Person")
+    )
+    cat_res = await db.execute(cat_stmt)
+    category = cat_res.scalar_one_or_none()
+    if not category:
+        category = Category(
+            name="Missing Person",
+            slug="missing-person",
+            description="Reports concerning missing persons, children, and vulnerable individuals.",
+        )
+        db.add(category)
+        await db.flush()
+
+    # 2. Determine approval & alert status
+    is_admin = current_user.role == UserRole.ADMIN
+    report_status = ReportStatus.APPROVED if is_admin else ReportStatus.SUBMITTED
+
+    title = f"Missing Person: {payload.full_name}"
+    description = payload.description or f"Missing person report for {payload.full_name}, last seen at {payload.last_seen_location}."
+
+    report = Report(
+        user_id=current_user.id,
+        category_id=category.id,
+        title=title,
+        description=description,
+        location_text=payload.last_seen_location,
+        latitude=payload.last_seen_latitude,
+        longitude=payload.last_seen_longitude,
+        incident_date=payload.last_seen_time or datetime.now(timezone.utc),
+        is_anonymous=payload.is_anonymous,
+        status=report_status,
+    )
+    db.add(report)
+    await db.flush()
+
+    # 3. Create biographical profile
+    profile = MissingPersonProfile(
+        report_id=report.id,
+        full_name=payload.full_name,
+        name_bn=payload.name_bn,
+        age=payload.age,
+        approximate_age=payload.approximate_age,
+        gender=payload.gender,
+        photo_url=payload.photo_url,
+        height=payload.height,
+        clothing=payload.clothing,
+        clothing_bn=payload.clothing_bn,
+        identifying_features=payload.identifying_features,
+        identifying_features_bn=payload.identifying_features_bn,
+        last_seen_location=payload.last_seen_location,
+        last_seen_location_bn=payload.last_seen_location_bn,
+        last_seen_latitude=payload.last_seen_latitude,
+        last_seen_longitude=payload.last_seen_longitude,
+        last_seen_time=payload.last_seen_time or report.incident_date,
+        description=description,
+        contact_information=payload.contact_information,
+        reporting_authority=payload.reporting_authority,
+        source=payload.source,
+    )
+    db.add(profile)
+    await db.flush()
+
+    # 4. Generate alert record
+    alert_status = AlertStatus.ALERT_ACTIVE if is_admin else AlertStatus.ALERT_PENDING
+    alert = MissingPersonAlert(
+        report_id=report.id,
+        status=alert_status,
+        is_active=(alert_status == AlertStatus.ALERT_ACTIVE),
+        alert_radius_km=15.0,
+        activated_at=datetime.now(timezone.utc) if alert_status == AlertStatus.ALERT_ACTIVE else None,
+    )
+    db.add(alert)
+    await db.commit()
+    await db.refresh(profile)
+    await db.refresh(alert)
+
+    msg = (
+        "Missing person alert activated and published successfully."
+        if is_admin
+        else "Missing person report submitted successfully. It is now awaiting verification."
+    )
+
+    return {
+        "report_id": report.id,
+        "alert_id": alert.id,
+        "status": alert.status,
+        "profile": profile,
+        "message": msg,
+    }
 
 
 # ==============================================================================

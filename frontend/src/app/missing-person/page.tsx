@@ -89,24 +89,34 @@ export default function MissingPersonsFeedPage() {
           </div>
         </div>
 
-        {/* Language Switcher */}
-        <div className="inline-flex rounded-xl bg-zinc-100 dark:bg-zinc-800 p-1 border border-zinc-200 dark:border-zinc-700 self-start sm:self-auto">
-          <button
-            onClick={() => setLang("en")}
-            className={`px-3 py-1 text-xs font-bold rounded-lg transition ${
-              lang === "en" ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-xs" : "text-zinc-500 hover:text-zinc-800"
-            }`}
+        <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+          <Link
+            href="/missing-person/create"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-red-600 hover:bg-red-500 px-4 py-2 text-xs font-bold text-white transition shadow-sm shrink-0"
           >
-            English
-          </button>
-          <button
-            onClick={() => setLang("bn")}
-            className={`px-3 py-1 text-xs font-bold rounded-lg transition ${
-              lang === "bn" ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-xs" : "text-zinc-500 hover:text-zinc-800"
-            }`}
-          >
-            বাংলা
-          </button>
+            <span>🚨</span>
+            <span>{lang === "bn" ? "নিখোঁজ ব্যক্তির তথ্য দিন" : "Report Missing Person"}</span>
+          </Link>
+
+          {/* Language Switcher */}
+          <div className="inline-flex rounded-xl bg-zinc-100 dark:bg-zinc-800 p-1 border border-zinc-200 dark:border-zinc-700">
+            <button
+              onClick={() => setLang("en")}
+              className={`px-3 py-1 text-xs font-bold rounded-lg transition ${
+                lang === "en" ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-xs" : "text-zinc-500 hover:text-zinc-800"
+              }`}
+            >
+              English
+            </button>
+            <button
+              onClick={() => setLang("bn")}
+              className={`px-3 py-1 text-xs font-bold rounded-lg transition ${
+                lang === "bn" ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-xs" : "text-zinc-500 hover:text-zinc-800"
+              }`}
+            >
+              বাংলা
+            </button>
+          </div>
         </div>
       </div>
 
