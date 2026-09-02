@@ -4,10 +4,14 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select, func, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.api.deps import get_optional_current_user
 from app.db.session import get_db
 from app.models.category import Category
 from app.models.report import Report, ReportStatus
 from app.models.report_media import ReportMedia
+from app.models.comment import Comment, CommentStatus
+from app.models.reaction import Reaction, ReactionType
+from app.models.user import User
 from app.schemas.public import (
     PublicReportListItem,
     PublicReportDetailResponse,
@@ -16,6 +20,8 @@ from app.schemas.public import (
     PublicMediaResponse,
 )
 from app.schemas.category import CategoryResponse
+from app.schemas.comment import PublicCommentResponse, CommentPagination
+from app.schemas.reaction import ReactionSummaryResponse
 from app.services.storage import get_storage_service
 
 router = APIRouter()
@@ -280,4 +286,128 @@ async def stream_public_report_media(
             "Content-Disposition": f'inline; filename="{media.file_name}"',
             "Content-Length": str(media.file_size),
         },
+    )
+
+
+@router.get(
+    "/reports/{report_id}/comments",
+    response_model=CommentPagination,
+    status_code=status.HTTP_200_OK,
+    summary="Get public visible comments on an APPROVED report",
+)
+async def get_public_report_comments(
+    report_id: uuid.UUID,
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    current_user: Optional[User] = Depends(get_optional_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    # 1. Enforce parent report is APPROVED
+    report_stmt = select(Report).where(
+        Report.id == report_id,
+        Report.status == ReportStatus.APPROVED,
+    )
+    res_report = await db.execute(report_stmt)
+    report = res_report.scalar_one_or_none()
+
+    if not report:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Public report not found or has not been approved.",
+        )
+
+    # 2. Total count of visible comments
+    count_stmt = select(func.count(Comment.id)).where(
+        Comment.report_id == report_id,
+        Comment.status == CommentStatus.VISIBLE,
+    )
+    total = await db.scalar(count_stmt) or 0
+
+    # 3. Fetch paginated comments
+    comments_stmt = (
+        select(Comment)
+        .where(
+            Comment.report_id == report_id,
+            Comment.status == CommentStatus.VISIBLE,
+        )
+        .order_by(Comment.created_at.asc())
+        .limit(limit)
+        .offset(offset)
+    )
+    result = await db.execute(comments_stmt)
+    comments = result.scalars().all()
+
+    items = [
+        PublicCommentResponse(
+            id=c.id,
+            report_id=c.report_id,
+            body=c.body,
+            status=c.status,
+            created_at=c.created_at,
+            user_display_name=c.user.full_name or c.user.username if c.user else "Citizen",
+            is_own_comment=(current_user is not None and c.user_id == current_user.id),
+        )
+        for c in comments
+    ]
+
+    return CommentPagination(
+        items=items,
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
+
+
+@router.get(
+    "/reports/{report_id}/reactions",
+    response_model=ReactionSummaryResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get reaction summary for an APPROVED report",
+)
+async def get_public_report_reactions(
+    report_id: uuid.UUID,
+    current_user: Optional[User] = Depends(get_optional_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    # 1. Enforce parent report is APPROVED
+    report_stmt = select(Report).where(
+        Report.id == report_id,
+        Report.status == ReportStatus.APPROVED,
+    )
+    res_report = await db.execute(report_stmt)
+    report = res_report.scalar_one_or_none()
+
+    if not report:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Public report not found or has not been approved.",
+        )
+
+    # 2. Aggregate reaction counts
+    support_stmt = select(func.count(Reaction.id)).where(
+        Reaction.report_id == report_id,
+        Reaction.reaction_type == ReactionType.SUPPORT,
+    )
+    important_stmt = select(func.count(Reaction.id)).where(
+        Reaction.report_id == report_id,
+        Reaction.reaction_type == ReactionType.IMPORTANT,
+    )
+
+    support_count = await db.scalar(support_stmt) or 0
+    important_count = await db.scalar(important_stmt) or 0
+
+    user_reactions: List[ReactionType] = []
+    if current_user:
+        user_reacts_stmt = select(Reaction.reaction_type).where(
+            Reaction.report_id == report_id,
+            Reaction.user_id == current_user.id,
+        )
+        res_user = await db.execute(user_reacts_stmt)
+        user_reactions = [r[0] for r in res_user.all()]
+
+    return ReactionSummaryResponse(
+        report_id=report_id,
+        support_count=support_count,
+        important_count=important_count,
+        user_reactions=user_reactions,
     )

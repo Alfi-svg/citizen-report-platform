@@ -17,6 +17,10 @@ export type ModerationAction =
   | "REQUESTED_INFORMATION"
   | "ARCHIVED";
 
+export type CommentStatus = "VISIBLE" | "HIDDEN" | "REMOVED";
+
+export type ReactionType = "SUPPORT" | "IMPORTANT";
+
 export interface User {
   id: string;
   email: string;
@@ -74,6 +78,48 @@ export interface PublicMedia {
   caption: string | null;
   media_type: "image" | "video" | "document";
   download_url: string;
+}
+
+export interface PublicComment {
+  id: string;
+  report_id: string;
+  body: string;
+  status: CommentStatus;
+  created_at: string;
+  user_display_name: string;
+  is_own_comment: boolean;
+}
+
+export interface CommentPagination {
+  items: PublicComment[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface AdminComment {
+  id: string;
+  report_id: string;
+  user_id: string;
+  body: string;
+  status: CommentStatus;
+  created_at: string;
+  updated_at: string;
+  user?: User | null;
+}
+
+export interface ReactionSummary {
+  report_id: string;
+  support_count: number;
+  important_count: number;
+  user_reactions: ReactionType[];
+}
+
+export interface ReactionToggleResponse {
+  report_id: string;
+  reaction_type: ReactionType;
+  action: "added" | "removed";
+  summary: ReactionSummary;
 }
 
 export interface ModerationRecord {

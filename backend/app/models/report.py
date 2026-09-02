@@ -104,6 +104,19 @@ class Report(Base, TimestampMixin):
         order_by="ModerationRecord.created_at.desc()",
         lazy="selectin",
     )
+    comments: Mapped[List["Comment"]] = relationship(
+        "Comment",
+        back_populates="report",
+        cascade="all, delete-orphan",
+        order_by="Comment.created_at.desc()",
+        lazy="selectin",
+    )
+    reactions: Mapped[List["Reaction"]] = relationship(
+        "Reaction",
+        back_populates="report",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
 
     __table_args__ = (
         Index("ix_reports_status_created_at", "status", "created_at"),

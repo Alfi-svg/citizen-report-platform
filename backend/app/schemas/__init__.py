@@ -3,6 +3,8 @@ from app.schemas.auth import UserRegister, UserLogin, Token, TokenPayload, Logou
 from app.schemas.category import CategoryBase, CategoryCreate, CategoryUpdate, CategoryResponse
 from app.schemas.report_media import ReportMediaBase, ReportMediaCreate, ReportMediaResponse
 from app.schemas.report import ReportBase, ReportCreate, ReportUpdate, ReportResponse, ReportPublicResponse
+from app.schemas.comment import CommentCreate, CommentStatusUpdate, PublicCommentResponse, AdminCommentResponse, CommentPagination
+from app.schemas.reaction import ReactionCreate, ReactionSummaryResponse, ReactionToggleResponse
 
 __all__ = [
     "UserBase",
@@ -26,4 +28,12 @@ __all__ = [
     "ReportUpdate",
     "ReportResponse",
     "ReportPublicResponse",
+    "CommentCreate",
+    "CommentStatusUpdate",
+    "PublicCommentResponse",
+    "AdminCommentResponse",
+    "CommentPagination",
+    "ReactionCreate",
+    "ReactionSummaryResponse",
+    "ReactionToggleResponse",
 ]

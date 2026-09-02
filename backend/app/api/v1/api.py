@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1.endpoints import health, auth, categories, reports, admin, public
+from app.api.v1.endpoints import health, auth, categories, reports, admin, public, comments, reactions
 
 api_router = APIRouter()
 api_router.include_router(health.router, prefix="/health", tags=["health"])
@@ -8,6 +8,9 @@ api_router.include_router(categories.router, prefix="/categories", tags=["catego
 api_router.include_router(reports.router, prefix="/reports", tags=["reports"])
 api_router.include_router(admin.router, prefix="/admin", tags=["admin"])
 api_router.include_router(public.router, prefix="/public", tags=["public"])
+api_router.include_router(comments.router, tags=["comments"])
+api_router.include_router(reactions.router, tags=["reactions"])
+
 
 
 

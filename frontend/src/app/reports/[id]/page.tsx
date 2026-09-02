@@ -8,6 +8,8 @@ import { apiFetch } from "@/lib/api";
 import { Report, Category, ReportStatus, ReportMedia, PublicReport } from "@/lib/types";
 import EvidenceGallery from "@/components/EvidenceGallery";
 import EvidenceUploader from "@/components/EvidenceUploader";
+import ReactionControls from "@/components/ReactionControls";
+import CommentsSection from "@/components/CommentsSection";
 
 const STATUS_BADGES: Record<
   ReportStatus,
@@ -342,10 +344,18 @@ export default function ReportDetailPage() {
             </div>
           )}
 
+          {/* Reaction Controls */}
+          <div className="pt-2">
+            <ReactionControls reportId={publicReport.id} />
+          </div>
+
           {/* Verification Disclaimer */}
           <div className="rounded-2xl border border-blue-200 bg-blue-50/50 dark:border-blue-900 dark:bg-blue-950/20 p-4 text-xs text-blue-800 dark:text-blue-300 leading-relaxed">
             ℹ️ <strong>Platform Verification Notice:</strong> This report has undergone administrative moderation and review according to platform civic guidelines. It is published for public transparency and community awareness.
           </div>
+
+          {/* Citizen Comments & Discussion */}
+          <CommentsSection reportId={publicReport.id} />
         </div>
       </article>
     );

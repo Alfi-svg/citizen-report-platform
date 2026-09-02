@@ -4,6 +4,8 @@ from app.models.category import Category
 from app.models.report import Report, ReportStatus
 from app.models.report_media import ReportMedia
 from app.models.moderation import ModerationRecord, ModerationAction
+from app.models.comment import Comment, CommentStatus
+from app.models.reaction import Reaction, ReactionType
 
 __all__ = [
     "Base",
@@ -17,4 +19,8 @@ __all__ = [
     "ReportMedia",
     "ModerationRecord",
     "ModerationAction",
+    "Comment",
+    "CommentStatus",
+    "Reaction",
+    "ReactionType",
 ]

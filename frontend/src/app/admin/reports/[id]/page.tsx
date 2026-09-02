@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
-import { Report, ReportStatus } from "@/lib/types";
+import { Report, ReportStatus, AdminComment, CommentStatus } from "@/lib/types";
 import EvidenceGallery from "@/components/EvidenceGallery";
 
 const STATUS_BADGES: Record<
@@ -63,6 +63,7 @@ export default function AdminReportDetailPage() {
   const { isAuthenticated, isLoading: authLoading, isAdmin } = useAuth();
 
   const [report, setReport] = useState<Report | null>(null);
+  const [adminComments, setAdminComments] = useState<AdminComment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
@@ -83,9 +84,15 @@ export default function AdminReportDetailPage() {
   useEffect(() => {
     let isMounted = true;
     if (isAuthenticated && isAdmin && reportId) {
-      apiFetch<Report>(`/admin/reports/${reportId}`)
-        .then((data) => {
-          if (isMounted) setReport(data);
+      Promise.all([
+        apiFetch<Report>(`/admin/reports/${reportId}`),
+        apiFetch<AdminComment[]>(`/admin/comments?report_id=${reportId}`),
+      ])
+        .then(([reportData, commentsData]) => {
+          if (isMounted) {
+            setReport(reportData);
+            setAdminComments(commentsData);
+          }
         })
         .catch((err: unknown) => {
           if (isMounted && err instanceof Error) setError(err.message);
@@ -165,6 +172,32 @@ export default function AdminReportDetailPage() {
       if (err instanceof Error) setError(err.message);
     } finally {
       setDeletingMediaId(null);
+    }
+  };
+
+  const handleUpdateCommentStatus = async (commentId: string, newStatus: CommentStatus) => {
+    try {
+      const updated = await apiFetch<AdminComment>(`/admin/comments/${commentId}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: newStatus }),
+      });
+      setAdminComments((prev) =>
+        prev.map((c) => (c.id === commentId ? { ...c, status: updated.status } : c))
+      );
+      setActionSuccess(`Comment status updated to ${newStatus}.`);
+    } catch (err: unknown) {
+      if (err instanceof Error) setError(err.message);
+    }
+  };
+
+  const handleDeleteCommentAdmin = async (commentId: string) => {
+    if (!confirm("Remove this comment permanently?")) return;
+    try {
+      await apiFetch(`/comments/${commentId}`, { method: "DELETE" });
+      setAdminComments((prev) => prev.filter((c) => c.id !== commentId));
+      setActionSuccess("Comment permanently deleted.");
+    } catch (err: unknown) {
+      if (err instanceof Error) setError(err.message);
     }
   };
 
@@ -287,7 +320,7 @@ export default function AdminReportDetailPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column: Report Details & Evidence */}
+        {/* Left Column: Report Details & Evidence & Comments */}
         <div className="lg:col-span-2 space-y-6">
           <div className="rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 p-6 shadow-sm">
             <div className="flex items-center justify-between gap-2 border-b border-zinc-100 dark:border-zinc-800 pb-3 mb-4">
@@ -351,6 +384,83 @@ export default function AdminReportDetailPage() {
                 deletingId={deletingMediaId}
               />
             </div>
+          </div>
+
+          {/* Comment Moderation Panel */}
+          <div className="rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 p-6 shadow-sm space-y-4">
+            <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100 flex items-center justify-between">
+              <span>Community Comments Moderation ({adminComments.length})</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded">
+                Admin Control
+              </span>
+            </h3>
+
+            {adminComments.length === 0 ? (
+              <p className="text-xs text-zinc-500">No comments posted on this report yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {adminComments.map((c) => (
+                  <div
+                    key={c.id}
+                    className="p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/40 text-xs space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                        User ID: <code className="font-mono text-[11px]">{c.user_id}</code>
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                            c.status === "VISIBLE"
+                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                              : c.status === "HIDDEN"
+                              ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                              : "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300"
+                          }`}
+                        >
+                          {c.status}
+                        </span>
+                        <span className="text-[11px] text-zinc-400">
+                          {new Date(c.created_at).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+
+                    <p className="text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-900 p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 whitespace-pre-wrap">
+                      {c.body}
+                    </p>
+
+                    <div className="flex items-center justify-end gap-2 pt-1">
+                      {c.status !== "VISIBLE" && (
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateCommentStatus(c.id, "VISIBLE")}
+                          className="rounded px-2.5 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-emerald-300"
+                        >
+                          👁️ Make Visible
+                        </button>
+                      )}
+                      {c.status !== "HIDDEN" && (
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateCommentStatus(c.id, "HIDDEN")}
+                          className="rounded px-2.5 py-1 text-[11px] font-semibold text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/40 border border-amber-300"
+                        >
+                          🚫 Hide Comment
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteCommentAdmin(c.id)}
+                        className="rounded px-2.5 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 border border-red-300"
+                      >
+                        🗑️ Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Moderation History Audit Trail */}

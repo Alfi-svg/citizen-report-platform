@@ -7,6 +7,7 @@ from app.api.deps import get_current_active_admin
 from app.db.session import get_db
 from app.models.moderation import ModerationRecord, ModerationAction
 from app.models.report import Report, ReportStatus
+from app.models.comment import Comment, CommentStatus
 from app.models.user import User
 from app.schemas.moderation import (
     AdminDashboardStats,
@@ -16,6 +17,7 @@ from app.schemas.report import (
     AdminReportResponse,
     AdminReportPagination,
 )
+from app.schemas.comment import AdminCommentResponse, CommentStatusUpdate
 
 router = APIRouter()
 
@@ -345,3 +347,60 @@ async def request_more_information(
     await db.commit()
     await db.refresh(report)
     return report
+
+
+@router.get(
+    "/comments",
+    response_model=list[AdminCommentResponse],
+    status_code=status.HTTP_200_OK,
+    summary="List comments for administrative moderation",
+)
+async def list_admin_comments(
+    report_id: Optional[uuid.UUID] = Query(None),
+    comment_status: Optional[CommentStatus] = Query(None),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    conditions = []
+    if report_id:
+        conditions.append(Comment.report_id == report_id)
+    if comment_status:
+        conditions.append(Comment.status == comment_status)
+
+    stmt = select(Comment)
+    if conditions:
+        stmt = stmt.where(and_(*conditions))
+
+    stmt = stmt.order_by(Comment.created_at.desc()).limit(limit).offset(offset)
+    result = await db.execute(stmt)
+    return result.scalars().all()
+
+
+@router.patch(
+    "/comments/{comment_id}/status",
+    response_model=AdminCommentResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Update comment moderation status (VISIBLE / HIDDEN / REMOVED)",
+)
+async def update_comment_status(
+    comment_id: uuid.UUID,
+    payload: CommentStatusUpdate,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    stmt = select(Comment).where(Comment.id == comment_id)
+    result = await db.execute(stmt)
+    comment = result.scalar_one_or_none()
+
+    if not comment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Comment not found.",
+        )
+
+    comment.status = payload.status
+    await db.commit()
+    await db.refresh(comment)
+    return comment
