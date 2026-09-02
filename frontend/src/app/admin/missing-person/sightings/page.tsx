@@ -155,18 +155,30 @@ function SightingsContent() {
               {sightings.map((s) => (
                 <tr key={s.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition">
                   <td className="p-3.5 font-bold text-zinc-900 dark:text-zinc-100">
-                    📍 {s.approximate_location}
+                    <div>📍 {s.approximate_location}</div>
+                    {s.is_potential_duplicate && (
+                      <span className="inline-flex items-center gap-1 mt-1 rounded-md bg-amber-100 dark:bg-amber-950/80 px-2 py-0.5 text-[10px] font-extrabold text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+                        <span>⚠️</span> {s.duplicate_reason || "Potential duplicate"}
+                      </span>
+                    )}
                   </td>
-                  <td className="p-3.5 max-w-sm">
-                    <p className="text-zinc-800 dark:text-zinc-200 line-clamp-2">{s.description}</p>
+                  <td className="p-3.5 max-w-sm space-y-1">
+                    <p className="text-zinc-800 dark:text-zinc-200">{s.description}</p>
+                    {(s.clothing || s.direction || s.additional_information) && (
+                      <div className="text-[11px] text-zinc-500 space-y-0.5 pt-1 border-t border-zinc-100 dark:border-zinc-800">
+                        {s.clothing && <div><strong>Clothing:</strong> {s.clothing}</div>}
+                        {s.direction && <div><strong>Direction:</strong> {s.direction}</div>}
+                        {s.additional_information && <div><strong>Notes:</strong> {s.additional_information}</div>}
+                      </div>
+                    )}
                     {s.photo_url && (
                       <a
                         href={s.photo_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[11px] text-blue-600 hover:underline mt-1 inline-block"
+                        className="text-[11px] font-bold text-blue-600 hover:underline mt-1 inline-flex items-center gap-1"
                       >
-                        🖼️ View Attached Image
+                        <span>🖼️</span> View Attached Evidence
                       </a>
                     )}
                   </td>

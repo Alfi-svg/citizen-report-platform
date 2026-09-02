@@ -79,6 +79,9 @@ class MissingPersonSightingCreate(BaseModel):
     sighting_date: Optional[datetime] = None
     sighting_time: Optional[str] = Field(None, max_length=100)
     description: str = Field(..., min_length=5)
+    clothing: Optional[str] = Field(None, max_length=500)
+    direction: Optional[str] = Field(None, max_length=255)
+    additional_information: Optional[str] = Field(None, max_length=1000)
     photo_url: Optional[str] = Field(None, max_length=1000)
 
 
@@ -89,6 +92,8 @@ class PublicMissingPersonSightingResponse(BaseModel):
     sighting_date: Optional[datetime] = None
     sighting_time: Optional[str] = None
     description: str
+    clothing: Optional[str] = None
+    direction: Optional[str] = None
     photo_url: Optional[str] = None
     status: SightingStatus
     created_at: datetime
@@ -98,11 +103,14 @@ class PublicMissingPersonSightingResponse(BaseModel):
 
 class AdminMissingPersonSightingResponse(PublicMissingPersonSightingResponse):
     user_id: Optional[uuid.UUID] = None
+    additional_information: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     reviewed_by_admin_id: Optional[uuid.UUID] = None
     reviewed_at: Optional[datetime] = None
     admin_notes: Optional[str] = None
+    is_potential_duplicate: bool = False
+    duplicate_reason: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 

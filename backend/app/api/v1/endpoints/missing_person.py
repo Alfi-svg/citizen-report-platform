@@ -193,9 +193,39 @@ async def get_public_missing_person_alert(
     )
 
 
-# ==============================================================================
-# 2. "I SAW THIS PERSON" SIGHTING SUBMISSION
-# ==============================================================================
+@router.get(
+    "/alerts/{alert_id}/sightings",
+    response_model=List[PublicMissingPersonSightingResponse],
+    status_code=status.HTTP_200_OK,
+    summary="Get approved sightings for an alert timeline and map",
+)
+async def get_public_missing_person_sightings(
+    alert_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    stmt = select(MissingPersonAlert).where(MissingPersonAlert.id == alert_id)
+    result = await db.execute(stmt)
+    alert = result.scalar_one_or_none()
+    if not alert:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Missing person alert not found.",
+        )
+
+    sightings_stmt = (
+        select(MissingPersonSighting)
+        .where(
+            and_(
+                MissingPersonSighting.alert_id == alert.id,
+                MissingPersonSighting.status == SightingStatus.APPROVED,
+            )
+        )
+        .order_by(MissingPersonSighting.created_at.desc())
+    )
+    res = await db.execute(sightings_stmt)
+    sightings = res.scalars().all()
+    return [PublicMissingPersonSightingResponse.model_validate(s) for s in sightings]
+
 
 @router.post(
     "/alerts/{alert_id}/sightings",
@@ -220,17 +250,31 @@ async def submit_missing_person_sighting(
             detail="Missing person alert not found.",
         )
 
+    # Reject submissions on inactive or resolved alerts
+    if alert.status != AlertStatus.ALERT_ACTIVE or not alert.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot submit sightings for an inactive or resolved missing person alert.",
+        )
+
+    # Privacy coordinate fuzzing (~3 decimal places = ~110m)
+    fuzzed_lat = round(payload.latitude, 3) if payload.latitude is not None else None
+    fuzzed_lng = round(payload.longitude, 3) if payload.longitude is not None else None
+
     # Create new sighting with PENDING status (requires moderation)
     sighting = MissingPersonSighting(
         alert_id=alert.id,
         user_id=current_user.id if current_user else None,
         approximate_location=payload.approximate_location.strip(),
-        latitude=payload.latitude,
-        longitude=payload.longitude,
+        latitude=fuzzed_lat,
+        longitude=fuzzed_lng,
         sighting_date=payload.sighting_date,
-        sighting_time=payload.sighting_time,
+        sighting_time=payload.sighting_time.strip() if payload.sighting_time else None,
         description=payload.description.strip(),
-        photo_url=payload.photo_url,
+        clothing=payload.clothing.strip() if payload.clothing else None,
+        direction=payload.direction.strip() if payload.direction else None,
+        additional_information=payload.additional_information.strip() if payload.additional_information else None,
+        photo_url=payload.photo_url.strip() if payload.photo_url else None,
         status=SightingStatus.PENDING,
     )
     db.add(sighting)

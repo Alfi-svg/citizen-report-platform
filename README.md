@@ -77,6 +77,16 @@ The **Transparency & Crime Analysis Dashboard** (`/transparency`) and **Admin Op
 - **Aggregated Data Export:** One-click sanitized CSV and JSON downloads of public platform statistics.
 - **Admin Operations Analytics:** Internal moderation throughput, review queue depths, approval/rejection rates, turnaround times, and flag resolution metrics.
 
+### 1.5. "I Saw This Person" Community Response System
+The **"I Saw This Person" / "আমি এই ব্যক্তিকে দেখেছি"** community response network empowers citizens to report sightings of missing individuals with privacy and moderation safeguards:
+- **Active Search Gate:** Sighting submissions are enabled ONLY when a missing person alert has `status = ALERT_ACTIVE` and `is_active = True`. Inactive, expired, closed, or found cases reject new submissions.
+- **Mandatory Moderation Flow:** All citizen submissions are created in `PENDING` status. Only approved sightings appear publicly in chronological timelines and maps.
+- **Zero Continuous Tracking:** Supports 1-time GPS capture on user tap only. `watchPosition()` is strictly prohibited.
+- **Zero-Doxxing Location Privacy:** Coordinates fuzzed to ~3 decimals (~110m). Submitter contact details, emails, and exact locations are never exposed publicly.
+- **Duplicate Detection Warning:** Automated duplicate analysis detects matching locations or timestamp overlaps, alerting moderators with warning badges while preserving submission records.
+- **Chronological Sightings Timeline:** Displays platform-reviewed sightings in chronological order with date/time, approximate area, clothing notes, and direction.
+- **Admin Moderation Portal:** Dedicated moderation console (`/admin/missing-person/sightings`) to review attached evidence, inspect duplicate signals, and Approve, Reject, or Flag sightings.
+
 ---
 
 ## 2. Production Deployment Checklist

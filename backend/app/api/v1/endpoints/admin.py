@@ -1475,7 +1475,24 @@ async def list_admin_missing_person_sightings(
     res = await db.execute(stmt)
     sightings = res.scalars().all()
 
-    return [AdminMissingPersonSightingResponse.model_validate(s) for s in sightings]
+    # Build duplicate analysis map
+    response_items = []
+    for s in sightings:
+        item = AdminMissingPersonSightingResponse.model_validate(s)
+        # Check if other sightings exist for the same alert with similar location
+        other_matches = [
+            other for other in sightings
+            if other.id != s.id and other.alert_id == s.alert_id and (
+                other.approximate_location.lower().strip() == s.approximate_location.lower().strip()
+                or (s.description and other.description and len(s.description) > 10 and s.description[:20].lower() in other.description.lower())
+            )
+        ]
+        if other_matches:
+            item.is_potential_duplicate = True
+            item.duplicate_reason = f"Matches location or keywords from sighting #{str(other_matches[0].id)[:8]}"
+        response_items.append(item)
+
+    return response_items
 
 
 @router.post(

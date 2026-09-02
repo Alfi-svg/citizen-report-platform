@@ -288,6 +288,18 @@ class MissingPersonSighting(Base, TimestampMixin):
         Text,
         nullable=False,
     )
+    clothing: Mapped[Optional[str]] = mapped_column(
+        Text,
+        nullable=True,
+    )
+    direction: Mapped[Optional[str]] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+    additional_information: Mapped[Optional[str]] = mapped_column(
+        Text,
+        nullable=True,
+    )
     photo_url: Mapped[Optional[str]] = mapped_column(
         String(1000),
         nullable=True,

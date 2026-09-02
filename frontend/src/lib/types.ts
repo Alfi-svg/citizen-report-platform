@@ -492,6 +492,19 @@ export interface MissingPersonProfileCreate {
   source?: string;
 }
 
+export interface MissingPersonSightingCreate {
+  approximate_location: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  sighting_date?: string | null;
+  sighting_time?: string | null;
+  description: string;
+  clothing?: string | null;
+  direction?: string | null;
+  additional_information?: string | null;
+  photo_url?: string | null;
+}
+
 export interface PublicMissingPersonSightingResponse {
   id: string;
   alert_id: string;
@@ -499,6 +512,8 @@ export interface PublicMissingPersonSightingResponse {
   sighting_date?: string | null;
   sighting_time?: string | null;
   description: string;
+  clothing?: string | null;
+  direction?: string | null;
   photo_url?: string | null;
   status: SightingStatus;
   created_at: string;
@@ -506,11 +521,14 @@ export interface PublicMissingPersonSightingResponse {
 
 export interface AdminMissingPersonSightingResponse extends PublicMissingPersonSightingResponse {
   user_id?: string | null;
+  additional_information?: string | null;
   latitude?: number | null;
   longitude?: number | null;
   reviewed_by_admin_id?: string | null;
   reviewed_at?: string | null;
   admin_notes?: string | null;
+  is_potential_duplicate?: boolean;
+  duplicate_reason?: string | null;
 }
 
 export interface PublicMissingPersonAlertResponse {
