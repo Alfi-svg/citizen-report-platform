@@ -38,7 +38,7 @@ export default function AdminNav({ pendingReports, pendingFlags }: AdminNavProps
   ];
 
   return (
-    <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 sticky top-14 z-40">
+    <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 sticky top-16 z-40">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between py-2 overflow-x-auto gap-2 no-scrollbar">
           <div className="flex items-center space-x-1 sm:space-x-2 shrink-0">

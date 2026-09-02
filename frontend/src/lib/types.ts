@@ -673,7 +673,7 @@ export interface PublicSafetyMapResponse {
   clusters: PublicMapClusterPoint[];
   total_incidents: number;
   total_clusters: number;
-  applied_filters: Record<string, any>;
+  applied_filters: Record<string, unknown>;
 }
 
 export interface PublicRelatedReportResponse {

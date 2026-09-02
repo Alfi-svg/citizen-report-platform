@@ -39,7 +39,7 @@ export default function DashboardPage() {
   if (isLoading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-600 border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-700 border-t-transparent" />
       </div>
     );
   }
@@ -49,178 +49,182 @@ export default function DashboardPage() {
   }
 
   const draftsCount = reports.filter((r) => r.status === "DRAFT").length;
-  const submittedCount = reports.filter(
+  const inReviewCount = reports.filter(
     (r) => r.status === "SUBMITTED" || r.status === "UNDER_REVIEW"
   ).length;
   const approvedCount = reports.filter((r) => r.status === "APPROVED").length;
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-            Citizen Dashboard
-          </h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Welcome back, <span className="font-semibold text-zinc-900 dark:text-zinc-100">{user.full_name || user.username}</span>.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {isAdmin && (
-            <Link
-              href="/admin"
-              className="rounded-lg bg-amber-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-amber-500 transition"
-            >
-              Access Admin Panel
-            </Link>
-          )}
-          <button
-            onClick={logout}
-            className="rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3.5 py-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition"
-          >
-            Sign Out
-          </button>
-        </div>
-      </div>
-
-      {/* Quick Action Banner */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-        <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-500/10 to-teal-500/5 p-6 dark:border-emerald-900/60 dark:from-emerald-950/40 dark:to-teal-950/20 shadow-sm flex flex-col justify-between">
-          <div>
-            <span className="text-2xl mb-2 block">📝</span>
-            <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
-              Submit an Incident Report
-            </h2>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
-              File a verified community incident report or confidential whistleblowing allegation.
-            </p>
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
+      {/* 1. Citizen Profile Banner */}
+      <div className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 sm:p-8 shadow-2xs">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="h-16 w-16 rounded-2xl bg-emerald-700 text-white flex items-center justify-center text-2xl font-black shadow-md shadow-emerald-700/20 shrink-0">
+              {(user.full_name || user.username).charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">
+                  {user.full_name || user.username}
+                </h1>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                  {user.role}
+                </span>
+              </div>
+              <p className="text-xs text-zinc-500 mt-0.5">
+                @{user.username} • Verified Citizen Reporter
+              </p>
+            </div>
           </div>
-          <div className="mt-4">
+
+          <div className="flex items-center gap-2.5">
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="rounded-xl bg-amber-600 hover:bg-amber-500 text-white px-3.5 py-2 text-xs font-bold shadow-xs transition"
+              >
+                Admin Panel
+              </Link>
+            )}
             <Link
               href="/reports/create"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-500 transition"
+              className="rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white px-4 py-2 text-xs font-bold shadow-xs transition"
             >
-              + Create Report
+              + New Report
             </Link>
+            <button
+              onClick={logout}
+              className="rounded-xl border border-zinc-200 dark:border-zinc-700 px-3.5 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+            >
+              Sign Out
+            </button>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 p-6 shadow-sm flex flex-col justify-between">
-          <div>
-            <span className="text-2xl mb-2 block">📋</span>
-            <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
-              My Submissions
-            </h2>
-            <div className="grid grid-cols-3 gap-2 mt-3 text-center">
-              <div className="p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700">
-                <span className="text-xs text-zinc-500 block">Drafts</span>
-                <span className="text-base font-bold text-zinc-800 dark:text-zinc-200">
-                  {loadingReports ? "—" : draftsCount}
-                </span>
-              </div>
-              <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900">
-                <span className="text-xs text-blue-600 dark:text-blue-400 block">Submitted</span>
-                <span className="text-base font-bold text-blue-700 dark:text-blue-300">
-                  {loadingReports ? "—" : submittedCount}
-                </span>
-              </div>
-              <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900">
-                <span className="text-xs text-emerald-600 dark:text-emerald-400 block">Approved</span>
-                <span className="text-base font-bold text-emerald-700 dark:text-emerald-300">
-                  {loadingReports ? "—" : approvedCount}
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className="mt-4">
-            <Link
-              href="/reports/mine"
-              className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
-            >
-              View All My Reports ({reports.length}) →
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        {/* Account Profile Card */}
-        <div className="col-span-1 md:col-span-2 rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-4 flex items-center justify-between">
-            <span>Profile Details</span>
-            <span
-              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                user.role === "ADMIN"
-                  ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
-                  : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-              }`}
-            >
-              {user.role}
+        {/* Contribution KPI Cards */}
+        <div className="grid grid-cols-3 gap-3 sm:gap-4 mt-6 pt-6 border-t border-zinc-100 dark:border-zinc-800">
+          <div className="rounded-2xl bg-zinc-50 dark:bg-zinc-800/60 p-4 text-center">
+            <span className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-zinc-100 block">
+              {reports.length}
             </span>
-          </h2>
-
-          <dl className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 text-sm">
-            <div>
-              <dt className="text-xs font-medium text-zinc-500">Username</dt>
-              <dd className="mt-1 font-semibold text-zinc-900 dark:text-zinc-100">{user.username}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium text-zinc-500">Email Address</dt>
-              <dd className="mt-1 font-semibold text-zinc-900 dark:text-zinc-100">{user.email}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium text-zinc-500">Display Name</dt>
-              <dd className="mt-1 font-semibold text-zinc-900 dark:text-zinc-100">{user.full_name || "—"}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium text-zinc-500">Account Status</dt>
-              <dd className="mt-1 inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                <span className="h-2 w-2 rounded-full bg-emerald-600" />
-                Active & Verified
-              </dd>
-            </div>
-            <div className="sm:col-span-2">
-              <dt className="text-xs font-medium text-zinc-500">Account Identifier (UUID)</dt>
-              <dd className="mt-1 font-mono text-xs text-zinc-600 dark:text-zinc-400 break-all">{user.id}</dd>
-            </div>
-            <div className="sm:col-span-2">
-              <dt className="text-xs font-medium text-zinc-500">Registered At</dt>
-              <dd className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
-                {new Date(user.created_at).toLocaleString()}
-              </dd>
-            </div>
-          </dl>
-        </div>
-
-        {/* Auth Verification Card */}
-        <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 p-6 shadow-sm flex flex-col justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-              Platform Status
-            </h2>
-            <p className="text-xs text-zinc-500 mb-4">
-              Step 3 Report Submission System active.
-            </p>
-            <div className="space-y-2 text-xs">
-              <div className="flex items-center justify-between py-1 border-b border-zinc-100 dark:border-zinc-800">
-                <span className="text-zinc-500">Incident Reporting:</span>
-                <span className="font-semibold text-emerald-600">Enabled</span>
-              </div>
-              <div className="flex items-center justify-between py-1 border-b border-zinc-100 dark:border-zinc-800">
-                <span className="text-zinc-500">Draft Management:</span>
-                <span className="font-semibold text-emerald-600">Enabled</span>
-              </div>
-              <div className="flex items-center justify-between py-1">
-                <span className="text-zinc-500">Anonymous Mode:</span>
-                <span className="font-semibold text-emerald-600">Enabled</span>
-              </div>
-            </div>
+            <span className="text-[11px] text-zinc-500 font-medium">
+              Total Submissions
+            </span>
           </div>
-          <div className="mt-6 pt-4 border-t border-zinc-100 dark:border-zinc-800 text-[11px] text-zinc-400">
-            Awaiting Step 4 for evidence attachments & moderation queue.
+
+          <div className="rounded-2xl bg-amber-50/60 dark:bg-amber-950/20 p-4 text-center border border-amber-200/40 dark:border-amber-900/40">
+            <span className="text-xl sm:text-2xl font-black text-amber-700 dark:text-amber-400 block">
+              {inReviewCount}
+            </span>
+            <span className="text-[11px] text-amber-800/80 dark:text-amber-300 font-medium">
+              In Active Review
+            </span>
+          </div>
+
+          <div className="rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/20 p-4 text-center border border-emerald-200/40 dark:border-emerald-900/40">
+            <span className="text-xl sm:text-2xl font-black text-emerald-700 dark:text-emerald-400 block">
+              {approvedCount}
+            </span>
+            <span className="text-[11px] text-emerald-800/80 dark:text-emerald-300 font-medium">
+              Verified & Published
+            </span>
           </div>
         </div>
       </div>
+
+      {/* 2. My Reports List */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-zinc-100">
+            My Incident Reports
+          </h2>
+          <span className="text-xs text-zinc-500">
+            {reports.length} report{reports.length !== 1 ? "s" : ""} recorded
+          </span>
+        </div>
+
+        {loadingReports ? (
+          <div className="space-y-3">
+            {[...Array(3)].map((_, i) => (
+              <div
+                key={i}
+                className="h-20 bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 animate-pulse"
+              />
+            ))}
+          </div>
+        ) : reports.length === 0 ? (
+          <div className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-12 text-center space-y-3">
+            <div className="text-4xl">📝</div>
+            <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+              You haven&apos;t filed any incident reports yet
+            </h3>
+            <p className="text-xs text-zinc-500 max-w-sm mx-auto">
+              Help keep your neighborhood safe by submitting verified reports of civic hazards or safety incidents.
+            </p>
+            <Link
+              href="/reports/create"
+              className="inline-block mt-2 rounded-xl bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-emerald-600 transition"
+            >
+              Submit Your First Report
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {reports.map((report) => (
+              <div
+                key={report.id}
+                className="group rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 hover:border-emerald-700/40 dark:hover:border-emerald-500/40 transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs"
+              >
+                <div className="space-y-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        report.status === "APPROVED"
+                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                          : report.status === "REJECTED"
+                          ? "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300"
+                          : report.status === "DRAFT"
+                          ? "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                          : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                      }`}
+                    >
+                      {report.status}
+                    </span>
+                    <span className="text-[11px] text-zinc-400">
+                      {new Date(report.created_at).toLocaleDateString()}
+                    </span>
+                    {report.is_anonymous && (
+                      <span className="text-[10px] font-semibold text-purple-700 dark:text-purple-300">
+                        🛡️ Anonymous
+                      </span>
+                    )}
+                  </div>
+
+                  <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate">
+                    <Link href={`/reports/${report.id}`} className="hover:text-emerald-700 dark:hover:text-emerald-400 transition">
+                      {report.title}
+                    </Link>
+                  </h3>
+
+                  <p className="text-xs text-zinc-500 truncate max-w-md">
+                    📍 {report.location_text}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <Link
+                    href={`/reports/${report.id}`}
+                    className="rounded-xl border border-zinc-200 dark:border-zinc-700 px-3 py-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition"
+                  >
+                    View Details →
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

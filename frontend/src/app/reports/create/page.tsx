@@ -86,7 +86,7 @@ export default function CreateReportPage() {
       return false;
     }
     if (!formData.locationText.trim() || formData.locationText.trim().length < 3) {
-      setError("Location is required (e.g. Dhanmondi, Dhaka).");
+      setError("Location is required (e.g. Dhanmondi 27, Dhaka).");
       return false;
     }
     if (formData.incidentDate) {
@@ -101,21 +101,18 @@ export default function CreateReportPage() {
 
   const handleProceedToReview = (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     if (validateForm()) {
       setIsReviewMode(true);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
-  const handleSaveReport = async (statusToSet: "DRAFT" | "SUBMITTED") => {
-    setError(null);
+  const handleFinalSubmit = async () => {
     if (!validateForm()) return;
 
     setSubmitting(true);
-    setUploadStatus("Creating report record...");
-
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    setError(null);
+    setUploadStatus("Creating report draft...");
 
     try {
       const payload = {
@@ -123,202 +120,135 @@ export default function CreateReportPage() {
         category_id: formData.categoryId,
         description: formData.description.trim(),
         location_text: formData.locationText.trim(),
-        incident_date: formData.incidentDate ? new Date(formData.incidentDate).toISOString() : null,
+        incident_date: formData.incidentDate
+          ? new Date(formData.incidentDate).toISOString()
+          : null,
         is_anonymous: formData.isAnonymous,
-        status: statusToSet,
       };
 
-      const created = await apiFetch<Report>("/reports", {
+      const createdReport = await apiFetch<Report>("/reports", {
         method: "POST",
         body: JSON.stringify(payload),
       });
 
-      // Upload attached files if any
+      // Upload any selected media files
       if (selectedFiles.length > 0) {
+        setUploadStatus(`Uploading ${selectedFiles.length} evidence attachment(s)...`);
         for (let i = 0; i < selectedFiles.length; i++) {
           const item = selectedFiles[i];
-          setUploadStatus(`Uploading evidence ${i + 1} of ${selectedFiles.length}: ${item.file.name}...`);
-
-          const formDataFile = new FormData();
-          formDataFile.append("file", item.file);
-          if (item.caption.trim()) formDataFile.append("caption", item.caption.trim());
-
-          const res = await fetch(`${apiBase}/reports/${created.id}/media`, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token || ""}`,
-            },
-            body: formDataFile,
-          });
-
-          if (!res.ok) {
-            const errData = await res.json().catch(() => ({ detail: res.statusText }));
-            throw new Error(errData.detail || `Upload failed for ${item.file.name}`);
+          const uploadForm = new FormData();
+          uploadForm.append("file", item.file);
+          if (item.caption.trim()) {
+            uploadForm.append("caption", item.caption.trim());
           }
+
+          await apiFetch(`/reports/${createdReport.id}/media`, {
+            method: "POST",
+            body: uploadForm,
+          });
         }
       }
 
-      router.push(`/reports/${created.id}`);
+      // Submit for moderation
+      setUploadStatus("Submitting report for moderation review...");
+      await apiFetch<Report>(`/reports/${createdReport.id}/submit`, {
+        method: "POST",
+      });
+
+      router.push(`/reports/${createdReport.id}?submitted=true`);
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError("Failed to create report. Please verify your inputs.");
+        setError("An unexpected error occurred while submitting your report.");
       }
       setSubmitting(false);
       setUploadStatus(null);
     }
   };
 
-  if (authLoading || categoriesLoading) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-600 border-t-transparent" />
-      </div>
-    );
-  }
-
-  if (!isAuthenticated || !user) {
-    return null;
-  }
-
   const selectedCategoryObj = categories.find((c) => c.id === formData.categoryId);
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
+    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8 space-y-6">
+      {/* Header & Steps Indicator */}
+      <div className="border-b border-zinc-200 dark:border-zinc-800 pb-5">
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">
+              Report a Civic Incident
+            </h1>
+            <p className="text-xs text-zinc-500 mt-0.5">
+              Submit verifiable community issues for moderation and public action across Bangladesh.
+            </p>
+          </div>
           <Link
-            href="/reports/mine"
-            className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline inline-flex items-center gap-1 mb-2"
+            href="/"
+            className="text-xs font-semibold text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
           >
-            ← Back to My Reports
+            ✕ Cancel
           </Link>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-            {isReviewMode ? "Review & Confirm Incident Report" : "Submit Community Incident Report"}
-          </h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            {isReviewMode
-              ? "Verify all incident information and evidence attachments before submitting."
-              : "Provide clear and factual details regarding the incident."}
-          </p>
+        </div>
+
+        {/* 2-Step Bar */}
+        <div className="grid grid-cols-2 gap-2 mt-4">
+          <div
+            className={`h-1.5 rounded-full transition ${
+              !isReviewMode ? "bg-emerald-700" : "bg-emerald-200 dark:bg-emerald-950"
+            }`}
+          />
+          <div
+            className={`h-1.5 rounded-full transition ${
+              isReviewMode ? "bg-emerald-700" : "bg-zinc-200 dark:bg-zinc-800"
+            }`}
+          />
+        </div>
+        <div className="flex justify-between text-[11px] font-bold text-zinc-500 mt-1">
+          <span className={!isReviewMode ? "text-emerald-700 dark:text-emerald-400" : ""}>
+            1. Details & Evidence
+          </span>
+          <span className={isReviewMode ? "text-emerald-700 dark:text-emerald-400" : ""}>
+            2. Review & Submit
+          </span>
         </div>
       </div>
 
       {error && (
-        <div className="mb-6 rounded-xl bg-red-50 dark:bg-red-950/50 p-4 border border-red-200 dark:border-red-900">
-          <p className="text-sm font-medium text-red-800 dark:text-red-300">{error}</p>
+        <div className="rounded-2xl bg-red-50 dark:bg-red-950/50 p-4 border border-red-200 dark:border-red-900">
+          <p className="text-xs font-bold text-red-800 dark:text-red-300">⚠️ {error}</p>
         </div>
       )}
 
-      {isReviewMode ? (
-        /* Review Mode */
-        <div className="space-y-6 bg-white dark:bg-zinc-900 p-6 sm:p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
-          <div className="border-b border-zinc-200 dark:border-zinc-800 pb-4">
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 mb-2">
-              {selectedCategoryObj?.name || "Uncategorized"}
-            </span>
-            <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">{formData.title}</h2>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="text-xs font-medium text-zinc-500 block">Location</span>
-              <span className="font-semibold text-zinc-900 dark:text-zinc-100">{formData.locationText}</span>
-            </div>
-            <div>
-              <span className="text-xs font-medium text-zinc-500 block">Incident Date / Time</span>
-              <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-                {formData.incidentDate ? new Date(formData.incidentDate).toLocaleString() : "Not specified"}
-              </span>
-            </div>
-            <div className="sm:col-span-2">
-              <span className="text-xs font-medium text-zinc-500 block">Reporter Privacy</span>
-              <span
-                className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold mt-1 ${
-                  formData.isAnonymous
-                    ? "bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300"
-                    : "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300"
-                }`}
+      {!isReviewMode ? (
+        <form onSubmit={handleProceedToReview} className="space-y-6">
+          {/* Incident Category */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-zinc-900 dark:text-zinc-100">
+              Incident Category <span className="text-red-500">*</span>
+            </label>
+            {categoriesLoading ? (
+              <div className="h-10 bg-zinc-100 dark:bg-zinc-800 rounded-xl animate-pulse" />
+            ) : (
+              <select
+                name="categoryId"
+                value={formData.categoryId}
+                onChange={handleChange}
+                required
+                className="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3.5 py-2.5 text-xs text-zinc-900 dark:text-zinc-100 font-medium focus:border-emerald-700 focus:outline-none focus:ring-1 focus:ring-emerald-700"
               >
-                {formData.isAnonymous
-                  ? "Anonymous Whistleblower Mode (Name hidden from public view)"
-                  : `Public Attribution (${user.full_name || user.username})`}
-              </span>
-            </div>
-          </div>
-
-          <div className="pt-2">
-            <span className="text-xs font-medium text-zinc-500 block mb-2">Incident Description</span>
-            <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800 text-sm whitespace-pre-wrap text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700">
-              {formData.description}
-            </div>
-          </div>
-
-          {/* Attached Evidence Summary */}
-          {selectedFiles.length > 0 && (
-            <div className="pt-2">
-              <span className="text-xs font-medium text-zinc-500 block mb-2">
-                Attached Evidence Files ({selectedFiles.length})
-              </span>
-              <ul className="space-y-1.5 text-xs text-zinc-700 dark:text-zinc-300">
-                {selectedFiles.map((item, idx) => (
-                  <li key={idx} className="flex items-center gap-2 p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800">
-                    <span>📎</span>
-                    <span className="font-semibold truncate">{item.file.name}</span>
-                    {item.caption && <span className="text-zinc-500 italic">(&quot;{item.caption}&quot;)</span>}
-                  </li>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name} — {cat.description || "Civic Hazard"}
+                  </option>
                 ))}
-              </ul>
-            </div>
-          )}
-
-          {uploadStatus && (
-            <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-900 text-xs font-semibold text-emerald-800 dark:text-emerald-200 animate-pulse">
-              {uploadStatus}
-            </div>
-          )}
-
-          <div className="pt-6 border-t border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={() => setIsReviewMode(false)}
-              disabled={submitting}
-              className="w-full sm:w-auto rounded-lg border border-zinc-300 dark:border-zinc-700 px-4 py-2.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
-            >
-              ← Edit Details
-            </button>
-
-            <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
-              <button
-                type="button"
-                onClick={() => handleSaveReport("DRAFT")}
-                disabled={submitting}
-                className="w-full sm:w-auto rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-5 py-2.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition"
-              >
-                {submitting ? "Saving..." : "Save Draft"}
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSaveReport("SUBMITTED")}
-                disabled={submitting}
-                className="w-full sm:w-auto rounded-lg bg-emerald-600 px-6 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-500 transition"
-              >
-                {submitting ? "Submitting..." : "Submit for Moderation"}
-              </button>
-            </div>
+              </select>
+            )}
           </div>
-        </div>
-      ) : (
-        /* Form Edit Mode */
-        <form
-          onSubmit={handleProceedToReview}
-          className="space-y-6 bg-white dark:bg-zinc-900 p-6 sm:p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm"
-        >
+
           {/* Title */}
-          <div>
-            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-              Report Title <span className="text-red-500">*</span>
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-zinc-900 dark:text-zinc-100">
+              Incident Title <span className="text-red-500">*</span>
             </label>
             <input
               name="title"
@@ -326,34 +256,32 @@ export default function CreateReportPage() {
               required
               value={formData.title}
               onChange={handleChange}
-              placeholder="e.g. Broken water pipeline flooding road"
-              className="mt-1 block w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              placeholder="e.g. Broken water pipeline causing severe flooding near Mirpur 10"
+              className="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3.5 py-2.5 text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:border-emerald-700 focus:outline-none focus:ring-1 focus:ring-emerald-700"
             />
           </div>
 
-          {/* Category & Location */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                Incident Category <span className="text-red-500">*</span>
-              </label>
-              <select
-                name="categoryId"
-                value={formData.categoryId}
-                onChange={handleChange}
-                className="mt-1 block w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-              >
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+          {/* Description */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-zinc-900 dark:text-zinc-100">
+              Detailed Description <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              name="description"
+              required
+              rows={4}
+              value={formData.description}
+              onChange={handleChange}
+              placeholder="Describe what happened, exact landmarks, severity of risk, and how long the issue has persisted..."
+              className="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3.5 py-2.5 text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:border-emerald-700 focus:outline-none focus:ring-1 focus:ring-emerald-700 leading-relaxed"
+            />
+          </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                Location Text <span className="text-red-500">*</span>
+          {/* Location & Incident Date */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                Location / Landmark <span className="text-red-500">*</span>
               </label>
               <input
                 name="locationText"
@@ -361,125 +289,163 @@ export default function CreateReportPage() {
                 required
                 value={formData.locationText}
                 onChange={handleChange}
-                placeholder="e.g. Dhanmondi 27, Dhaka"
-                className="mt-1 block w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                placeholder="e.g. Road 27, Dhanmondi, Dhaka"
+                className="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3.5 py-2.5 text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:border-emerald-700 focus:outline-none focus:ring-1 focus:ring-emerald-700"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                Date & Time of Incident (Optional)
+              </label>
+              <input
+                name="incidentDate"
+                type="datetime-local"
+                value={formData.incidentDate}
+                onChange={handleChange}
+                className="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3.5 py-2 text-xs text-zinc-900 dark:text-zinc-100 focus:border-emerald-700 focus:outline-none focus:ring-1 focus:ring-emerald-700"
               />
             </div>
           </div>
 
-          {/* Incident Date */}
-          <div>
-            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-              Date and Time of Occurrence (Optional)
-            </label>
+          {/* Evidence File Uploader */}
+          <div className="space-y-2 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/50 p-4">
+            <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+              Photographic / Document Evidence
+            </h3>
+            <p className="text-[11px] text-zinc-500 leading-relaxed">
+              Upload clear images or documents (JPEG, PNG, WebP, PDF, max 10MB). Photos increase verification speed by 80%.
+            </p>
+            <EvidenceUploader
+              onFilesChange={setSelectedFiles}
+            />
+          </div>
+
+          {/* Anonymous Reporting Checkbox */}
+          <div className="rounded-2xl border border-purple-200/80 dark:border-purple-900/60 bg-purple-50/50 dark:bg-purple-950/20 p-4 flex items-start gap-3">
             <input
-              name="incidentDate"
-              type="datetime-local"
-              value={formData.incidentDate}
+              type="checkbox"
+              id="isAnonymous"
+              name="isAnonymous"
+              checked={formData.isAnonymous}
               onChange={handleChange}
-              className="mt-1 block w-full sm:w-1/2 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-purple-600 focus:ring-purple-500"
             />
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-              Detailed Description <span className="text-red-500">*</span>
+            <label htmlFor="isAnonymous" className="text-xs text-zinc-700 dark:text-zinc-300 cursor-pointer">
+              <span className="font-bold text-purple-900 dark:text-purple-300 block">
+                🛡️ Submit as Anonymous Citizen
+              </span>
+              Your username and identity will be shielded completely from the public feed. Only platform compliance records will note your account securely.
             </label>
-            <textarea
-              name="description"
-              rows={6}
-              required
-              value={formData.description}
-              onChange={handleChange}
-              placeholder="Provide a factual, comprehensive description of what occurred, key individuals involved (if known), and public impact..."
-              className="mt-1 block w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-            />
           </div>
 
-          {/* Evidence Attachments Uploader */}
-          <div>
-            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
-              Supporting Evidence Attachments (Optional)
-            </label>
-            <EvidenceUploader onFilesChange={(files) => setSelectedFiles(files)} />
-          </div>
-
-          {/* Privacy & Identity Selector */}
-          <div className="space-y-3 pt-2">
-            <label className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-              Reporter Identity Preference
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <label
-                className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition ${
-                  !formData.isAnonymous
-                    ? "border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20"
-                    : "border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="privacyMode"
-                  checked={!formData.isAnonymous}
-                  onChange={() => setFormData((prev) => ({ ...prev, isAnonymous: false }))}
-                  className="mt-1 text-emerald-600 focus:ring-emerald-500"
-                />
-                <div>
-                  <span className="block text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                    Publish with My Identity
-                  </span>
-                  <span className="block text-[11px] text-zinc-500 mt-0.5">
-                    Your name will be visible to the public once the report is approved.
-                  </span>
-                </div>
-              </label>
-
-              <label
-                className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition ${
-                  formData.isAnonymous
-                    ? "border-purple-500 bg-purple-50/40 dark:bg-purple-950/20"
-                    : "border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="privacyMode"
-                  checked={formData.isAnonymous}
-                  onChange={() => setFormData((prev) => ({ ...prev, isAnonymous: true }))}
-                  className="mt-1 text-purple-600 focus:ring-purple-500"
-                />
-                <div>
-                  <span className="block text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                    Submit Anonymously
-                  </span>
-                  <span className="block text-[11px] text-zinc-500 mt-0.5">
-                    Your identity remains confidential from the public. Only authorized moderators see audit metadata.
-                  </span>
-                </div>
-              </label>
-            </div>
-          </div>
-
-          {/* Form Actions */}
-          <div className="pt-6 border-t border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-end gap-3">
-            <button
-              type="button"
-              onClick={() => handleSaveReport("DRAFT")}
-              disabled={submitting}
-              className="w-full sm:w-auto rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-5 py-2.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition"
-            >
-              Save as Draft
-            </button>
+          <div className="flex items-center justify-end gap-3 pt-2">
             <button
               type="submit"
-              disabled={submitting}
-              className="w-full sm:w-auto rounded-lg bg-emerald-600 px-6 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-500 transition"
+              className="w-full sm:w-auto rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white px-6 py-2.5 text-xs font-bold shadow-md transition active:scale-98"
             >
-              Review and Submit →
+              Continue to Review →
             </button>
           </div>
         </form>
+      ) : (
+        /* Step 2: Review Screen */
+        <div className="space-y-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 sm:p-8 shadow-sm">
+          <div className="border-b border-zinc-100 dark:border-zinc-800 pb-4">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+              Review Before Submission
+            </span>
+            <h2 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-zinc-100 mt-1">
+              {formData.title}
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+            <div>
+              <span className="text-zinc-400 block font-medium">Category</span>
+              <span className="font-bold text-zinc-900 dark:text-zinc-100">
+                {selectedCategoryObj?.name || "Civic Incident"}
+              </span>
+            </div>
+
+            <div>
+              <span className="text-zinc-400 block font-medium">Location</span>
+              <span className="font-bold text-zinc-900 dark:text-zinc-100">
+                📍 {formData.locationText}
+              </span>
+            </div>
+
+            <div>
+              <span className="text-zinc-400 block font-medium">Date & Time</span>
+              <span className="font-bold text-zinc-900 dark:text-zinc-100">
+                {formData.incidentDate
+                  ? new Date(formData.incidentDate).toLocaleString()
+                  : "Not specified (Recent)"}
+              </span>
+            </div>
+
+            <div>
+              <span className="text-zinc-400 block font-medium">Identity Mode</span>
+              <span className="font-bold text-zinc-900 dark:text-zinc-100">
+                {formData.isAnonymous ? "🛡️ Anonymous Citizen" : `👤 ${user?.username}`}
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <span className="text-xs text-zinc-400 block font-medium mb-1">Description</span>
+            <p className="text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed bg-zinc-50 dark:bg-zinc-800/60 p-3.5 rounded-xl border border-zinc-100 dark:border-zinc-800 whitespace-pre-wrap">
+              {formData.description}
+            </p>
+          </div>
+
+          {selectedFiles.length > 0 && (
+            <div>
+              <span className="text-xs text-zinc-400 block font-medium mb-2">
+                Attached Evidence ({selectedFiles.length} file{selectedFiles.length > 1 ? "s" : ""})
+              </span>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {selectedFiles.map((f, i) => (
+                  <div
+                    key={i}
+                    className="p-2 rounded-xl bg-zinc-50 dark:bg-zinc-800 text-[11px] truncate border border-zinc-200 dark:border-zinc-700"
+                  >
+                    📎 {f.file.name}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {submitting && uploadStatus && (
+            <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/40 p-3.5 border border-emerald-200 dark:border-emerald-900 flex items-center gap-3">
+              <div className="h-4 w-4 rounded-full border-2 border-emerald-700 border-t-transparent animate-spin shrink-0" />
+              <p className="text-xs font-bold text-emerald-800 dark:text-emerald-300">
+                {uploadStatus}
+              </p>
+            </div>
+          )}
+
+          <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 pt-4 border-t border-zinc-100 dark:border-zinc-800">
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={() => setIsReviewMode(false)}
+              className="w-full sm:w-auto rounded-xl border border-zinc-200 dark:border-zinc-700 px-5 py-2.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition"
+            >
+              ← Edit Details
+            </button>
+
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={handleFinalSubmit}
+              className="w-full sm:w-auto rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white px-7 py-2.5 text-xs font-bold shadow-md shadow-emerald-800/20 disabled:opacity-50 transition active:scale-98"
+            >
+              {submitting ? "Submitting..." : "Submit Incident Report ✓"}
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
