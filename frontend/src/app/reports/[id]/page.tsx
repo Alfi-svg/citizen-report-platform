@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
-import { Report, Category, ReportStatus, ReportMedia } from "@/lib/types";
+import { Report, Category, ReportStatus, ReportMedia, PublicReport } from "@/lib/types";
 import EvidenceGallery from "@/components/EvidenceGallery";
 import EvidenceUploader from "@/components/EvidenceUploader";
 
@@ -32,7 +32,7 @@ const STATUS_BADGES: Record<
     dot: "bg-amber-500",
   },
   APPROVED: {
-    label: "Approved & Published",
+    label: "Approved & Platform Verified",
     bg: "bg-emerald-100 dark:bg-emerald-950",
     text: "text-emerald-700 dark:text-emerald-300",
     dot: "bg-emerald-500",
@@ -59,11 +59,11 @@ const STATUS_BADGES: Record<
 
 export default function ReportDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const reportId = params?.id as string;
   const { isAuthenticated, isLoading: authLoading } = useAuth();
 
   const [report, setReport] = useState<Report | null>(null);
+  const [publicReport, setPublicReport] = useState<PublicReport | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -83,14 +83,11 @@ export default function ReportDetailPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push("/login");
-    }
-  }, [authLoading, isAuthenticated, router]);
-
-  useEffect(() => {
     let isMounted = true;
-    if (isAuthenticated && reportId) {
+    if (!reportId) return;
+
+    // 1. If authenticated, attempt to fetch user/owner report
+    if (isAuthenticated) {
       Promise.all([
         apiFetch<Report>(`/reports/${reportId}`),
         apiFetch<Category[]>("/categories"),
@@ -109,15 +106,42 @@ export default function ReportDetailPage() {
                 : "",
               isAnonymous: reportData.is_anonymous,
             });
+            setLoading(false);
           }
         })
-        .catch((err) => {
-          if (isMounted) setError(err.message);
+        .catch(() => {
+          // If not owner/admin (403), fallback to public report endpoint
+          apiFetch<PublicReport>(`/public/reports/${reportId}`)
+            .then((pubData) => {
+              if (isMounted) {
+                setPublicReport(pubData);
+                setLoading(false);
+              }
+            })
+            .catch((pubErr) => {
+              if (isMounted) {
+                setError(pubErr.message);
+                setLoading(false);
+              }
+            });
+        });
+    } else {
+      // 2. Unauthenticated visitor -> fetch from public endpoint
+      apiFetch<PublicReport>(`/public/reports/${reportId}`)
+        .then((pubData) => {
+          if (isMounted) {
+            setPublicReport(pubData);
+            setLoading(false);
+          }
         })
-        .finally(() => {
-          if (isMounted) setLoading(false);
+        .catch((pubErr) => {
+          if (isMounted) {
+            setError(pubErr.message);
+            setLoading(false);
+          }
         });
     }
+
     return () => {
       isMounted = false;
     };
@@ -219,26 +243,118 @@ export default function ReportDetailPage() {
     );
   }
 
-  if (error || !report) {
+  if (error || (!report && !publicReport)) {
     return (
       <div className="mx-auto max-w-xl px-4 py-16 text-center">
         <div className="rounded-2xl border border-red-200 bg-red-50 p-8 dark:border-red-900 dark:bg-red-950/40">
-          <h2 className="text-lg font-bold text-red-900 dark:text-red-200">Report Unavailable</h2>
+          <h2 className="text-lg font-bold text-red-900 dark:text-red-200">Incident Report Unavailable</h2>
           <p className="mt-2 text-sm text-red-700 dark:text-red-300">
-            {error || "Report not found or you do not have permission to access it."}
+            {error || "This report was not found or has not been approved for public release."}
           </p>
-          <div className="mt-6">
+          <div className="mt-6 flex items-center justify-center gap-3">
             <Link
-              href="/reports/mine"
-              className="inline-flex rounded-lg bg-zinc-900 px-4 py-2 text-xs font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900"
+              href="/"
+              className="inline-flex rounded-xl bg-zinc-900 px-4 py-2 text-xs font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900"
             >
-              Back to My Reports
+              ← Return to Public News Feed
             </Link>
           </div>
         </div>
       </div>
     );
   }
+
+  // =========================================================================
+  // PUBLIC REPORT ARTICLE VIEW (When viewing as public citizen / visitor)
+  // =========================================================================
+  if (publicReport && !report) {
+    return (
+      <article className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
+        <div className="flex items-center justify-between">
+          <Link
+            href="/"
+            className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline inline-flex items-center gap-1"
+          >
+            ← Back to Public News Feed
+          </Link>
+        </div>
+
+        <div className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 sm:p-10 shadow-sm space-y-6">
+          {/* Badges Header */}
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100 dark:border-zinc-800 pb-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                {publicReport.category?.name || "Civic Incident"}
+              </span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold uppercase bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
+                <span className="h-2 w-2 rounded-full bg-blue-600" />
+                {publicReport.review_status}
+              </span>
+            </div>
+            <span className="text-xs text-zinc-400">
+              Published on {new Date(publicReport.created_at).toLocaleDateString()}
+            </span>
+          </div>
+
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-900 dark:text-zinc-100 leading-tight">
+            {publicReport.title}
+          </h1>
+
+          {/* Incident Metadata Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/60 dark:border-zinc-700/60 text-xs">
+            <div>
+              <span className="text-zinc-500 block">Incident Location:</span>
+              <span className="font-semibold text-zinc-800 dark:text-zinc-200 text-sm mt-0.5 block">
+                📍 {publicReport.location_text}
+              </span>
+            </div>
+            <div>
+              <span className="text-zinc-500 block">Incident Date / Time:</span>
+              <span className="font-semibold text-zinc-800 dark:text-zinc-200 text-sm mt-0.5 block">
+                🕒 {publicReport.incident_date ? new Date(publicReport.incident_date).toLocaleString() : "Not specified"}
+              </span>
+            </div>
+            <div>
+              <span className="text-zinc-500 block">Reporter Attribution:</span>
+              <span className="font-semibold text-zinc-800 dark:text-zinc-200 text-sm mt-0.5 block">
+                {publicReport.is_anonymous ? "🛡️ Anonymous Citizen" : `👤 ${publicReport.reporter_display_name || "Citizen"}`}
+              </span>
+            </div>
+          </div>
+
+          {/* Description Section */}
+          <div className="space-y-2">
+            <h2 className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
+              Verified Incident Description
+            </h2>
+            <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm leading-relaxed text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap">
+              {publicReport.description}
+            </div>
+          </div>
+
+          {/* Evidence Attachments */}
+          {publicReport.media && publicReport.media.length > 0 && (
+            <div className="space-y-3 pt-2">
+              <h2 className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
+                Attached Supporting Evidence ({publicReport.media.length})
+              </h2>
+              <EvidenceGallery media={publicReport.media as ReportMedia[]} canDelete={false} />
+            </div>
+          )}
+
+          {/* Verification Disclaimer */}
+          <div className="rounded-2xl border border-blue-200 bg-blue-50/50 dark:border-blue-900 dark:bg-blue-950/20 p-4 text-xs text-blue-800 dark:text-blue-300 leading-relaxed">
+            ℹ️ <strong>Platform Verification Notice:</strong> This report has undergone administrative moderation and review according to platform civic guidelines. It is published for public transparency and community awareness.
+          </div>
+        </div>
+      </article>
+    );
+  }
+
+  // =========================================================================
+  // OWNER / CITIZEN REPORT MANAGEMENT VIEW
+  // =========================================================================
+  if (!report) return null;
 
   const badge = STATUS_BADGES[report.status] || STATUS_BADGES.DRAFT;
   const canEdit = report.status === "DRAFT" || report.status === "NEEDS_MORE_INFORMATION";

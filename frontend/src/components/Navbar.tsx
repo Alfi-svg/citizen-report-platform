@@ -20,6 +20,12 @@ export default function Navbar() {
         </div>
 
         <nav className="flex items-center gap-3 sm:gap-4">
+          <Link
+            href="/"
+            className="text-sm font-medium text-zinc-700 hover:text-emerald-600 dark:text-zinc-300 dark:hover:text-emerald-400"
+          >
+            Public Feed
+          </Link>
           {isLoading ? (
             <div className="h-8 w-20 animate-pulse rounded bg-zinc-200 dark:bg-zinc-800" />
           ) : isAuthenticated && user ? (

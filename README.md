@@ -1,23 +1,42 @@
 # Bangladesh Citizen Report Platform
 
-> **Current Stage:** `STEP 5 — Evidence Upload & Cloud Object Storage`
+> **Current Stage:** `STEP 6 — Public News Feed & Approved Reports`
 
 ---
 
 ## 1. Project Overview
 
-The **Bangladesh Citizen Report Platform** is a secure, production-grade citizen reporting system designed to empower citizens to submit community incident reports accompanied by multimedia supporting evidence (photos, videos, documents). Reports undergo administrative moderation and verification before public publication.
+The **Bangladesh Citizen Report Platform** is a secure, production-grade citizen reporting system designed to empower citizens to submit community incident reports accompanied by multimedia supporting evidence (photos, videos, documents). Reports undergo administrative moderation and verification before publication to the public news feed.
 
 ### Core Architectural Principles
-- **Privacy by Design:** Supports anonymous reporting where reporter identity is protected from the public view while retaining internal links for moderation and abuse prevention.
+- **Strict Public Visibility Policy:** Public feeds and APIs display **ONLY** reports in `APPROVED` status. Unapproved reports (`DRAFT`, `SUBMITTED`, `UNDER_REVIEW`, `NEEDS_MORE_INFORMATION`, `REJECTED`, `ARCHIVED`) return `404 Not Found` across all public endpoints to prevent information leakage.
+- **Privacy by Design:** Supports anonymous reporting where reporter identity is protected on public interfaces while retaining internal links for moderation and abuse prevention.
 - **Secure Authentication & RBAC:** JWT Bearer tokens with bcrypt password hashing and backend-enforced Role-Based Access Control (`USER`, `ADMIN`, `MODERATOR`).
 - **Cloud-Compatible Object Storage:** PostgreSQL stores **only file metadata**; all binary evidence files reside in dedicated object storage via a provider-agnostic abstraction layer.
 - **Multi-Stage Moderation Lifecycle:** Workflow transitions (`DRAFT` → `SUBMITTED` → `UNDER_REVIEW` → `APPROVED` / `REJECTED` / `NEEDS_MORE_INFORMATION`).
-- **Audit & Evidence Security:** Non-executable file storage, magic byte verification, MIME whitelisting, size limits, and authorized tokenized streaming.
+- **Public News Feed & Discovery:** Real-time search, category filtering, location filtering, and verified trending evidence ranking.
 
 ---
 
-## 2. Storage Architecture & Evidence Pipeline (Step 5)
+## 2. Public API Architecture (Step 6)
+
+All public endpoints are grouped under `/api/v1/public/` and require no authentication credentials.
+
+| Method | Endpoint | Query Parameters | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/v1/public/reports` | `sort`, `category_id`, `location`, `q`, `limit`, `offset` | Paginated feed of `APPROVED` reports with keyword search, location filtering, and category chips |
+| `GET` | `/api/v1/public/reports/{id}` | — | Detailed public report article view (strictly enforces `status = APPROVED`) |
+| `GET` | `/api/v1/public/categories` | — | Active categories with verified report counters |
+| `GET` | `/api/v1/public/reports/{id}/media/{media_id}` | — | Public streaming of evidence files attached to an `APPROVED` report |
+
+### Strict Public Visibility Rule
+Database queries across all public endpoints apply an unconditional `Report.status == ReportStatus.APPROVED` filter:
+- If an unapproved report ID (`DRAFT`, `SUBMITTED`, `REJECTED`, etc.) is requested publicly, the API returns `404 Not Found` rather than `403 Forbidden`, preventing discovery of unapproved submissions.
+- Anonymous reports have reporter identity sanitized (`reporter_display_name = "Anonymous Citizen"`). User emails, passwords, and private moderation notes are never serialized.
+
+---
+
+## 3. Storage Architecture & Evidence Pipeline (Step 5)
 
 ```
 [Citizen / Client]
@@ -49,32 +68,10 @@ The **Bangladesh Citizen Report Platform** is a secure, production-grade citizen
 +------------------------------+ +----------------------------+
 ```
 
-### Storage Providers & Abstraction
-The system utilizes `BaseStorageService` with pluggable implementations:
-- **`LocalStorageService` (Default for local development & sandboxed environments):** Secure local filesystem storage rooted in `data/storage` with strict path traversal prevention.
-- **`S3StorageService` (Production / Cloud):** S3-compatible client for AWS S3, Cloudflare R2, MinIO, or Supabase Storage.
-
-### Supported Evidence Formats & Size Limits
-| Category | Allowed Formats / Extensions | MIME Types | Max Size |
-| :--- | :--- | :--- | :--- |
-| **Photos** | `.jpg`, `.jpeg`, `.png`, `.webp` | `image/jpeg`, `image/png`, `image/webp` | **10 MB** |
-| **Videos** | `.mp4`, `.webm`, `.mov` | `video/mp4`, `video/webm`, `video/quicktime` | **50 MB** |
-| **Documents** | `.pdf`, `.txt`, `.docx` | `application/pdf`, `text/plain`, `.docx` | **20 MB** |
-
-*Note: Executable scripts (`.exe`, `.sh`, `.bat`, `.cmd`, `.js`, `.py`, `.bin`, `.html`) are strictly rejected.*
-
 ---
 
-## 3. API Endpoints
+## 4. Administrative Moderation Endpoints (`role = ADMIN` Required)
 
-### Evidence & Storage Endpoints
-| Method | Path | Access | Description |
-| :--- | :--- | :--- | :--- |
-| `POST` | `/api/v1/reports/{id}/media` | Owner / Admin | Uploads and attaches evidence file (enforces editable status) |
-| `GET` | `/api/v1/reports/{id}/media/{media_id}` | Owner / Admin | Streams evidence file securely |
-| `DELETE` | `/api/v1/reports/{id}/media/{media_id}` | Owner / Admin | Deletes evidence file from storage and database |
-
-### Administrative Endpoints (`role = ADMIN` Required)
 | Method | Path | Description |
 | :--- | :--- | :--- |
 | `GET` | `/api/v1/admin/dashboard` | Aggregated platform and moderation statistics from real DB data |
@@ -85,7 +82,10 @@ The system utilizes `BaseStorageService` with pluggable implementations:
 | `POST` | `/api/v1/admin/reports/{id}/reject` | Transitions report status to `REJECTED` |
 | `POST` | `/api/v1/admin/reports/{id}/request-information` | Transitions report status to `NEEDS_MORE_INFORMATION` |
 
-### Citizen Report Endpoints
+---
+
+## 5. Citizen Report Endpoints
+
 | Method | Path | Access | Description |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/v1/categories` | Public / Auth | Lists active incident categories |
@@ -94,91 +94,43 @@ The system utilizes `BaseStorageService` with pluggable implementations:
 | `GET` | `/api/v1/reports/{id}` | Owner / Admin | Gets report details, media evidence, and moderator feedback |
 | `PATCH` | `/api/v1/reports/{id}` | Owner / Admin | Updates editable report (`DRAFT` / `NEEDS_MORE_INFORMATION`) |
 | `POST` | `/api/v1/reports/{id}/submit` | Owner / Admin | Submits report for moderation |
-
-### Authentication Endpoints
-| Method | Path | Access | Description |
-| :--- | :--- | :--- | :--- |
-| `POST` | `/api/v1/auth/register` | Public | Registers a new citizen account (`USER` role) |
-| `POST` | `/api/v1/auth/login` | Public | Authenticates credentials and returns JWT token |
-| `POST` | `/api/v1/auth/logout` | Authenticated | Invalidates client session |
-| `GET` | `/api/v1/auth/me` | Authenticated | Returns current authenticated user profile |
-| `GET` | `/api/v1/auth/admin-check` | Admin (`ADMIN`) | Backend-enforced administrative check |
+| `POST` | `/api/v1/reports/{id}/media` | Owner / Admin | Uploads and attaches evidence file |
+| `DELETE` | `/api/v1/reports/{id}/media/{media_id}` | Owner / Admin | Deletes evidence file from storage and database |
 
 ---
 
-## 4. Frontend Pages & Components
+## 6. Frontend Pages & Components
 
-- **Home Page (`/`):** Platform landing page with dynamic authentication state and quick links.
-- **Create Report (`/reports/create`):**
-  - Integrated `EvidenceUploader` component supporting multi-file selection, client-side type/size validation, captions, and upload progress.
-  - Interactive two-step Review & Confirmation screen displaying attached evidence.
-- **My Reports (`/reports/mine`):** Citizen report tracker with status badges and filter tabs.
-- **Report Detail (`/reports/[id]`):**
-  - `EvidenceGallery` displaying photo previews, video players, and document links.
-  - Inline evidence uploader and live deletion in `DRAFT` and `NEEDS_MORE_INFORMATION` modes.
-- **Admin Console (`/admin`):** Real-time incident counts and pending submission queues.
-- **Admin Moderation Console (`/admin/reports/[id]`):**
-  - Moderation decision controls (Review, Approve, Reject, Request More Info).
-  - Full evidence inspection panel for photos, videos, and documents.
+- **Home / News Feed (`/`):** Public citizen news feed featuring hero search, location filter, category pills, "Latest Reviewed" vs "Trending Evidence" sort modes, and responsive report cards.
+- **Public Report Article (`/reports/[id]`):** Editorial incident view displaying verified details, photo previews, video players, and moderation trust disclaimers.
+- **Create Report (`/reports/create`):** Multi-step form with evidence attachments and anonymous whistleblower toggle.
+- **My Reports (`/reports/mine`):** Personal report tracker with status badges and feedback display.
+- **Admin Console (`/admin` & `/admin/reports` & `/admin/reports/[id]`):** Operational dashboard and decision controls.
 
 ---
 
-## 5. Local Setup & Commands
+## 7. Local Setup & Verification Commands
 
-### Database Setup (PostgreSQL)
-
-1. Start your local PostgreSQL server:
-   ```bash
-   brew services start postgresql@16
-   ```
-2. Create the platform database:
-   ```bash
-   createdb citizen_report_db
-   ```
-3. Run Alembic migrations:
-   ```bash
-   cd backend
-   source .venv/bin/activate
-   alembic upgrade head
-   ```
-4. Seed initial incident categories:
-   ```bash
-   python -m app.db.seed
-   ```
-5. Bootstrap development administrator:
-   ```bash
-   python -m app.db.create_admin --email admin@citizenreport.gov.bd --username admin --password "Admin@Secure2026!"
-   ```
-
----
-
-### Running the Backend
-
-```bash
-cd backend
-source .venv/bin/activate
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-- **Interactive API Documentation:** [http://localhost:8000/api/v1/docs](http://localhost:8000/api/v1/docs)
-- **Health Check Endpoint:** [http://localhost:8000/api/v1/health](http://localhost:8000/api/v1/health)
-
----
-
-### Running Backend Tests
-
+### Backend Tests
 ```bash
 cd backend
 source .venv/bin/activate
 pytest -v
 ```
 
----
-
-### Running Frontend
-
+### Frontend Build & Lint
 ```bash
 cd frontend
-npm run dev
+npm run type-check
+npm run lint
+npm run build
 ```
-Access the application at [http://localhost:3000](http://localhost:3000).
+
+### Starting the Services
+```bash
+# Backend (Port 8000)
+cd backend && source .venv/bin/activate && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# Frontend (Port 3000)
+cd frontend && npm run dev
+```

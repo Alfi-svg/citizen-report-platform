@@ -45,6 +45,14 @@ export interface Category {
   updated_at: string;
 }
 
+export interface PublicCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  approved_reports_count: number;
+}
+
 export interface ReportMedia {
   id: string;
   report_id: string;
@@ -56,6 +64,16 @@ export interface ReportMedia {
   media_type: "image" | "video" | "document";
   download_url: string;
   created_at: string;
+}
+
+export interface PublicMedia {
+  id: string;
+  file_name: string;
+  mime_type: string;
+  file_size: number;
+  caption: string | null;
+  media_type: "image" | "video" | "document";
+  download_url: string;
 }
 
 export interface ModerationRecord {
@@ -88,6 +106,33 @@ export interface Report {
   user?: User | null;
   media?: ReportMedia[];
   moderation_records?: ModerationRecord[];
+}
+
+export interface PublicReport {
+  id: string;
+  category_id: string;
+  category?: Category | null;
+  title: string;
+  description: string;
+  location_text: string;
+  latitude: number | null;
+  longitude: number | null;
+  incident_date: string | null;
+  submitted_at: string | null;
+  created_at: string;
+  is_anonymous: boolean;
+  reporter_display_name?: string | null;
+  media: PublicMedia[];
+  media_count: number;
+  has_evidence: boolean;
+  review_status: string;
+}
+
+export interface PublicReportPagination {
+  items: PublicReport[];
+  total: number;
+  limit: number;
+  offset: number;
 }
 
 export interface ReportCreatePayload {
