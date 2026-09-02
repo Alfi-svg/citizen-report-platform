@@ -327,3 +327,190 @@ async def test_internal_notes_privacy_from_normal_users(
     assert user_data["moderation_records"][0]["user_message"] == "Please clarify your location."
     assert "internal_notes" not in user_data["moderation_records"][0]
     assert "TOP_SECRET_MODERATOR_INTERNAL_INVESTIGATION_NOTE_12345" not in str(user_data)
+
+
+@pytest.mark.asyncio
+async def test_admin_user_management_and_safeguards(
+    async_client: AsyncClient,
+    admin_user: User,
+    regular_user: User,
+    db_session: AsyncSession,
+):
+    admin_token = create_access_token(subject=admin_user.id, role=admin_user.role.value)
+    user_token = create_access_token(subject=regular_user.id, role=regular_user.role.value)
+
+    # 1. Normal user blocked from listing users
+    res_block = await async_client.get(
+        "/api/v1/admin/users",
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert res_block.status_code == 403
+
+    # 2. Admin lists users with search & filters
+    res_list = await async_client.get(
+        "/api/v1/admin/users?search=citizen_tester",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert res_list.status_code == 200
+    data = res_list.json()
+    assert data["total"] == 1
+    assert data["items"][0]["username"] == "citizen_tester"
+
+    # 3. Admin cannot change their own role (self-demotion protection)
+    res_self = await async_client.patch(
+        f"/api/v1/admin/users/{admin_user.id}/role",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={"role": "USER"},
+    )
+    assert res_self.status_code == 400
+    assert "cannot modify their own role" in res_self.json()["detail"]
+
+    # 4. Admin promotes regular user to ADMIN
+    res_promote = await async_client.patch(
+        f"/api/v1/admin/users/{regular_user.id}/role",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={"role": "ADMIN"},
+    )
+    assert res_promote.status_code == 200
+    assert res_promote.json()["role"] == "ADMIN"
+
+    # 5. Admin deactivates and reactivates user
+    res_deact = await async_client.patch(
+        f"/api/v1/admin/users/{regular_user.id}/status",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={"is_active": False},
+    )
+    assert res_deact.status_code == 200
+    assert res_deact.json()["is_active"] is False
+
+    res_act = await async_client.patch(
+        f"/api/v1/admin/users/{regular_user.id}/status",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={"is_active": True},
+    )
+    assert res_act.status_code == 200
+    assert res_act.json()["is_active"] is True
+
+
+@pytest.mark.asyncio
+async def test_admin_category_management_lifecycle(
+    async_client: AsyncClient,
+    admin_user: User,
+    regular_user: User,
+    sample_category: Category,
+    db_session: AsyncSession,
+):
+    admin_token = create_access_token(subject=admin_user.id, role=admin_user.role.value)
+    user_token = create_access_token(subject=regular_user.id, role=regular_user.role.value)
+
+    # 1. Normal user cannot create category
+    res_c_block = await async_client.post(
+        "/api/v1/admin/categories",
+        headers={"Authorization": f"Bearer {user_token}"},
+        json={"name": "Illegal Logging", "slug": "illegal-logging"},
+    )
+    assert res_c_block.status_code == 403
+
+    # 2. Admin creates category
+    res_create = await async_client.post(
+        "/api/v1/admin/categories",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={
+            "name": "Illegal Logging",
+            "slug": f"illegal-logging-{uuid.uuid4().hex[:6]}",
+            "description": "Deforestation and illegal timber harvesting.",
+            "is_active": True,
+        },
+    )
+    assert res_create.status_code == 201
+    cat_id = res_create.json()["id"]
+
+    # 3. Admin lists all categories
+    res_list = await async_client.get(
+        "/api/v1/admin/categories",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert res_list.status_code == 200
+    assert any(c["id"] == cat_id for c in res_list.json())
+
+    # 4. Admin updates category
+    res_update = await async_client.patch(
+        f"/api/v1/admin/categories/{cat_id}",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={"name": "Forestry & Logging Violations"},
+    )
+    assert res_update.status_code == 200
+    assert res_update.json()["name"] == "Forestry & Logging Violations"
+
+    # 5. Delete category with 0 reports -> deleted cleanly
+    res_del = await async_client.delete(
+        f"/api/v1/admin/categories/{cat_id}",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert res_del.status_code == 200
+
+    # 6. Delete category referenced by reports -> soft-deactivated safely
+    report = Report(
+        user_id=regular_user.id,
+        category_id=sample_category.id,
+        title="Active Report in Category",
+        description="Testing safe soft deactivation.",
+        location_text="Sylhet",
+        status=ReportStatus.APPROVED,
+    )
+    db_session.add(report)
+    await db_session.commit()
+
+    res_soft_del = await async_client.delete(
+        f"/api/v1/admin/categories/{sample_category.id}",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert res_soft_del.status_code == 200
+    assert "safely deactivated" in res_soft_del.json()["message"]
+
+    # Verify category still exists in database but has is_active = False
+    await db_session.refresh(sample_category)
+    assert sample_category.is_active is False
+
+
+@pytest.mark.asyncio
+async def test_admin_report_archive_and_history(
+    async_client: AsyncClient,
+    admin_user: User,
+    regular_user: User,
+    sample_category: Category,
+    db_session: AsyncSession,
+):
+    admin_token = create_access_token(subject=admin_user.id, role=admin_user.role.value)
+    user_token = create_access_token(subject=regular_user.id, role=regular_user.role.value)
+
+    report = Report(
+        user_id=regular_user.id,
+        category_id=sample_category.id,
+        title="Resolved Bridge Defect",
+        description="Bridge repairs completed.",
+        location_text="Khulna",
+        status=ReportStatus.APPROVED,
+    )
+    db_session.add(report)
+    await db_session.commit()
+    await db_session.refresh(report)
+
+    # 1. Admin archives report
+    res_arch = await async_client.post(
+        f"/api/v1/admin/reports/{report.id}/archive",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={"user_message": "Incident resolution verified on-site."},
+    )
+    assert res_arch.status_code == 200
+    assert res_arch.json()["status"] == "ARCHIVED"
+
+    # 2. Admin retrieves moderation history
+    res_hist = await async_client.get(
+        f"/api/v1/admin/reports/{report.id}/history",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert res_hist.status_code == 200
+    records = res_hist.json()
+    assert len(records) >= 1
+    assert records[0]["action"] == "ARCHIVED"

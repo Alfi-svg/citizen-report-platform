@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel, EmailStr, ConfigDict
 from app.models.user import UserRole
 
@@ -32,3 +32,29 @@ class UserResponse(UserBase):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class AdminUserResponse(UserBase):
+    id: uuid.UUID
+    is_active: bool
+    is_verified: bool
+    created_at: datetime
+    updated_at: datetime
+    report_count: int = 0
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AdminUserPagination(BaseModel):
+    items: List[AdminUserResponse]
+    total: int
+    limit: int
+    offset: int
+
+
+class AdminUserRoleUpdate(BaseModel):
+    role: UserRole
+
+
+class AdminUserStatusUpdate(BaseModel):
+    is_active: bool

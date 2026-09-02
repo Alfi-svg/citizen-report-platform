@@ -1,7 +1,8 @@
+import re
 import uuid
-from typing import Any, Optional
+from typing import Any, Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, func, and_, or_, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_current_active_admin
 from app.db.session import get_db
@@ -9,20 +10,38 @@ from app.models.notification import NotificationType
 from app.models.moderation import ModerationRecord, ModerationAction
 from app.models.report import Report, ReportStatus
 from app.models.comment import Comment, CommentStatus
-from app.models.user import User
+from app.models.flag import ContentFlag, FlagStatus
+from app.models.category import Category
+from app.models.user import User, UserRole
 from app.schemas.moderation import (
     AdminDashboardStats,
     ModerationActionRequest,
+    ModerationRecordResponse,
 )
 from app.schemas.report import (
     AdminReportResponse,
     AdminReportPagination,
+)
+from app.schemas.user import (
+    AdminUserResponse,
+    AdminUserPagination,
+    AdminUserRoleUpdate,
+    AdminUserStatusUpdate,
+)
+from app.schemas.category import (
+    CategoryCreate,
+    CategoryUpdate,
+    AdminCategoryResponse,
 )
 from app.schemas.comment import AdminCommentResponse, CommentStatusUpdate
 from app.services.notification import notify_report_owner, create_notification
 
 router = APIRouter()
 
+
+# ==============================================================================
+# 1. ADMIN DASHBOARD METRICS
+# ==============================================================================
 
 @router.get(
     "/dashboard",
@@ -65,6 +84,19 @@ async def get_admin_dashboard(
         select(func.count(Report.id)).where(Report.is_anonymous == True)
     ) or 0
 
+    # Safety flags & Comments metrics
+    total_flags = await db.scalar(select(func.count(ContentFlag.id))) or 0
+    pending_flags = await db.scalar(
+        select(func.count(ContentFlag.id)).where(ContentFlag.status == FlagStatus.PENDING)
+    ) or 0
+    total_comments = await db.scalar(select(func.count(Comment.id))) or 0
+    hidden_comments = await db.scalar(
+        select(func.count(Comment.id)).where(Comment.status != CommentStatus.VISIBLE)
+    ) or 0
+    active_categories = await db.scalar(
+        select(func.count(Category.id)).where(Category.is_active == True)
+    ) or 0
+
     return AdminDashboardStats(
         total_reports=total_reports,
         pending_reports=pending_reports,
@@ -76,8 +108,17 @@ async def get_admin_dashboard(
         draft_reports=draft_reports,
         total_users=total_users,
         anonymous_reports_count=anonymous_reports_count,
+        total_flags=total_flags,
+        pending_flags=pending_flags,
+        total_comments=total_comments,
+        hidden_comments=hidden_comments,
+        active_categories=active_categories,
     )
 
+
+# ==============================================================================
+# 2. REPORT QUEUE & MODERATION LIFECYCLE
+# ==============================================================================
 
 @router.get(
     "/reports",
@@ -95,9 +136,6 @@ async def list_admin_reports(
     current_admin: User = Depends(get_current_active_admin),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
-    """
-    Returns paginated incident reports with optional filtering by status, category, anonymous flag, or title.
-    """
     conditions = []
     if status_filter:
         conditions.append(Report.status == status_filter)
@@ -106,23 +144,30 @@ async def list_admin_reports(
     if is_anonymous is not None:
         conditions.append(Report.is_anonymous == is_anonymous)
     if search:
-        conditions.append(Report.title.ilike(f"%{search.strip()}%"))
+        search_pattern = f"%{search.strip()}%"
+        conditions.append(
+            or_(
+                Report.title.ilike(search_pattern),
+                Report.description.ilike(search_pattern),
+                Report.location_text.ilike(search_pattern),
+            )
+        )
 
     where_clause = and_(*conditions) if conditions else True
 
-    # Count total matching
+    # Total count query
     count_stmt = select(func.count(Report.id)).where(where_clause)
     total = await db.scalar(count_stmt) or 0
 
-    # Query paginated rows
-    query_stmt = (
+    # Items query with eager-loaded relations
+    stmt = (
         select(Report)
         .where(where_clause)
         .order_by(Report.created_at.desc())
         .limit(limit)
         .offset(offset)
     )
-    result = await db.execute(query_stmt)
+    result = await db.execute(stmt)
     reports = result.scalars().all()
 
     return AdminReportPagination(
@@ -137,16 +182,13 @@ async def list_admin_reports(
     "/reports/{report_id}",
     response_model=AdminReportResponse,
     status_code=status.HTTP_200_OK,
-    summary="Get detailed moderation report view with full audit history",
+    summary="Get full report details for moderation review",
 )
 async def get_admin_report_detail(
     report_id: uuid.UUID,
     current_admin: User = Depends(get_current_active_admin),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
-    """
-    Returns complete report details including reporter profile and moderation history.
-    """
     stmt = select(Report).where(Report.id == report_id)
     result = await db.execute(stmt)
     report = result.scalar_one_or_none()
@@ -156,15 +198,35 @@ async def get_admin_report_detail(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Report not found.",
         )
-
     return report
+
+
+@router.get(
+    "/reports/{report_id}/history",
+    response_model=List[ModerationRecordResponse],
+    status_code=status.HTTP_200_OK,
+    summary="Get moderation history audit trail for a report",
+)
+async def get_report_moderation_history(
+    report_id: uuid.UUID,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    stmt = (
+        select(ModerationRecord)
+        .where(ModerationRecord.report_id == report_id)
+        .order_by(ModerationRecord.created_at.desc())
+    )
+    result = await db.execute(stmt)
+    records = result.scalars().all()
+    return list(records)
 
 
 @router.post(
     "/reports/{report_id}/review",
     response_model=AdminReportResponse,
     status_code=status.HTTP_200_OK,
-    summary="Start reviewing a submitted report",
+    summary="Mark report as currently under active review",
 )
 async def start_report_review(
     report_id: uuid.UUID,
@@ -172,9 +234,6 @@ async def start_report_review(
     current_admin: User = Depends(get_current_active_admin),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
-    """
-    Transitions report status to UNDER_REVIEW and logs the moderation event.
-    """
     stmt = select(Report).where(Report.id == report_id)
     result = await db.execute(stmt)
     report = result.scalar_one_or_none()
@@ -228,10 +287,6 @@ async def approve_report(
     current_admin: User = Depends(get_current_active_admin),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
-    """
-    Approves the report, making it eligible for future platform publication.
-    Logs moderation record with administrator ID.
-    """
     stmt = select(Report).where(Report.id == report_id)
     result = await db.execute(stmt)
     report = result.scalar_one_or_none()
@@ -285,9 +340,6 @@ async def reject_report(
     current_admin: User = Depends(get_current_active_admin),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
-    """
-    Rejects the report with optional user explanation and private internal notes.
-    """
     stmt = select(Report).where(Report.id == report_id)
     result = await db.execute(stmt)
     report = result.scalar_one_or_none()
@@ -342,9 +394,6 @@ async def request_more_information(
     current_admin: User = Depends(get_current_active_admin),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
-    """
-    Transitions report status to NEEDS_MORE_INFORMATION and sends user-facing guidance.
-    """
     if not payload.user_message or not payload.user_message.strip():
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -392,15 +441,454 @@ async def request_more_information(
     return report
 
 
+@router.post(
+    "/reports/{report_id}/archive",
+    response_model=AdminReportResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Archive an incident report",
+)
+async def archive_report(
+    report_id: uuid.UUID,
+    payload: Optional[ModerationActionRequest] = None,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    stmt = select(Report).where(Report.id == report_id)
+    result = await db.execute(stmt)
+    report = result.scalar_one_or_none()
+
+    if not report:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Report not found.",
+        )
+
+    report.status = ReportStatus.ARCHIVED
+
+    record = ModerationRecord(
+        report_id=report.id,
+        admin_id=current_admin.id,
+        action=ModerationAction.ARCHIVED,
+        user_message=payload.user_message if payload else None,
+        internal_notes=payload.internal_notes if payload else None,
+    )
+    db.add(record)
+    await db.flush()
+
+    await notify_report_owner(
+        db=db,
+        report=report,
+        notification_type=NotificationType.REPORT_ARCHIVED,
+        title="Incident Report Archived",
+        message=f"Your incident report '{report.title}' has been moved to the platform archives.",
+    )
+
+    await db.commit()
+    await db.refresh(report)
+    return report
+
+
+# ==============================================================================
+# 3. USER MANAGEMENT
+# ==============================================================================
+
+@router.get(
+    "/users",
+    response_model=AdminUserPagination,
+    status_code=status.HTTP_200_OK,
+    summary="List, search, and paginate registered platform users",
+)
+async def list_admin_users(
+    search: Optional[str] = Query(None, min_length=1),
+    role: Optional[UserRole] = Query(None),
+    is_active: Optional[bool] = Query(None),
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    conditions = []
+    if role:
+        conditions.append(User.role == role)
+    if is_active is not None:
+        conditions.append(User.is_active == is_active)
+    if search:
+        search_pattern = f"%{search.strip()}%"
+        conditions.append(
+            or_(
+                User.username.ilike(search_pattern),
+                User.email.ilike(search_pattern),
+                User.full_name.ilike(search_pattern),
+            )
+        )
+
+    where_clause = and_(*conditions) if conditions else True
+
+    # Count
+    total = await db.scalar(select(func.count(User.id)).where(where_clause)) or 0
+
+    # Fetch users
+    stmt = (
+        select(User)
+        .where(where_clause)
+        .order_by(User.created_at.desc())
+        .limit(limit)
+        .offset(offset)
+    )
+    result = await db.execute(stmt)
+    users = result.scalars().all()
+
+    # Get report counts efficiently for these users
+    user_ids = [u.id for u in users]
+    counts_map = {}
+    if user_ids:
+        c_stmt = (
+            select(Report.user_id, func.count(Report.id))
+            .where(Report.user_id.in_(user_ids))
+            .group_by(Report.user_id)
+        )
+        c_res = await db.execute(c_stmt)
+        for uid, count in c_res.all():
+            counts_map[uid] = count
+
+    items = [
+        AdminUserResponse(
+            id=u.id,
+            email=u.email,
+            username=u.username,
+            full_name=u.full_name,
+            role=u.role,
+            is_active=u.is_active,
+            is_verified=u.is_verified,
+            created_at=u.created_at,
+            updated_at=u.updated_at,
+            report_count=counts_map.get(u.id, 0),
+        )
+        for u in users
+    ]
+
+    return AdminUserPagination(
+        items=items,
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
+
+
+@router.patch(
+    "/users/{user_id}/role",
+    response_model=AdminUserResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Change user role (USER <-> ADMIN) with safety safeguards",
+)
+async def update_user_role(
+    user_id: uuid.UUID,
+    payload: AdminUserRoleUpdate,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    # 1. Prevent self-demotion / modification
+    if user_id == current_admin.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Administrators cannot modify their own role.",
+        )
+
+    stmt = select(User).where(User.id == user_id)
+    result = await db.execute(stmt)
+    target_user = result.scalar_one_or_none()
+
+    if not target_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found.",
+        )
+
+    # 2. If demoting an admin, ensure at least one active admin remains
+    if target_user.role == UserRole.ADMIN and payload.role != UserRole.ADMIN:
+        active_admins_count = await db.scalar(
+            select(func.count(User.id)).where(
+                User.role == UserRole.ADMIN,
+                User.is_active == True,
+                User.id != target_user.id,
+            )
+        ) or 0
+        if active_admins_count < 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot demote the platform's last active administrator.",
+            )
+
+    target_user.role = payload.role
+    await db.commit()
+    await db.refresh(target_user)
+
+    # Calculate report count
+    rep_count = await db.scalar(select(func.count(Report.id)).where(Report.user_id == target_user.id)) or 0
+
+    return AdminUserResponse(
+        id=target_user.id,
+        email=target_user.email,
+        username=target_user.username,
+        full_name=target_user.full_name,
+        role=target_user.role,
+        is_active=target_user.is_active,
+        is_verified=target_user.is_verified,
+        created_at=target_user.created_at,
+        updated_at=target_user.updated_at,
+        report_count=rep_count,
+    )
+
+
+@router.patch(
+    "/users/{user_id}/status",
+    response_model=AdminUserResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Activate or deactivate a user account",
+)
+async def update_user_status(
+    user_id: uuid.UUID,
+    payload: AdminUserStatusUpdate,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    # Prevent deactivating self if last active admin
+    if user_id == current_admin.id and not payload.is_active:
+        active_admins_count = await db.scalar(
+            select(func.count(User.id)).where(
+                User.role == UserRole.ADMIN,
+                User.is_active == True,
+                User.id != user_id,
+            )
+        ) or 0
+        if active_admins_count < 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot deactivate the platform's last active administrator.",
+            )
+
+    stmt = select(User).where(User.id == user_id)
+    result = await db.execute(stmt)
+    target_user = result.scalar_one_or_none()
+
+    if not target_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found.",
+        )
+
+    target_user.is_active = payload.is_active
+    await db.commit()
+    await db.refresh(target_user)
+
+    rep_count = await db.scalar(select(func.count(Report.id)).where(Report.user_id == target_user.id)) or 0
+
+    return AdminUserResponse(
+        id=target_user.id,
+        email=target_user.email,
+        username=target_user.username,
+        full_name=target_user.full_name,
+        role=target_user.role,
+        is_active=target_user.is_active,
+        is_verified=target_user.is_verified,
+        created_at=target_user.created_at,
+        updated_at=target_user.updated_at,
+        report_count=rep_count,
+    )
+
+
+# ==============================================================================
+# 4. CATEGORY MANAGEMENT
+# ==============================================================================
+
+@router.get(
+    "/categories",
+    response_model=List[AdminCategoryResponse],
+    status_code=status.HTTP_200_OK,
+    summary="List all categories with report metrics for administrative management",
+)
+async def list_admin_categories(
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    stmt = select(Category).order_by(Category.name.asc())
+    result = await db.execute(stmt)
+    categories = result.scalars().all()
+
+    # Get report counts per category
+    c_stmt = (
+        select(Report.category_id, func.count(Report.id))
+        .group_by(Report.category_id)
+    )
+    c_res = await db.execute(c_stmt)
+    counts_map = {cid: count for cid, count in c_res.all()}
+
+    return [
+        AdminCategoryResponse(
+            id=c.id,
+            name=c.name,
+            slug=c.slug,
+            description=c.description,
+            is_active=c.is_active,
+            report_count=counts_map.get(c.id, 0),
+            created_at=c.created_at,
+            updated_at=c.updated_at,
+        )
+        for c in categories
+    ]
+
+
+@router.post(
+    "/categories",
+    response_model=AdminCategoryResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a new incident report category",
+)
+async def create_category(
+    payload: CategoryCreate,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    slug = payload.slug.strip().lower()
+    if not slug:
+        slug = re.sub(r"[^a-z0-9]+", "-", payload.name.strip().lower()).strip("-")
+
+    # Check for existing slug
+    stmt = select(Category).where(Category.slug == slug)
+    res = await db.execute(stmt)
+    if res.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Category with slug '{slug}' already exists.",
+        )
+
+    category = Category(
+        name=payload.name.strip(),
+        slug=slug,
+        description=payload.description.strip() if payload.description else None,
+        is_active=payload.is_active,
+    )
+    db.add(category)
+    await db.commit()
+    await db.refresh(category)
+
+    return AdminCategoryResponse(
+        id=category.id,
+        name=category.name,
+        slug=category.slug,
+        description=category.description,
+        is_active=category.is_active,
+        report_count=0,
+        created_at=category.created_at,
+        updated_at=category.updated_at,
+    )
+
+
+@router.patch(
+    "/categories/{category_id}",
+    response_model=AdminCategoryResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Update category details or toggle active status",
+)
+async def update_category(
+    category_id: uuid.UUID,
+    payload: CategoryUpdate,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    stmt = select(Category).where(Category.id == category_id)
+    result = await db.execute(stmt)
+    category = result.scalar_one_or_none()
+
+    if not category:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Category not found.",
+        )
+
+    if payload.name is not None:
+        category.name = payload.name.strip()
+    if payload.slug is not None:
+        slug = payload.slug.strip().lower()
+        if slug != category.slug:
+            existing = await db.scalar(select(Category).where(Category.slug == slug))
+            if existing:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Category with slug '{slug}' already exists.",
+                )
+            category.slug = slug
+    if payload.description is not None:
+        category.description = payload.description.strip() if payload.description else None
+    if payload.is_active is not None:
+        category.is_active = payload.is_active
+
+    await db.commit()
+    await db.refresh(category)
+
+    rep_count = await db.scalar(select(func.count(Report.id)).where(Report.category_id == category.id)) or 0
+
+    return AdminCategoryResponse(
+        id=category.id,
+        name=category.name,
+        slug=category.slug,
+        description=category.description,
+        is_active=category.is_active,
+        report_count=rep_count,
+        created_at=category.created_at,
+        updated_at=category.updated_at,
+    )
+
+
+@router.delete(
+    "/categories/{category_id}",
+    status_code=status.HTTP_200_OK,
+    summary="Safely deactivate or delete a category",
+)
+async def delete_or_deactivate_category(
+    category_id: uuid.UUID,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    stmt = select(Category).where(Category.id == category_id)
+    result = await db.execute(stmt)
+    category = result.scalar_one_or_none()
+
+    if not category:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Category not found.",
+        )
+
+    rep_count = await db.scalar(select(func.count(Report.id)).where(Report.category_id == category.id)) or 0
+    if rep_count > 0:
+        # Soft-deactivate to preserve historical reports
+        category.is_active = False
+        await db.commit()
+        return {
+            "message": f"Category '{category.name}' is referenced by {rep_count} report(s). It has been safely deactivated instead of deleted.",
+            "is_active": False,
+        }
+
+    await db.delete(category)
+    await db.commit()
+    return {"message": f"Category '{category.name}' has been deleted.", "is_active": False}
+
+
+# ==============================================================================
+# 5. COMMENTS MODERATION
+# ==============================================================================
+
 @router.get(
     "/comments",
-    response_model=list[AdminCommentResponse],
+    response_model=List[AdminCommentResponse],
     status_code=status.HTTP_200_OK,
     summary="List comments for administrative moderation",
 )
 async def list_admin_comments(
     report_id: Optional[uuid.UUID] = Query(None),
     comment_status: Optional[CommentStatus] = Query(None),
+    search: Optional[str] = Query(None, min_length=1),
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
     current_admin: User = Depends(get_current_active_admin),
@@ -411,6 +899,8 @@ async def list_admin_comments(
         conditions.append(Comment.report_id == report_id)
     if comment_status:
         conditions.append(Comment.status == comment_status)
+    if search:
+        conditions.append(Comment.body.ilike(f"%{search.strip()}%"))
 
     stmt = select(Comment)
     if conditions:

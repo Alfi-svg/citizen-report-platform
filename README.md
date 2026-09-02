@@ -49,7 +49,7 @@ The **Bangladesh Citizen Report Platform** is a production-hardened citizen repo
 
 ---
 
-## 3. End-to-End User & Moderation Workflow
+## 3. End-to-End User, Moderation & Platform Operations Workflow
 
 1. **Citizen Registration & Authentication:** Citizen registers via `/auth/register` (strictly assigned `USER` role) and authenticates via `/auth/login` to receive JWT access tokens.
 2. **Incident Creation & Evidence Attachment:** Citizen drafts report (`POST /reports`) and uploads images/documents (`POST /reports/{id}/media`).
@@ -58,12 +58,13 @@ The **Bangladesh Citizen Report Platform** is a production-hardened citizen repo
 5. **Public Verification & Discussion:** Report is published to public news feed (`GET /public/reports`). Community members endorse with reactions and post constructive comments.
 6. **Safety & Content Flagging:** Community members flag suspicious or duplicate entries. Admins resolve flags in the moderation queue (`PATCH /admin/flags/{id}`).
 7. **In-App Activity Notifications:** Citizen tracks real-time status changes via the Navbar bell dropdown and dedicated `/notifications` activity center.
+8. **Platform Operations & Governance:** Administrators manage citizen profiles, promote/demote roles with self-demotion guards, create/edit categories with safe soft-deactivation, moderate comments, and archive historical incidents.
 
 ---
 
 ## 4. Local Setup & Verification Commands
 
-### Backend Verification (73 Automated Pytest Scenarios)
+### Backend Verification (76 Automated Pytest Scenarios)
 ```bash
 cd backend
 source .venv/bin/activate
@@ -99,5 +100,9 @@ cd frontend && npm run dev
 - [x] MIME-type, extension, and magic-byte upload validation enforced.
 - [x] Standard HTTP security response headers configured.
 - [x] Global safe exception handler active (no traceback or path leakage).
-- [x] All 73 backend tests passing.
+- [x] Self-demotion guard preventing administrators from removing their own privileges.
+- [x] Last-active administrator protection preventing accidental total lockout.
+- [x] Category relational integrity protection (soft-deactivates instead of deleting referenced categories).
+- [x] All 76 backend tests passing.
 - [x] TypeScript type-check, ESLint, and Next.js production build passing.
+

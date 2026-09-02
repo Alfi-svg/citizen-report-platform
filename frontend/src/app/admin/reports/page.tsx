@@ -55,6 +55,8 @@ const STATUS_BADGES: Record<
   },
 };
 
+import AdminNav from "@/components/AdminNav";
+
 export default function AdminReportsQueuePage() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading, isAdmin } = useAuth();
@@ -135,24 +137,22 @@ export default function AdminReportsQueuePage() {
   const totalPages = data ? Math.ceil(data.total / PAGE_SIZE) : 1;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      {/* Header */}
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <Link
-            href="/admin"
-            className="text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline inline-flex items-center gap-1 mb-2"
-          >
-            ← Admin Dashboard
-          </Link>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-            Incident Moderation Queue
-          </h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Review, investigate, and approve citizen incident reports.
-          </p>
+    <div>
+      <AdminNav />
+
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-6">
+        {/* Header */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+              Incident Moderation Queue / প্রতিবেদন সারি
+            </h1>
+            <p className="text-xs text-zinc-500 mt-1">
+              Review, investigate, and approve citizen incident reports with live status tracking.
+            </p>
+          </div>
         </div>
-      </div>
+
 
       {error && (
         <div className="mb-6 rounded-xl bg-red-50 p-4 border border-red-200 text-sm text-red-800">
@@ -339,6 +339,8 @@ export default function AdminReportsQueuePage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
+

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
 import { AdminDashboardStats, AdminReportPagination } from "@/lib/types";
+import AdminNav from "@/components/AdminNav";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -59,7 +60,6 @@ export default function AdminDashboardPage() {
     return null;
   }
 
-  // Non-admin user access attempt
   if (!isAdmin) {
     return (
       <div className="mx-auto max-w-xl px-4 py-16 text-center">
@@ -71,7 +71,7 @@ export default function AdminDashboardPage() {
             Access Denied — HTTP 403 Forbidden
           </h1>
           <p className="mt-2 text-sm text-red-700 dark:text-red-300">
-            Your account <span className="font-semibold">{user.username}</span> possesses the role <span className="font-semibold">{user.role}</span>. Administrative privileges are required to access moderation tools.
+            Your account possesses the role <span className="font-semibold">{user.role}</span>. Administrative privileges are required.
           </p>
           <div className="mt-6">
             <Link
@@ -87,203 +87,213 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      {/* Top Header */}
-      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 mb-2">
-            🛡️ Administrative Management
-          </div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-            Moderation Operations Console
-          </h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Platform incident oversight and citizen report verification dashboard.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/admin/reports"
-            className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-500 transition"
-          >
-            📋 Moderation Queue ({stats?.pending_reports || 0})
-          </Link>
-          <Link
-            href="/admin/flags"
-            className="rounded-lg bg-amber-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-amber-500 transition"
-          >
-            🚩 Safety & Flags Queue
-          </Link>
-          <Link
-            href="/dashboard"
-            className="rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3.5 py-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50"
-          >
-            Citizen View
-          </Link>
-        </div>
-      </div>
+    <div>
+      <AdminNav
+        pendingReports={stats?.pending_reports}
+        pendingFlags={stats?.pending_flags}
+      />
 
-      {error && (
-        <div className="mb-6 rounded-xl bg-red-50 p-4 border border-red-200 text-sm text-red-800">
-          Failed to load administrative data: {error}
-        </div>
-      )}
-
-      {/* Real Statistics Grid */}
-      {stats && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-          <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 p-5 shadow-sm">
-            <span className="text-xs font-medium text-zinc-500 block">Total Reports</span>
-            <span className="text-2xl font-extrabold text-zinc-900 dark:text-zinc-100 mt-1 block">
-              {stats.total_reports}
-            </span>
-            <span className="text-[11px] text-zinc-400 mt-1 block">All created incidents</span>
-          </div>
-
-          <div className="rounded-xl border border-blue-200 bg-blue-50/40 dark:border-blue-900/60 dark:bg-blue-950/20 p-5 shadow-sm">
-            <span className="text-xs font-medium text-blue-700 dark:text-blue-300 block">
-              Pending Moderation
-            </span>
-            <span className="text-2xl font-extrabold text-blue-800 dark:text-blue-200 mt-1 block">
-              {stats.pending_reports}
-            </span>
-            <span className="text-[11px] text-blue-600 dark:text-blue-400 mt-1 block">
-              Awaiting review
-            </span>
-          </div>
-
-          <div className="rounded-xl border border-amber-200 bg-amber-50/40 dark:border-amber-900/60 dark:bg-amber-950/20 p-5 shadow-sm">
-            <span className="text-xs font-medium text-amber-700 dark:text-amber-300 block">
-              Under Review
-            </span>
-            <span className="text-2xl font-extrabold text-amber-800 dark:text-amber-200 mt-1 block">
-              {stats.under_review_reports}
-            </span>
-            <span className="text-[11px] text-amber-600 dark:text-amber-400 mt-1 block">
-              Active field checks
-            </span>
-          </div>
-
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 dark:border-emerald-900/60 dark:bg-emerald-950/20 p-5 shadow-sm">
-            <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300 block">
-              Approved Reports
-            </span>
-            <span className="text-2xl font-extrabold text-emerald-800 dark:text-emerald-200 mt-1 block">
-              {stats.approved_reports}
-            </span>
-            <span className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1 block">
-              Platform verified
-            </span>
-          </div>
-
-          <div className="rounded-xl border border-purple-200 bg-purple-50/40 dark:border-purple-900/60 dark:bg-purple-950/20 p-5 shadow-sm">
-            <span className="text-xs font-medium text-purple-700 dark:text-purple-300 block">
-              Needs Citizen Info
-            </span>
-            <span className="text-2xl font-extrabold text-purple-800 dark:text-purple-200 mt-1 block">
-              {stats.needs_more_info_reports}
-            </span>
-            <span className="text-[11px] text-purple-600 dark:text-purple-400 mt-1 block">
-              Returned to reporter
-            </span>
-          </div>
-
-          <div className="rounded-xl border border-red-200 bg-red-50/40 dark:border-red-900/60 dark:bg-red-950/20 p-5 shadow-sm">
-            <span className="text-xs font-medium text-red-700 dark:text-red-300 block">
-              Rejected
-            </span>
-            <span className="text-2xl font-extrabold text-red-800 dark:text-red-200 mt-1 block">
-              {stats.rejected_reports}
-            </span>
-            <span className="text-[11px] text-red-600 dark:text-red-400 mt-1 block">
-              Unverified / spam
-            </span>
-          </div>
-
-          <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 p-5 shadow-sm">
-            <span className="text-xs font-medium text-zinc-500 block">Total Users</span>
-            <span className="text-2xl font-extrabold text-zinc-900 dark:text-zinc-100 mt-1 block">
-              {stats.total_users}
-            </span>
-            <span className="text-[11px] text-zinc-400 mt-1 block">Registered accounts</span>
-          </div>
-
-          <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 p-5 shadow-sm">
-            <span className="text-xs font-medium text-zinc-500 block">Anonymous Reports</span>
-            <span className="text-2xl font-extrabold text-zinc-900 dark:text-zinc-100 mt-1 block">
-              {stats.anonymous_reports_count}
-            </span>
-            <span className="text-[11px] text-zinc-400 mt-1 block">Whistleblower mode</span>
-          </div>
-        </div>
-      )}
-
-      {/* Pending Reports Moderation Preview */}
-      <div className="rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
+        {/* Top Header */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
-              Pending Submissions Awaiting Moderation
-            </h2>
-            <p className="text-xs text-zinc-500">
-              Incidents requiring administrative review before platform approval.
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 mb-2">
+              🛡️ Administrative Console
+            </div>
+            <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+              Platform Operations & Governance
+            </h1>
+            <p className="text-xs text-zinc-500 mt-1">
+              Centralized platform metrics, moderation workflows, user management, and safety controls.
             </p>
           </div>
+
+          <div className="flex items-center gap-2.5">
+            <Link
+              href="/admin/reports"
+              className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-500 transition"
+            >
+              📋 Reports Queue ({stats?.pending_reports || 0})
+            </Link>
+            <Link
+              href="/admin/flags"
+              className="rounded-xl bg-amber-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-amber-500 transition"
+            >
+              🚩 Safety Flags ({stats?.pending_flags || 0})
+            </Link>
+          </div>
+        </div>
+
+        {error && (
+          <div className="rounded-xl bg-red-50 p-4 border border-red-200 text-xs text-red-800">
+            Failed to load administrative data: {error}
+          </div>
+        )}
+
+        {/* Primary Platform Metrics */}
+        {stats && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+            <div className="rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 p-4 shadow-sm">
+              <span className="text-[11px] font-medium text-zinc-500 block">Total Reports</span>
+              <span className="text-2xl font-extrabold text-zinc-900 dark:text-zinc-100 mt-1 block">
+                {stats.total_reports}
+              </span>
+              <span className="text-[10px] text-zinc-400 mt-1 block">All created incidents</span>
+            </div>
+
+            <div className="rounded-2xl border border-blue-200 bg-blue-50/40 dark:border-blue-900/60 dark:bg-blue-950/20 p-4 shadow-sm">
+              <span className="text-[11px] font-medium text-blue-700 dark:text-blue-300 block">
+                Pending Review
+              </span>
+              <span className="text-2xl font-extrabold text-blue-800 dark:text-blue-200 mt-1 block">
+                {stats.pending_reports}
+              </span>
+              <span className="text-[10px] text-blue-600 dark:text-blue-400 mt-1 block">
+                Awaiting moderation
+              </span>
+            </div>
+
+            <div className="rounded-2xl border border-amber-200 bg-amber-50/40 dark:border-amber-900/60 dark:bg-amber-950/20 p-4 shadow-sm">
+              <span className="text-[11px] font-medium text-amber-700 dark:text-amber-300 block">
+                Under Review
+              </span>
+              <span className="text-2xl font-extrabold text-amber-800 dark:text-amber-200 mt-1 block">
+                {stats.under_review_reports}
+              </span>
+              <span className="text-[10px] text-amber-600 dark:text-amber-400 mt-1 block">
+                Active investigation
+              </span>
+            </div>
+
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50/40 dark:border-emerald-900/60 dark:bg-emerald-950/20 p-4 shadow-sm">
+              <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-300 block">
+                Verified & Published
+              </span>
+              <span className="text-2xl font-extrabold text-emerald-800 dark:text-emerald-200 mt-1 block">
+                {stats.approved_reports}
+              </span>
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-1 block">
+                Live on public feed
+              </span>
+            </div>
+
+            <div className="rounded-2xl border border-purple-200 bg-purple-50/40 dark:border-purple-900/60 dark:bg-purple-950/20 p-4 shadow-sm">
+              <span className="text-[11px] font-medium text-purple-700 dark:text-purple-300 block">
+                Total Users
+              </span>
+              <span className="text-2xl font-extrabold text-purple-800 dark:text-purple-200 mt-1 block">
+                {stats.total_users}
+              </span>
+              <span className="text-[10px] text-purple-600 dark:text-purple-400 mt-1 block">
+                Registered citizens
+              </span>
+            </div>
+
+            <div className="rounded-2xl border border-cyan-200 bg-cyan-50/40 dark:border-cyan-900/60 dark:bg-cyan-950/20 p-4 shadow-sm">
+              <span className="text-[11px] font-medium text-cyan-700 dark:text-cyan-300 block">
+                Safety Flags
+              </span>
+              <span className="text-2xl font-extrabold text-cyan-800 dark:text-cyan-200 mt-1 block">
+                {stats.total_flags || 0}
+              </span>
+              <span className="text-[10px] text-cyan-600 dark:text-cyan-400 mt-1 block">
+                {stats.pending_flags || 0} pending review
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Quick Operations Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link
-            href="/admin/reports?status=SUBMITTED"
-            className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
+            href="/admin/users"
+            className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-sm hover:border-amber-400 dark:hover:border-amber-600 transition space-y-2 text-xs"
           >
-            View All Pending ({recentReports?.total || 0}) →
+            <div className="flex items-center gap-2 text-amber-600 font-bold text-sm">
+              <span>👥</span>
+              <span>User & Role Governance</span>
+            </div>
+            <p className="text-zinc-500">
+              Inspect registered accounts, assign administrative roles with self-protection guards, and toggle active status.
+            </p>
+          </Link>
+
+          <Link
+            href="/admin/categories"
+            className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-sm hover:border-emerald-400 dark:hover:border-emerald-600 transition space-y-2 text-xs"
+          >
+            <div className="flex items-center gap-2 text-emerald-600 font-bold text-sm">
+              <span>🏷️</span>
+              <span>Category Management</span>
+            </div>
+            <p className="text-zinc-500">
+              Manage incident classifications, create new report tags, and safely deactivate categories while preserving report links.
+            </p>
+          </Link>
+
+          <Link
+            href="/admin/comments"
+            className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-sm hover:border-blue-400 dark:hover:border-blue-600 transition space-y-2 text-xs"
+          >
+            <div className="flex items-center gap-2 text-blue-600 font-bold text-sm">
+              <span>💬</span>
+              <span>Comments Moderation</span>
+            </div>
+            <p className="text-zinc-500">
+              Audit public discussion threads on approved reports, hide spam or abusive remarks, and issue moderation notices.
+            </p>
           </Link>
         </div>
 
-        {recentReports && recentReports.items.length > 0 ? (
-          <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
-            {recentReports.items.map((r) => (
-              <div
-                key={r.id}
-                className="py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
-              >
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
-                      SUBMITTED
-                    </span>
-                    <span className="text-xs text-zinc-500">
-                      {r.category?.name || "Incident"}
-                    </span>
-                    {r.is_anonymous && (
-                      <span className="text-[10px] font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950 px-1.5 py-0.5 rounded">
-                        Anonymous
-                      </span>
-                    )}
+        {/* Recent Pending Reports Preview */}
+        <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+              <span>📋 Recent Submissions Awaiting Moderation</span>
+            </h2>
+            <Link
+              href="/admin/reports"
+              className="text-xs font-semibold text-emerald-600 hover:underline"
+            >
+              Open Full Queue →
+            </Link>
+          </div>
+
+          {!recentReports || recentReports.items.length === 0 ? (
+            <div className="py-8 text-center text-xs text-zinc-400 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl">
+              No reports currently pending moderation review.
+            </div>
+          ) : (
+            <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+              {recentReports.items.map((r) => (
+                <div key={r.id} className="py-3 flex items-center justify-between gap-4 text-xs">
+                  <div className="space-y-0.5">
+                    <Link
+                      href={`/admin/reports/${r.id}`}
+                      className="font-bold text-zinc-900 dark:text-zinc-100 hover:text-emerald-600"
+                    >
+                      {r.title}
+                    </Link>
+                    <div className="flex items-center gap-2 text-[10px] text-zinc-400">
+                      <span>{r.category?.name || "Incident"}</span>
+                      <span>•</span>
+                      <span>{r.location_text}</span>
+                      <span>•</span>
+                      <span>{new Date(r.created_at).toLocaleDateString()}</span>
+                    </div>
                   </div>
+
                   <Link
                     href={`/admin/reports/${r.id}`}
-                    className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 hover:text-emerald-600 transition"
+                    className="rounded-lg bg-zinc-100 dark:bg-zinc-800 px-3 py-1 text-[11px] font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200 transition"
                   >
-                    {r.title}
-                  </Link>
-                  <p className="text-xs text-zinc-500 mt-0.5">
-                    📍 {r.location_text} • Submitted {r.submitted_at ? new Date(r.submitted_at).toLocaleString() : "Recently"}
-                  </p>
-                </div>
-                <div>
-                  <Link
-                    href={`/admin/reports/${r.id}`}
-                    className="inline-flex items-center rounded-lg bg-zinc-900 dark:bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-white dark:text-zinc-900 hover:bg-zinc-800 transition"
-                  >
-                    Review Incident →
+                    Review →
                   </Link>
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="py-8 text-center text-xs text-zinc-500">
-            🎉 No pending submissions in queue. All reports have been processed.
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

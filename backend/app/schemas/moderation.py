@@ -66,6 +66,11 @@ class AdminDashboardStats(BaseModel):
     draft_reports: int
     total_users: int
     anonymous_reports_count: int
+    total_flags: int = 0
+    pending_flags: int = 0
+    total_comments: int = 0
+    hidden_comments: int = 0
+    active_categories: int = 0
 
 
 class AdminReportListResponse(BaseModel):

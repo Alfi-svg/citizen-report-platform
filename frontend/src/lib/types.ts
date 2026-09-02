@@ -221,6 +221,37 @@ export interface AdminDashboardStats {
   draft_reports: number;
   total_users: number;
   anonymous_reports_count: number;
+  total_flags?: number;
+  pending_flags?: number;
+  total_comments?: number;
+  hidden_comments?: number;
+  active_categories?: number;
+}
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  username: string;
+  full_name?: string | null;
+  role: UserRole;
+  is_active: boolean;
+  is_verified: boolean;
+  created_at: string;
+  updated_at: string;
+  report_count: number;
+}
+
+export interface AdminUserPagination {
+  items: AdminUser[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface AdminCategory extends Category {
+  report_count: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface AdminReportPagination {

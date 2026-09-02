@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
 import { Report, ReportStatus, AdminComment, CommentStatus } from "@/lib/types";
 import EvidenceGallery from "@/components/EvidenceGallery";
+import AdminNav from "@/components/AdminNav";
 
 const STATUS_BADGES: Record<
   ReportStatus,
@@ -71,7 +72,7 @@ export default function AdminReportDetailPage() {
   const [deletingMediaId, setDeletingMediaId] = useState<string | null>(null);
 
   // Modal dialog state
-  const [activeModal, setActiveModal] = useState<"APPROVE" | "REJECT" | "REQUEST_INFO" | null>(null);
+  const [activeModal, setActiveModal] = useState<"APPROVE" | "REJECT" | "REQUEST_INFO" | "ARCHIVE" | null>(null);
   const [userMessage, setUserMessage] = useState("");
   const [internalNotes, setInternalNotes] = useState("");
 
@@ -107,16 +108,17 @@ export default function AdminReportDetailPage() {
   }, [isAuthenticated, isAdmin, reportId]);
 
   const handleStartReview = async () => {
+    if (!report) return;
     setProcessing(true);
     setError(null);
     setActionSuccess(null);
     try {
-      const updated = await apiFetch<Report>(`/admin/reports/${reportId}/review`, {
+      const updated = await apiFetch<Report>(`/admin/reports/${report.id}/review`, {
         method: "POST",
-        body: JSON.stringify({ internal_notes: "Admin began review." }),
+        body: JSON.stringify({}),
       });
       setReport(updated);
-      setActionSuccess("Incident report moved to UNDER_REVIEW.");
+      setActionSuccess("Report is now under active review.");
     } catch (err: unknown) {
       if (err instanceof Error) setError(err.message);
     } finally {
@@ -125,7 +127,7 @@ export default function AdminReportDetailPage() {
   };
 
   const handleExecuteModalAction = async () => {
-    if (!activeModal) return;
+    if (!report || !activeModal) return;
     setProcessing(true);
     setError(null);
     setActionSuccess(null);
@@ -134,6 +136,7 @@ export default function AdminReportDetailPage() {
     if (activeModal === "APPROVE") endpoint = `/admin/reports/${reportId}/approve`;
     else if (activeModal === "REJECT") endpoint = `/admin/reports/${reportId}/reject`;
     else if (activeModal === "REQUEST_INFO") endpoint = `/admin/reports/${reportId}/request-information`;
+    else if (activeModal === "ARCHIVE") endpoint = `/admin/reports/${reportId}/archive`;
 
     try {
       const updated = await apiFetch<Report>(endpoint, {
@@ -235,89 +238,97 @@ export default function AdminReportDetailPage() {
   const badge = STATUS_BADGES[report.status] || STATUS_BADGES.DRAFT;
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-      {/* Top Header */}
-      <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <Link
-            href="/admin/reports"
-            className="text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline inline-flex items-center gap-1 mb-2"
-          >
-            ← Back to Moderation Queue
-          </Link>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-            Incident Moderation Console
-          </h1>
-        </div>
-        <div>
-          <span
-            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${badge.bg} ${badge.text}`}
-          >
-            <span className={`h-2 w-2 rounded-full ${badge.dot}`} />
-            {badge.label}
-          </span>
-        </div>
-      </div>
+    <div>
+      <AdminNav />
 
-      {actionSuccess && (
-        <div className="mb-6 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 p-4 border border-emerald-200 dark:border-emerald-900">
-          <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">{actionSuccess}</p>
-        </div>
-      )}
-
-      {/* Moderation Actions Action Bar */}
-      <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50/40 dark:border-amber-900/60 dark:bg-amber-950/20 p-5 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 space-y-6">
+        {/* Top Header */}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
-              Moderation Decision Controls
-            </h2>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
-              Current status: <span className="font-semibold">{report.status}</span>
-            </p>
+            <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+              Incident Moderation Console
+            </h1>
           </div>
+          <div>
+            <span
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${badge.bg} ${badge.text}`}
+            >
+              <span className={`h-2 w-2 rounded-full ${badge.dot}`} />
+              {badge.label}
+            </span>
+          </div>
+        </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {report.status === "SUBMITTED" && (
+        {actionSuccess && (
+          <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/50 p-4 border border-emerald-200 dark:border-emerald-900">
+            <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">{actionSuccess}</p>
+          </div>
+        )}
+
+        {/* Moderation Actions Action Bar */}
+        <div className="rounded-2xl border border-amber-200 bg-amber-50/40 dark:border-amber-900/60 dark:bg-amber-950/20 p-5 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                Moderation Decision Controls
+              </h2>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
+                Current status: <span className="font-semibold">{report.status}</span>
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {report.status === "SUBMITTED" && (
+                <button
+                  type="button"
+                  onClick={handleStartReview}
+                  disabled={processing}
+                  className="rounded-lg bg-amber-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-amber-500 shadow-sm transition disabled:opacity-50"
+                >
+                  🔍 Start Review
+                </button>
+              )}
+
               <button
                 type="button"
-                onClick={handleStartReview}
-                disabled={processing}
-                className="rounded-lg bg-amber-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-amber-500 shadow-sm transition disabled:opacity-50"
+                onClick={() => setActiveModal("APPROVE")}
+                disabled={processing || report.status === "APPROVED"}
+                className="rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500 shadow-sm transition disabled:opacity-50"
               >
-                🔍 Start Review
+                ✓ Approve Report
               </button>
-            )}
 
-            <button
-              type="button"
-              onClick={() => setActiveModal("APPROVE")}
-              disabled={processing || report.status === "APPROVED"}
-              className="rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500 shadow-sm transition disabled:opacity-50"
-            >
-              ✓ Approve Report
-            </button>
+              <button
+                type="button"
+                onClick={() => setActiveModal("REQUEST_INFO")}
+                disabled={processing || report.status === "NEEDS_MORE_INFORMATION"}
+                className="rounded-lg bg-purple-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-purple-500 shadow-sm transition disabled:opacity-50"
+              >
+                💬 Request More Info
+              </button>
 
-            <button
-              type="button"
-              onClick={() => setActiveModal("REQUEST_INFO")}
-              disabled={processing || report.status === "NEEDS_MORE_INFORMATION"}
-              className="rounded-lg bg-purple-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-purple-500 shadow-sm transition disabled:opacity-50"
-            >
-              💬 Request More Info
-            </button>
+              <button
+                type="button"
+                onClick={() => setActiveModal("REJECT")}
+                disabled={processing || report.status === "REJECTED"}
+                className="rounded-lg bg-red-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-red-500 shadow-sm transition disabled:opacity-50"
+              >
+                ✕ Reject Report
+              </button>
 
-            <button
-              type="button"
-              onClick={() => setActiveModal("REJECT")}
-              disabled={processing || report.status === "REJECTED"}
-              className="rounded-lg bg-red-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-red-500 shadow-sm transition disabled:opacity-50"
-            >
-              ✕ Reject Report
-            </button>
+              {report.status !== "ARCHIVED" && (
+                <button
+                  type="button"
+                  onClick={() => setActiveModal("ARCHIVE")}
+                  disabled={processing}
+                  className="rounded-lg bg-zinc-700 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-zinc-600 shadow-sm transition disabled:opacity-50"
+                >
+                  📦 Archive Report
+                </button>
+              )}
+            </div>
           </div>
         </div>
-      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Report Details & Evidence & Comments */}
@@ -576,12 +587,14 @@ export default function AdminReportDetailPage() {
               {activeModal === "APPROVE" && "Approve & Verify Incident Report"}
               {activeModal === "REJECT" && "Reject Incident Report"}
               {activeModal === "REQUEST_INFO" && "Request Additional Information from Reporter"}
+              {activeModal === "ARCHIVE" && "Archive Incident Report"}
             </h3>
 
             <p className="text-xs text-zinc-500 mb-4">
               {activeModal === "APPROVE" && "This report will transition to APPROVED status (Platform Reviewed)."}
               {activeModal === "REJECT" && "This report will transition to REJECTED status. Explain why the report is ineligible."}
               {activeModal === "REQUEST_INFO" && "Explain what evidence or location details the citizen should provide to clarify this incident."}
+              {activeModal === "ARCHIVE" && "This report will transition to ARCHIVED status and be moved to the platform archives."}
             </p>
 
             <div className="space-y-4">
@@ -633,6 +646,7 @@ export default function AdminReportDetailPage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
