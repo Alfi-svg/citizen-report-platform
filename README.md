@@ -34,8 +34,18 @@ The **Bangladesh Citizen Report Platform** is an enterprise-grade citizen report
 │  * Comments & Reactions       │ └─────────────────────────────┘
 │  * Safety Review Flags        │
 │  * In-App Notifications       │
+│  * Emergency Services Units   │
 └───────────────────────────────┘
 ```
+
+### 1.1. Citizen Safety Navigator
+The **Citizen Safety Navigator** (`/safety`) provides an instant, mobile-first emergency assistance directory across Bangladesh:
+- **National Emergency 999:** 1-tap toll-free emergency call action for police, fire service, and ambulance.
+- **Nearest Police Station & Police Box:** Server-side Haversine geospatial proximity calculation with accurate human-readable distance (e.g. `350 m`, `1.4 km`), verified phone number, 1-tap call button, and Google Maps directions link.
+- **Zero Continuous Tracking:** User GPS coordinates are processed on-demand in memory only when the user explicitly requests *"Find Help Near Me"*. Coordinates are never persisted in the database or exposed publicly.
+- **Manual Area Fallback:** Quick-select and dropdown filters for all major divisions/districts in Bangladesh if browser geolocation is unavailable or denied.
+- **Bilingual Interface:** Full English and Bangla (বাংলা) support.
+- **Admin Directory Management:** Administrative CRUD interface (`/admin/emergency-services`) to maintain official phone numbers, addresses, verification badges, and active directory status.
 
 ---
 

@@ -355,3 +355,84 @@ export interface NotificationPagination {
   limit: number;
   offset: number;
 }
+
+export type ServiceType = "POLICE_STATION" | "POLICE_BOX" | "FIRE_SERVICE" | "EMERGENCY_SERVICE" | "OTHER";
+
+export type VerificationStatus = "VERIFIED" | "UNVERIFIED" | "PENDING_REVIEW";
+
+export interface EmergencyService {
+  id: string;
+  name: string;
+  name_bn?: string | null;
+  service_type: ServiceType;
+  district: string;
+  area: string;
+  address: string;
+  address_bn?: string | null;
+  phone: string;
+  alternate_phone?: string | null;
+  latitude: number;
+  longitude: number;
+  source: string;
+  source_url?: string | null;
+  verification_status: VerificationStatus;
+  last_verified_at?: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+export interface NearbyServiceResponse {
+  id: string;
+  name: string;
+  name_bn?: string | null;
+  service_type: ServiceType;
+  district: string;
+  area: string;
+  address: string;
+  address_bn?: string | null;
+  phone: string;
+  alternate_phone?: string | null;
+  latitude: number;
+  longitude: number;
+  verification_status: VerificationStatus;
+  distance_km: number;
+  distance_formatted: string;
+  directions_url: string;
+}
+
+export interface NationalEmergencyResponse {
+  number: string;
+  name: string;
+  name_bn: string;
+  description: string;
+  description_bn: string;
+  call_action: string;
+}
+
+export interface NearbyEmergencyServicesResult {
+  national_emergency: NationalEmergencyResponse;
+  nearest_police_station?: NearbyServiceResponse | null;
+  nearest_police_box?: NearbyServiceResponse | null;
+  nearby_services: NearbyServiceResponse[];
+  search_location?: { latitude: number; longitude: number } | null;
+  total_found: number;
+}
+
+export interface AreaReference {
+  id: string;
+  name: string;
+  name_bn: string;
+  district: string;
+  district_bn: string;
+  latitude: number;
+  longitude: number;
+}
+
+export interface AdminEmergencyServicePagination {
+  items: EmergencyService[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+

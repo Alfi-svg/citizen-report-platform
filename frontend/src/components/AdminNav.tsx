@@ -29,6 +29,7 @@ export default function AdminNav({ pendingReports, pendingFlags }: AdminNavProps
       badge: pendingFlags,
     },
     { href: "/admin/comments", label: "Comments", icon: "💬", bn: "মন্তব্য" },
+    { href: "/admin/emergency-services", label: "Emergency Services", icon: "🚨", bn: "জরুরি সেবা" },
     { href: "/admin/users", label: "Users", icon: "👥", bn: "ব্যবহারকারী" },
     { href: "/admin/categories", label: "Categories", icon: "🏷️", bn: "ক্যাটাগরি" },
   ];

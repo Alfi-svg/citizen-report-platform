@@ -12,6 +12,7 @@ from app.models.report import Report, ReportStatus
 from app.models.comment import Comment, CommentStatus
 from app.models.flag import ContentFlag, FlagStatus
 from app.models.category import Category
+from app.models.emergency_service import EmergencyService, ServiceType, VerificationStatus
 from app.models.user import User, UserRole
 from app.schemas.moderation import (
     AdminDashboardStats,
@@ -34,6 +35,12 @@ from app.schemas.category import (
     AdminCategoryResponse,
 )
 from app.schemas.comment import AdminCommentResponse, CommentStatusUpdate
+from app.schemas.emergency_service import (
+    EmergencyServiceCreate,
+    EmergencyServiceUpdate,
+    EmergencyServiceResponse,
+    AdminEmergencyServicePagination,
+)
 from app.services.notification import notify_report_owner, create_notification
 
 router = APIRouter()
@@ -948,3 +955,178 @@ async def update_comment_status(
     await db.commit()
     await db.refresh(comment)
     return comment
+
+
+# ==============================================================================
+# 6. EMERGENCY SERVICES DIRECTORY MANAGEMENT
+# ==============================================================================
+
+@router.get(
+    "/emergency-services",
+    response_model=AdminEmergencyServicePagination,
+    status_code=status.HTTP_200_OK,
+    summary="List and filter emergency services directory records",
+)
+async def list_admin_emergency_services(
+    service_type: Optional[ServiceType] = Query(None),
+    district: Optional[str] = Query(None),
+    verification_status: Optional[VerificationStatus] = Query(None),
+    is_active: Optional[bool] = Query(None),
+    search: Optional[str] = Query(None, min_length=1),
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    conditions = []
+    if service_type:
+        conditions.append(EmergencyService.service_type == service_type)
+    if district:
+        conditions.append(EmergencyService.district.ilike(f"%{district.strip()}%"))
+    if verification_status:
+        conditions.append(EmergencyService.verification_status == verification_status)
+    if is_active is not None:
+        conditions.append(EmergencyService.is_active == is_active)
+    if search:
+        p = f"%{search.strip()}%"
+        conditions.append(
+            or_(
+                EmergencyService.name.ilike(p),
+                EmergencyService.area.ilike(p),
+                EmergencyService.address.ilike(p),
+                EmergencyService.phone.ilike(p),
+            )
+        )
+
+    where_clause = and_(*conditions) if conditions else True
+    total = await db.scalar(select(func.count(EmergencyService.id)).where(where_clause)) or 0
+
+    stmt = (
+        select(EmergencyService)
+        .where(where_clause)
+        .order_by(EmergencyService.created_at.desc())
+        .limit(limit)
+        .offset(offset)
+    )
+    result = await db.execute(stmt)
+    services = result.scalars().all()
+
+    return AdminEmergencyServicePagination(
+        items=list(services),
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
+
+
+@router.post(
+    "/emergency-services",
+    response_model=EmergencyServiceResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a new verified emergency service directory entry",
+)
+async def create_admin_emergency_service(
+    payload: EmergencyServiceCreate,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    service = EmergencyService(
+        name=payload.name,
+        name_bn=payload.name_bn,
+        service_type=payload.service_type,
+        district=payload.district,
+        area=payload.area,
+        address=payload.address,
+        address_bn=payload.address_bn,
+        phone=payload.phone,
+        alternate_phone=payload.alternate_phone,
+        latitude=payload.latitude,
+        longitude=payload.longitude,
+        source=payload.source,
+        source_url=payload.source_url,
+        verification_status=payload.verification_status,
+        is_active=payload.is_active,
+    )
+    db.add(service)
+    await db.commit()
+    await db.refresh(service)
+    return service
+
+
+@router.get(
+    "/emergency-services/{service_id}",
+    response_model=EmergencyServiceResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get detailed emergency service record",
+)
+async def get_admin_emergency_service(
+    service_id: uuid.UUID,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    stmt = select(EmergencyService).where(EmergencyService.id == service_id)
+    result = await db.execute(stmt)
+    service = result.scalar_one_or_none()
+    if not service:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Emergency service record not found.",
+        )
+    return service
+
+
+@router.put(
+    "/emergency-services/{service_id}",
+    response_model=EmergencyServiceResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Update emergency service directory entry",
+)
+async def update_admin_emergency_service(
+    service_id: uuid.UUID,
+    payload: EmergencyServiceUpdate,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    stmt = select(EmergencyService).where(EmergencyService.id == service_id)
+    result = await db.execute(stmt)
+    service = result.scalar_one_or_none()
+    if not service:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Emergency service record not found.",
+        )
+
+    update_data = payload.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(service, field, value)
+
+    await db.commit()
+    await db.refresh(service)
+    return service
+
+
+@router.delete(
+    "/emergency-services/{service_id}",
+    response_model=EmergencyServiceResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Soft-delete or toggle active status of emergency service",
+)
+async def delete_admin_emergency_service(
+    service_id: uuid.UUID,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    stmt = select(EmergencyService).where(EmergencyService.id == service_id)
+    result = await db.execute(stmt)
+    service = result.scalar_one_or_none()
+    if not service:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Emergency service record not found.",
+        )
+
+    service.is_active = False
+    await db.commit()
+    await db.refresh(service)
+    return service
+

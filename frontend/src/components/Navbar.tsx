@@ -20,7 +20,16 @@ export default function Navbar() {
           </Link>
         </div>
 
-        <nav className="flex items-center gap-2.5 sm:gap-4">
+        <nav className="flex items-center gap-2 sm:gap-3.5">
+          <Link
+            href="/safety"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-black text-white shadow-xs hover:bg-red-500 transition animate-pulse hover:animate-none shrink-0"
+          >
+            <span>🚨</span>
+            <span className="hidden sm:inline">I Need Help</span>
+            <span className="sm:hidden">Help</span>
+          </Link>
+
           <Link
             href="/"
             className="text-sm font-medium text-zinc-700 hover:text-emerald-600 dark:text-zinc-300 dark:hover:text-emerald-400"

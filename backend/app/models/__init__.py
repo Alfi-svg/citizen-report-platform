@@ -8,6 +8,7 @@ from app.models.comment import Comment, CommentStatus
 from app.models.reaction import Reaction, ReactionType
 from app.models.flag import ContentFlag, FlagTargetType, FlagStatus, ReportFlagReason, CommentFlagReason
 from app.models.notification import Notification, NotificationType
+from app.models.emergency_service import EmergencyService, ServiceType, VerificationStatus
 
 __all__ = [
     "Base",
@@ -32,4 +33,7 @@ __all__ = [
     "CommentFlagReason",
     "Notification",
     "NotificationType",
+    "EmergencyService",
+    "ServiceType",
+    "VerificationStatus",
 ]
