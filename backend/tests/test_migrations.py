@@ -4,10 +4,13 @@ from alembic.script import ScriptDirectory
 
 
 def test_alembic_config_and_revisions():
-    alembic_ini_path = os.path.join(os.path.dirname(__file__), "..", "alembic.ini")
+    backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    alembic_ini_path = os.path.join(backend_dir, "alembic.ini")
     assert os.path.exists(alembic_ini_path)
 
     config = Config(alembic_ini_path)
+    config.set_main_option("script_location", os.path.join(backend_dir, "migrations"))
+
     script_directory = ScriptDirectory.from_config(config)
 
     # Verify head revision is discoverable
