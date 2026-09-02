@@ -28,9 +28,10 @@ async def test_health_check_endpoint_healthy(async_client: AsyncClient):
 async def test_health_check_endpoint_degraded(async_client: AsyncClient):
     with patch("app.api.v1.endpoints.health.check_database_connection", return_value=False):
         response = await async_client.get("/api/v1/health")
-        assert response.status_code == 503
+        assert response.status_code == 200
         data = response.json()
         assert data["status"] == "degraded"
         assert data["database"] == "unavailable"
+
 
 

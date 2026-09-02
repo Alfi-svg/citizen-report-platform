@@ -73,7 +73,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             await session.close()
 
 
-async def check_database_connection(timeout_seconds: float = 2.0) -> bool:
+async def check_database_connection(timeout_seconds: float = 5.0) -> bool:
     """Probes the database connection using SELECT 1 with a timeout."""
     try:
         async def _ping() -> bool:
@@ -84,3 +84,4 @@ async def check_database_connection(timeout_seconds: float = 2.0) -> bool:
         return await asyncio.wait_for(_ping(), timeout=timeout_seconds)
     except Exception:
         return False
+
