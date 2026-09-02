@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
-import { Report, Category, ReportStatus, ReportMedia, PublicReport } from "@/lib/types";
+import { Report, Category, ReportStatus, ReportMedia, PublicReport, PublicRelatedReportResponse } from "@/lib/types";
 import EvidenceGallery from "@/components/EvidenceGallery";
 import EvidenceUploader from "@/components/EvidenceUploader";
 import ReactionControls from "@/components/ReactionControls";
@@ -73,6 +73,7 @@ export default function ReportDetailPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [deletingMediaId, setDeletingMediaId] = useState<string | null>(null);
   const [isFlagModalOpen, setIsFlagModalOpen] = useState(false);
+  const [relatedReports, setRelatedReports] = useState<PublicRelatedReportResponse[]>([]);
 
   // Edit mode state
   const [isEditing, setIsEditing] = useState(false);
@@ -89,6 +90,13 @@ export default function ReportDetailPage() {
   useEffect(() => {
     let isMounted = true;
     if (!reportId) return;
+
+    // Fetch related reports
+    apiFetch<PublicRelatedReportResponse[]>(`/safety/reports/${reportId}/related`)
+      .then((rels) => {
+        if (isMounted) setRelatedReports(rels);
+      })
+      .catch(() => {});
 
     // 1. If authenticated, attempt to fetch user/owner report
     if (isAuthenticated) {
@@ -358,6 +366,43 @@ export default function ReportDetailPage() {
               <span>Flag Report / রিপোর্টটি ফ্ল্যাগ করুন</span>
             </button>
           </div>
+
+          {/* Related Reports Section */}
+          {relatedReports.length > 0 && (
+            <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40 p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-extrabold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                  <span>🔗</span>
+                  <span>Related Reports / সম্পর্কিত রিপোর্ট</span>
+                </h3>
+                <span className="text-[11px] text-zinc-400 font-semibold">
+                  {relatedReports.length} related
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {relatedReports.map((rel) => (
+                  <Link
+                    key={rel.id}
+                    href={`/reports/${rel.id}`}
+                    className="group rounded-xl border border-zinc-200/80 dark:border-zinc-700/80 bg-white dark:bg-zinc-900 p-3.5 shadow-xs hover:border-emerald-500 transition"
+                  >
+                    <div className="flex items-center justify-between text-[10px] text-zinc-400 mb-1">
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950 px-1.5 py-0.5 rounded">
+                        {rel.category_name}
+                      </span>
+                      <span>{new Date(rel.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <h4 className="text-xs font-bold text-zinc-800 dark:text-zinc-200 group-hover:text-emerald-600 transition line-clamp-1">
+                      {rel.title}
+                    </h4>
+                    <p className="text-[11px] text-zinc-500 mt-1 line-clamp-1">
+                      📍 {rel.location_text}
+                    </p>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Verification Disclaimer */}
           <div className="rounded-2xl border border-blue-200 bg-blue-50/50 dark:border-blue-900 dark:bg-blue-950/20 p-4 text-xs text-blue-800 dark:text-blue-300 leading-relaxed">

@@ -56,6 +56,15 @@ The **Missing Person Alert Network** (`/missing-person`) enables verified commun
 - **Found & Resolution Lifecycle:** Admins can mark individuals as `FOUND` with resolution notes, automatically updating public status and notifying community participants.
 - **Zero-Doxxing Privacy Guarantee:** Reporter personal contact info, private metadata, and unreviewed citizen locations are strictly shielded.
 
+### 1.3. Community Safety Map & Related Incident Clustering
+The **Community Safety Map** (`/safety-map`) and **Incident Clustering Intelligence Engine** (`/admin/clusters`) provide geospatial visualization and deterministic incident grouping across Bangladesh:
+- **Strict Public Approval Gate:** Only reports with `status = APPROVED` appear on the public map. Drafts, submitted, under review, rejected, or archived reports are filtered at the database level.
+- **Geographic Privacy Protection:** Public coordinates are rounded to ~3 decimal places (~110m resolution) or area centroids. Exact residential coordinates, reporter email, phone, and private evidence attachments are never published.
+- **Deterministic Similarity Scoring:** Rule-based similarity engine based on geographic proximity (Haversine formula ≤1km: 40pts, ≤3km: 30pts, ≤5km: 20pts, ≤10km: 10pts), time proximity (|Δt| ≤24h: 30pts, ≤72h: 20pts, ≤7d: 10pts), category matching (20pts), and title/location token overlap (10pts).
+- **Incident Clusters:** Non-destructive grouping (`IncidentCluster` & `IncidentClusterMember`) that associates multiple reports without merging or deleting underlying civic data.
+- **Related Reports on Public Detail:** Approved reports automatically display related cluster co-members and high-similarity reports on `/reports/[id]`.
+- **Admin Intelligence Console:** Full administrative controls (`/admin/clusters`) to create clusters, add/remove members, and inspect transparent similarity breakdowns.
+
 ---
 
 ## 2. Production Deployment Checklist

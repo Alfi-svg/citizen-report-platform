@@ -137,11 +137,18 @@ class Report(Base, TimestampMixin):
         cascade="all, delete-orphan",
         lazy="selectin",
     )
+    cluster_memberships: Mapped[List["IncidentClusterMember"]] = relationship(
+        "IncidentClusterMember",
+        back_populates="report",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
 
     __table_args__ = (
         Index("ix_reports_status_created_at", "status", "created_at"),
         Index("ix_reports_category_status", "category_id", "status"),
         Index("ix_reports_user_status", "user_id", "status"),
+        Index("ix_reports_status_lat_lng", "status", "latitude", "longitude"),
     )
 
     def __repr__(self) -> str:

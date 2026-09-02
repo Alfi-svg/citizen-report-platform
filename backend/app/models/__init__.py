@@ -18,6 +18,10 @@ from app.models.missing_person import (
     AlertStatus,
     SightingStatus,
 )
+from app.models.incident_cluster import (
+    IncidentCluster,
+    IncidentClusterMember,
+)
 
 __all__ = [
     "Base",
@@ -52,4 +56,6 @@ __all__ = [
     "AlertNotificationDelivery",
     "AlertStatus",
     "SightingStatus",
+    "IncidentCluster",
+    "IncidentClusterMember",
 ]

@@ -38,6 +38,14 @@ export default function Navbar() {
           </Link>
 
           <Link
+            href="/safety-map"
+            className="text-sm font-medium text-zinc-700 hover:text-emerald-600 dark:text-zinc-300 dark:hover:text-emerald-400 flex items-center gap-1"
+          >
+            <span>🗺️</span>
+            <span>Safety Map</span>
+          </Link>
+
+          <Link
             href="/missing-person"
             className="text-sm font-medium text-zinc-700 hover:text-red-600 dark:text-zinc-300 dark:hover:text-red-400"
           >

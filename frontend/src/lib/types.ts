@@ -49,6 +49,8 @@ export interface Category {
   updated_at: string;
 }
 
+export type CategoryResponse = Category;
+
 export interface PublicCategory {
   id: string;
   name: string;
@@ -558,5 +560,119 @@ export interface UserNotificationPreference {
   last_known_longitude?: number | null;
   last_location_updated_at?: string | null;
 }
+
+export interface PublicMapIncidentPoint {
+  id: string;
+  title: string;
+  category_name: string;
+  category_slug: string;
+  location_text: string;
+  approximate_latitude: number;
+  approximate_longitude: number;
+  incident_date?: string | null;
+  created_at: string;
+  status: string;
+  cluster_id?: string | null;
+  cluster_title?: string | null;
+  is_missing_person: boolean;
+  missing_person_alert_id?: string | null;
+  missing_person_status?: string | null;
+}
+
+export interface PublicMapClusterPoint {
+  id: string;
+  title: string;
+  title_bn?: string | null;
+  category_name?: string | null;
+  category_slug?: string | null;
+  summary?: string | null;
+  area?: string | null;
+  approximate_latitude: number;
+  approximate_longitude: number;
+  member_count: number;
+  created_at: string;
+}
+
+export interface PublicSafetyMapResponse {
+  incidents: PublicMapIncidentPoint[];
+  clusters: PublicMapClusterPoint[];
+  total_incidents: number;
+  total_clusters: number;
+  applied_filters: Record<string, any>;
+}
+
+export interface PublicRelatedReportResponse {
+  id: string;
+  title: string;
+  category_name: string;
+  category_slug: string;
+  location_text: string;
+  approximate_latitude?: number | null;
+  approximate_longitude?: number | null;
+  incident_date?: string | null;
+  created_at: string;
+  status: string;
+  relationship_type?: string | null;
+  similarity_score?: number | null;
+}
+
+export interface IncidentClusterMemberResponse {
+  id: string;
+  cluster_id: string;
+  report_id: string;
+  report_title: string;
+  report_status: string;
+  report_category: string;
+  relationship_type: string;
+  similarity_score?: number | null;
+  created_at: string;
+}
+
+export interface IncidentClusterDetailResponse {
+  id: string;
+  title: string;
+  title_bn?: string | null;
+  category_id?: string | null;
+  category_name?: string | null;
+  summary?: string | null;
+  summary_bn?: string | null;
+  approximate_latitude?: number | null;
+  approximate_longitude?: number | null;
+  area?: string | null;
+  is_active: boolean;
+  member_count: number;
+  members: IncidentClusterMemberResponse[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface IncidentClusterListResponse {
+  items: IncidentClusterDetailResponse[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface SimilarityBreakdown {
+  geo_score: number;
+  time_score: number;
+  category_score: number;
+  text_score: number;
+  total_score: number;
+  distance_km?: number | null;
+  time_diff_hours?: number | null;
+}
+
+export interface SuggestedRelatedReportResponse {
+  report_id: string;
+  title: string;
+  category_name: string;
+  location_text: string;
+  created_at: string;
+  incident_date?: string | null;
+  status: string;
+  similarity: SimilarityBreakdown;
+}
+
 
 

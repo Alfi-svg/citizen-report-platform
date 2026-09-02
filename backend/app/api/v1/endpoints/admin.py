@@ -59,11 +59,25 @@ from app.schemas.missing_person import (
     MissingPersonProfileResponse,
     PublicMissingPersonSightingResponse,
 )
+from app.models.incident_cluster import IncidentCluster, IncidentClusterMember
+from app.schemas.incident_cluster import (
+    IncidentClusterCreate,
+    IncidentClusterUpdate,
+    IncidentClusterDetailResponse,
+    IncidentClusterListResponse,
+    IncidentClusterMemberCreate,
+    IncidentClusterMemberResponse,
+    SuggestedRelatedReportResponse,
+)
 from app.services.notification import notify_report_owner, create_notification
 from app.services.missing_person import (
     dispatch_missing_person_alert_notifications,
     notify_missing_person_found,
     check_duplicate_missing_person_candidates,
+)
+from app.services.incident_similarity import (
+    find_suggested_related_reports,
+    calculate_similarity_breakdown,
 )
 
 router = APIRouter()
@@ -1504,5 +1518,415 @@ async def moderate_missing_person_sighting(
     await db.commit()
     await db.refresh(sighting)
     return AdminMissingPersonSightingResponse.model_validate(sighting)
+
+
+# ==============================================================================
+# 9. INCIDENT CLUSTER INTELLIGENCE & MANAGEMENT
+# ==============================================================================
+
+@router.get(
+    "/clusters",
+    response_model=IncidentClusterListResponse,
+    status_code=status.HTTP_200_OK,
+    summary="List all incident clusters with pagination and filtering",
+)
+async def list_admin_incident_clusters(
+    search: Optional[str] = Query(None, description="Search by cluster title or area"),
+    category_id: Optional[uuid.UUID] = Query(None, description="Filter by category"),
+    is_active: Optional[bool] = Query(None, description="Filter by active status"),
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    conditions = []
+    if is_active is not None:
+        conditions.append(IncidentCluster.is_active == is_active)
+    if category_id:
+        conditions.append(IncidentCluster.category_id == category_id)
+    if search and search.strip():
+        term = f"%{search.strip()}%"
+        conditions.append(
+            or_(
+                IncidentCluster.title.ilike(term),
+                IncidentCluster.area.ilike(term),
+                IncidentCluster.summary.ilike(term),
+            )
+        )
+
+    # Count
+    count_stmt = select(func.count(IncidentCluster.id))
+    if conditions:
+        count_stmt = count_stmt.where(and_(*conditions))
+    count_res = await db.execute(count_stmt)
+    total = count_res.scalar() or 0
+
+    # Fetch
+    stmt = (
+        select(IncidentCluster)
+        .order_by(IncidentCluster.created_at.desc())
+        .limit(limit)
+        .offset(offset)
+    )
+    if conditions:
+        stmt = stmt.where(and_(*conditions))
+
+    result = await db.execute(stmt)
+    clusters = result.scalars().all()
+
+    items: List[IncidentClusterDetailResponse] = []
+    for c in clusters:
+        members_resp = [
+            IncidentClusterMemberResponse(
+                id=m.id,
+                cluster_id=m.cluster_id,
+                report_id=m.report_id,
+                report_title=m.report.title if m.report else "Unknown Report",
+                report_status=m.report.status.value if m.report else "UNKNOWN",
+                report_category=m.report.category.name if m.report and m.report.category else "General",
+                relationship_type=m.relationship_type,
+                similarity_score=m.similarity_score,
+                created_at=m.created_at,
+            )
+            for m in c.members
+        ]
+        items.append(
+            IncidentClusterDetailResponse(
+                id=c.id,
+                title=c.title,
+                title_bn=c.title_bn,
+                category_id=c.category_id,
+                category_name=c.category.name if c.category else None,
+                summary=c.summary,
+                summary_bn=c.summary_bn,
+                approximate_latitude=c.approximate_latitude,
+                approximate_longitude=c.approximate_longitude,
+                area=c.area,
+                is_active=c.is_active,
+                member_count=len(c.members),
+                members=members_resp,
+                created_at=c.created_at,
+                updated_at=c.updated_at,
+            )
+        )
+
+    return IncidentClusterListResponse(
+        items=items,
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
+
+
+@router.post(
+    "/clusters",
+    response_model=IncidentClusterDetailResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a new incident cluster",
+)
+async def create_admin_incident_cluster(
+    payload: IncidentClusterCreate,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    cluster = IncidentCluster(
+        title=payload.title.strip(),
+        title_bn=payload.title_bn.strip() if payload.title_bn else None,
+        category_id=payload.category_id,
+        summary=payload.summary.strip() if payload.summary else None,
+        summary_bn=payload.summary_bn.strip() if payload.summary_bn else None,
+        approximate_latitude=payload.approximate_latitude,
+        approximate_longitude=payload.approximate_longitude,
+        area=payload.area.strip() if payload.area else None,
+        is_active=payload.is_active,
+        created_by_admin_id=current_admin.id,
+    )
+    db.add(cluster)
+    await db.flush()
+
+    # Link initial report IDs if provided
+    if payload.initial_report_ids:
+        for rep_id in payload.initial_report_ids:
+            mem = IncidentClusterMember(
+                cluster_id=cluster.id,
+                report_id=rep_id,
+                relationship_type="PRIMARY",
+                added_by_admin_id=current_admin.id,
+            )
+            db.add(mem)
+
+    await db.commit()
+    await db.refresh(cluster)
+
+    # Reload with relationships
+    stmt = select(IncidentCluster).where(IncidentCluster.id == cluster.id)
+    res = await db.execute(stmt)
+    full_cluster = res.scalar_one()
+
+    members_resp = [
+        IncidentClusterMemberResponse(
+            id=m.id,
+            cluster_id=m.cluster_id,
+            report_id=m.report_id,
+            report_title=m.report.title if m.report else "Unknown Report",
+            report_status=m.report.status.value if m.report else "UNKNOWN",
+            report_category=m.report.category.name if m.report and m.report.category else "General",
+            relationship_type=m.relationship_type,
+            similarity_score=m.similarity_score,
+            created_at=m.created_at,
+        )
+        for m in full_cluster.members
+    ]
+
+    return IncidentClusterDetailResponse(
+        id=full_cluster.id,
+        title=full_cluster.title,
+        title_bn=full_cluster.title_bn,
+        category_id=full_cluster.category_id,
+        category_name=full_cluster.category.name if full_cluster.category else None,
+        summary=full_cluster.summary,
+        summary_bn=full_cluster.summary_bn,
+        approximate_latitude=full_cluster.approximate_latitude,
+        approximate_longitude=full_cluster.approximate_longitude,
+        area=full_cluster.area,
+        is_active=full_cluster.is_active,
+        member_count=len(full_cluster.members),
+        members=members_resp,
+        created_at=full_cluster.created_at,
+        updated_at=full_cluster.updated_at,
+    )
+
+
+@router.get(
+    "/clusters/{cluster_id}",
+    response_model=IncidentClusterDetailResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get single incident cluster details",
+)
+async def get_admin_incident_cluster(
+    cluster_id: uuid.UUID,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    stmt = select(IncidentCluster).where(IncidentCluster.id == cluster_id)
+    res = await db.execute(stmt)
+    cluster = res.scalar_one_or_none()
+    if not cluster:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Incident cluster not found.",
+        )
+
+    members_resp = [
+        IncidentClusterMemberResponse(
+            id=m.id,
+            cluster_id=m.cluster_id,
+            report_id=m.report_id,
+            report_title=m.report.title if m.report else "Unknown Report",
+            report_status=m.report.status.value if m.report else "UNKNOWN",
+            report_category=m.report.category.name if m.report and m.report.category else "General",
+            relationship_type=m.relationship_type,
+            similarity_score=m.similarity_score,
+            created_at=m.created_at,
+        )
+        for m in cluster.members
+    ]
+
+    return IncidentClusterDetailResponse(
+        id=cluster.id,
+        title=cluster.title,
+        title_bn=cluster.title_bn,
+        category_id=cluster.category_id,
+        category_name=cluster.category.name if cluster.category else None,
+        summary=cluster.summary,
+        summary_bn=cluster.summary_bn,
+        approximate_latitude=cluster.approximate_latitude,
+        approximate_longitude=cluster.approximate_longitude,
+        area=cluster.area,
+        is_active=cluster.is_active,
+        member_count=len(cluster.members),
+        members=members_resp,
+        created_at=cluster.created_at,
+        updated_at=cluster.updated_at,
+    )
+
+
+@router.put(
+    "/clusters/{cluster_id}",
+    response_model=IncidentClusterDetailResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Update an incident cluster",
+)
+async def update_admin_incident_cluster(
+    cluster_id: uuid.UUID,
+    payload: IncidentClusterUpdate,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    stmt = select(IncidentCluster).where(IncidentCluster.id == cluster_id)
+    res = await db.execute(stmt)
+    cluster = res.scalar_one_or_none()
+    if not cluster:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Incident cluster not found.",
+        )
+
+    if payload.title is not None:
+        cluster.title = payload.title.strip()
+    if payload.title_bn is not None:
+        cluster.title_bn = payload.title_bn.strip() if payload.title_bn else None
+    if payload.category_id is not None:
+        cluster.category_id = payload.category_id
+    if payload.summary is not None:
+        cluster.summary = payload.summary.strip() if payload.summary else None
+    if payload.summary_bn is not None:
+        cluster.summary_bn = payload.summary_bn.strip() if payload.summary_bn else None
+    if payload.approximate_latitude is not None:
+        cluster.approximate_latitude = payload.approximate_latitude
+    if payload.approximate_longitude is not None:
+        cluster.approximate_longitude = payload.approximate_longitude
+    if payload.area is not None:
+        cluster.area = payload.area.strip() if payload.area else None
+    if payload.is_active is not None:
+        cluster.is_active = payload.is_active
+
+    await db.commit()
+    await db.refresh(cluster)
+
+    return await get_admin_incident_cluster(cluster_id=cluster_id, current_admin=current_admin, db=db)
+
+
+@router.post(
+    "/clusters/{cluster_id}/members",
+    response_model=IncidentClusterMemberResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Add a report to an incident cluster",
+)
+async def add_member_to_incident_cluster(
+    cluster_id: uuid.UUID,
+    payload: IncidentClusterMemberCreate,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    # Verify cluster exists
+    stmt_c = select(IncidentCluster).where(IncidentCluster.id == cluster_id)
+    res_c = await db.execute(stmt_c)
+    cluster = res_c.scalar_one_or_none()
+    if not cluster:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cluster not found.")
+
+    # Verify report exists
+    stmt_r = select(Report).where(Report.id == payload.report_id)
+    res_r = await db.execute(stmt_r)
+    report = res_r.scalar_one_or_none()
+    if not report:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found.")
+
+    # Check for existing membership
+    stmt_m = select(IncidentClusterMember).where(
+        and_(
+            IncidentClusterMember.cluster_id == cluster_id,
+            IncidentClusterMember.report_id == payload.report_id,
+        )
+    )
+    res_m = await db.execute(stmt_m)
+    existing_mem = res_m.scalar_one_or_none()
+    if existing_mem:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Report is already a member of this incident cluster.",
+        )
+
+    # Compute similarity score with cluster centroid or first report if not provided
+    score = payload.similarity_score
+    if score is None and cluster.members:
+        first_rep = cluster.members[0].report
+        if first_rep:
+            score = calculate_similarity_breakdown(report, first_rep).total_score
+
+    member = IncidentClusterMember(
+        cluster_id=cluster_id,
+        report_id=payload.report_id,
+        relationship_type=payload.relationship_type,
+        similarity_score=score,
+        added_by_admin_id=current_admin.id,
+    )
+    db.add(member)
+    await db.commit()
+    await db.refresh(member)
+
+    return IncidentClusterMemberResponse(
+        id=member.id,
+        cluster_id=member.cluster_id,
+        report_id=member.report_id,
+        report_title=report.title,
+        report_status=report.status.value,
+        report_category=report.category.name if report.category else "General",
+        relationship_type=member.relationship_type,
+        similarity_score=member.similarity_score,
+        created_at=member.created_at,
+    )
+
+
+@router.delete(
+    "/clusters/{cluster_id}/members/{report_id}",
+    status_code=status.HTTP_200_OK,
+    summary="Remove a report from an incident cluster",
+)
+async def remove_member_from_incident_cluster(
+    cluster_id: uuid.UUID,
+    report_id: uuid.UUID,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    stmt = select(IncidentClusterMember).where(
+        and_(
+            IncidentClusterMember.cluster_id == cluster_id,
+            IncidentClusterMember.report_id == report_id,
+        )
+    )
+    res = await db.execute(stmt)
+    member = res.scalar_one_or_none()
+    if not member:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Report membership in this cluster not found.",
+        )
+
+    await db.delete(member)
+    await db.commit()
+    return {"message": "Report successfully removed from cluster."}
+
+
+@router.get(
+    "/reports/{report_id}/suggested-related",
+    response_model=List[SuggestedRelatedReportResponse],
+    status_code=status.HTTP_200_OK,
+    summary="Get suggested related reports with transparent similarity scoring breakdown",
+)
+async def get_admin_suggested_related_reports(
+    report_id: uuid.UUID,
+    min_score: float = Query(25.0, ge=0.0, le=100.0),
+    limit: int = Query(10, ge=1, le=50),
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    stmt = select(Report).where(Report.id == report_id)
+    res = await db.execute(stmt)
+    report = res.scalar_one_or_none()
+    if not report:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Report not found.",
+        )
+
+    return await find_suggested_related_reports(
+        report=report,
+        db=db,
+        min_score=min_score,
+        limit=limit,
+    )
+
 
 
