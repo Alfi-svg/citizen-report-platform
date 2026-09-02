@@ -1,126 +1,256 @@
-# Bangladesh Citizen Report Platform — Production Deployment Guide
+# Bangladesh Citizen Report Platform — Production Launch Handoff & Deployment Manual
 
-> **Current Stage:** `STEP 12 — Production Deployment Preparation`
+> **Current Stage:** `STEP 14 — Final Launch Handoff & Deployment Checklist`
+> **Status:** Production-Ready & Deployment Handoff Complete
 
 ---
 
 ## 1. System Overview & Architecture
 
-The **Bangladesh Citizen Report Platform** is an enterprise-grade citizen reporting and community verification platform. It allows verified citizens to submit incident reports with multimedia evidence (images, documents, videos), participate in civic discussion, endorse verified issues, flag policy violations, and track live investigation progress.
+The **Bangladesh Citizen Report Platform** is an enterprise-grade citizen reporting and civic oversight platform. It allows verified citizens to submit community incident reports with multimedia evidence (photos, documents, videos), engage in constructive discussions, endorse issues, flag violations, and track status updates with in-app activity notifications.
 
 ```
 [Public Browser / Citizen Client]
-        |
-        |  (JSON API / Bearer Token)
-        v
-+---------------------------------------------------------------+
-|                       FastAPI Backend                         |
-|  - Structured Logging & Health Probes (/api/v1/health)        |
-|  - HTTP Security Headers (CSP, HSTS, X-Frame-Options)         |
-|  - Environment-Driven CORS (Multi-origin support)             |
-|  - Strict Role-Based Access Control (USER vs ADMIN)           |
-|  - Anonymous Whistleblower Masking                            |
-|  - Global Safe Exception Handler (No traceback leakage)       |
-+---------------+-------------------------------+---------------+
-                |                               |
-                v                               v
-+-------------------------------+ +-----------------------------+
-|    PostgreSQL Relational DB   | |   S3-Compatible Object Store|
-|  * Users & Auth Records       | |  * AWS S3 / Cloudflare R2   |
-|  * Categories & Seed Data     | |  * Encrypted binary storage |
-|  * Incident Reports           | |  * Magic-byte validation    |
-|  * Moderation Audit History   | |  * Sanitized storage paths  |
-|  * Comments & Reactions       | +-----------------------------+
-|  * Safety Review Flags        |
-|  * In-App Notifications       |
-+-------------------------------+
+        │
+        │  (JSON API / JWT Bearer)
+        ▼
+┌───────────────────────────────────────────────────────────────┐
+│                       FastAPI Backend                         │
+│  - Structured Logging & Health Probes (/api/v1/health)        │
+│  - HTTP Security Headers (HSTS, CSP, X-Frame-Options: DENY)   │
+│  - Environment-Driven CORS (Multi-origin validator)           │
+│  - Strict Role-Based Access Control (USER vs ADMIN)           │
+│  - Anonymous Whistleblower Masking Guaranteed                 │
+│  - Global Safe Exception Handler (Zero traceback disclosure)  │
+└───────────────┬───────────────────────────────┬───────────────┘
+                │                               │
+                ▼                               ▼
+┌───────────────────────────────┐ ┌─────────────────────────────┐
+│    PostgreSQL Relational DB   │ │   S3-Compatible Object Store│
+│  * Users & Auth Records       │ │  * AWS S3 / Cloudflare R2   │
+│  * Categories & Seed Data     │ │  * Encrypted binary storage │
+│  * Incident Reports           │ │  * Magic-byte validation    │
+│  * Moderation Audit History   │ │  * Sanitized storage paths  │
+│  * Comments & Reactions       │ └─────────────────────────────┘
+│  * Safety Review Flags        │
+│  * In-App Notifications       │
+└───────────────────────────────┘
 ```
 
 ---
 
-## 2. Environment Variables & Secret Separation
+## 2. Production Deployment Checklist
 
-The platform distinguishes between **SERVER-ONLY Secrets** and **PUBLIC Browser Variables**.
-
-### Server-Only Secrets (Backend / Runtime Container)
-| Variable | Description | Example / Required Format |
-|---|---|---|
-| `ENVIRONMENT` | Deployment stage | `production`, `staging`, `development` |
-| `SECRET_KEY` | 32+ character secret for JWT signing | Generate via `python -c "import secrets; print(secrets.token_urlsafe(32))"` |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | Token lifespan | `10080` (7 days) |
-| `DATABASE_URL` | PostgreSQL async connection string | `postgresql+asyncpg://user:password@host:5432/citizen_db?ssl=require` |
-| `CORS_ORIGINS` | Comma-separated or JSON list of authorized web origins | `https://citizenreport.gov.bd,https://admin.citizenreport.gov.bd` |
-| `STORAGE_BACKEND` | Storage driver | `s3` (for cloud) or `local` (for development) |
-| `STORAGE_ENDPOINT` | S3-compatible API endpoint | `https://<account-id>.r2.cloudflarestorage.com` or `https://s3.<region>.amazonaws.com` |
-| `STORAGE_BUCKET` | Dedicated bucket name | `citizen-report-evidence-prod` |
-| `STORAGE_REGION` | S3 region | `ap-southeast-1` or `auto` |
-| `STORAGE_ACCESS_KEY` | Cloud storage access key | `AKIA...` |
-| `STORAGE_SECRET_KEY` | Cloud storage secret key | `wJalrXUtnFEMI/K7MDENG/bPxRfiCY...` |
-| `LOG_LEVEL` | Python logging verbosity | `INFO`, `WARNING`, `ERROR` |
-| `ENABLE_DOCS` | Toggle Swagger/OpenAPI docs | `false` (default in production) |
-
-### Public Variables (Frontend Client Bundle)
-| Variable | Description | Example |
-|---|---|---|
-| `NEXT_PUBLIC_API_URL` | Base URL for FastAPI backend API | `https://api.citizenreport.gov.bd/api/v1` |
-| `NEXT_PUBLIC_APP_URL` | Canonical public web URL | `https://citizenreport.gov.bd` |
+### Pre-Deployment
+- [ ] **Production database created:** PostgreSQL 15+ instance provisioned.
+- [ ] **Database connection configured:** `DATABASE_URL` configured with `postgresql+asyncpg://` and SSL enabled (`?ssl=require`).
+- [ ] **Required environment variables configured:** All values set in server and frontend environments.
+- [ ] **Frontend API URL configured:** `NEXT_PUBLIC_API_URL` set to the backend API domain.
+- [ ] **Backend CORS origins configured:** `CORS_ORIGINS` points strictly to authorized frontend domains.
+- [ ] **Authentication secret configured:** `SECRET_KEY` set to a random 32+ character string.
+- [ ] **Admin bootstrap configuration completed:** CLI procedure ready for initial administrator setup.
+- [ ] **Object storage configured:** S3/R2 bucket created with private access policies.
+- [ ] **Storage bucket/private access verified:** Public direct bucket listing disabled.
+- [ ] **Signed URL/backend media access verified:** Evidence streamed securely through verified API endpoints.
+- [ ] **File upload limits configured:** `MAX_IMAGE_SIZE_BYTES`, `MAX_VIDEO_SIZE_BYTES`, `MAX_DOCUMENT_SIZE_BYTES` set.
+- [ ] **Production domain configured:** DNS A/CNAME records pointed.
+- [ ] **HTTPS enabled:** TLS certificates active on both frontend and backend.
+- [ ] **No development secrets committed:** Secret scanning verified 0 credentials in git.
+- [ ] **Database migrations ready:** All Alembic revisions verified up to head.
 
 ---
 
-## 3. Production Deployment Step-by-Step
+## 3. Recommended Deployment Order
 
-### Step 3.1 — PostgreSQL Provisioning & Migrations
-1. Provision a PostgreSQL 15+ database instance (AWS RDS, Supabase, Neon, Railway, or self-hosted).
-2. Configure your connection string in `DATABASE_URL` with `postgresql+asyncpg://` driver prefix and SSL enabled (`?ssl=require`).
-3. Run database migrations to apply all tables, indexes, and constraints:
-   ```bash
-   cd backend
-   source .venv/bin/activate
-   alembic upgrade head
-   ```
+Deploy components in this exact sequence to ensure reliable operation:
 
-### Step 3.2 — Initial Administrator Bootstrap
-Create the primary platform administrator securely without hardcoded credentials or public registration endpoints:
+```
+1. DATABASE         Provision managed PostgreSQL database
+   │
+2. OBJECT STORAGE   Provision private S3 / Cloudflare R2 bucket & IAM keys
+   │
+3. BACKEND          Deploy FastAPI container/process with environment variables
+   │
+4. MIGRATIONS       Execute 'alembic upgrade head' against the production database
+   │
+5. ADMIN BOOTSTRAP  Execute 'python -m app.db.create_admin' to create initial admin
+   │
+6. FRONTEND         Deploy Next.js application with NEXT_PUBLIC_* variables
+   │
+7. SMOKE TESTING    Execute the post-deployment verification checklist
+```
+
+---
+
+## 4. Environment Variable Reference
+
+Review [`.env.example`](./.env.example) for reference. All required variables:
+
+### DATABASE
+- `DATABASE_URL`: PostgreSQL async connection string (`postgresql+asyncpg://user:pass@host:5432/dbname?ssl=require`).
+- `DB_ECHO`: Boolean to toggle raw SQL logging (`false` in production).
+- `DB_POOL_SIZE`: Database connection pool size (default `5`).
+- `DB_MAX_OVERFLOW`: Max overflow connections beyond pool size (default `10`).
+- `DB_TIMEOUT`: Connection timeout in seconds (default `10`).
+
+### AUTH
+- `SECRET_KEY`: Cryptographic signing secret for JWT tokens (Required in production, min 32 characters).
+- `ACCESS_TOKEN_EXPIRE_MINUTES`: JWT token validity lifespan (default `10080` = 7 days).
+- `ADMIN_EMAIL`: Default email for admin CLI bootstrap.
+- `ADMIN_USERNAME`: Default username for admin CLI bootstrap.
+- `ADMIN_PASSWORD`: Default password for admin CLI bootstrap (or prompted interactively).
+- `ADMIN_NAME`: Full name for admin account.
+
+### BACKEND
+- `BACKEND_HOST`: Server bind host (`0.0.0.0`).
+- `BACKEND_PORT`: Server listening port (`8000`).
+- `API_V1_STR`: API route prefix (`/api/v1`).
+- `LOG_LEVEL`: Logging verbosity level (`INFO`, `WARNING`, `ERROR`).
+
+### FRONTEND
+- `NEXT_PUBLIC_API_URL`: Public-facing backend API URL (e.g. `https://api.citizenreport.gov.bd/api/v1`).
+- `NEXT_PUBLIC_APP_URL`: Public-facing web application URL (e.g. `https://citizenreport.gov.bd`).
+
+### CORS
+- `CORS_ORIGINS`: Comma-separated or JSON array of authorized web origins (e.g. `https://citizenreport.gov.bd,https://admin.citizenreport.gov.bd`). Wildcard `*` is prohibited.
+
+### STORAGE
+- `STORAGE_BACKEND`: Object storage driver (`s3` in production, `local` for dev).
+- `STORAGE_LOCAL_ROOT`: Local directory path for file storage if using local backend.
+- `STORAGE_BUCKET`: Private S3 bucket name.
+- `STORAGE_ENDPOINT`: S3 endpoint URL (for Cloudflare R2, Wasabi, MinIO, or AWS S3).
+- `STORAGE_REGION`: AWS/S3 storage region.
+- `STORAGE_ACCESS_KEY`: IAM access key ID.
+- `STORAGE_SECRET_KEY`: IAM secret access key.
+- `MAX_IMAGE_SIZE_BYTES`: Maximum image upload size (default `10485760` = 10 MB).
+- `MAX_VIDEO_SIZE_BYTES`: Maximum video upload size (default `52428800` = 50 MB).
+- `MAX_DOCUMENT_SIZE_BYTES`: Maximum PDF/document upload size (default `20971520` = 20 MB).
+- `MAX_MEDIA_PER_REPORT`: Maximum evidence files allowed per report (default `10`).
+
+### OTHER REQUIRED CONFIGURATION
+- `ENVIRONMENT`: Runtime environment mode (`production`, `staging`, `development`).
+- `PROJECT_NAME`: Platform display name.
+- `VERSION`: Application version string.
+- `ENABLE_DOCS`: Toggle Swagger/OpenAPI documentation (`false` default in production).
+
+---
+
+## 5. Admin Bootstrap Instructions
+
+To safely create or update the primary administrator account without public registration endpoints:
+
 ```bash
 cd backend
 source .venv/bin/activate
 python -m app.db.create_admin \
   --email "lead-admin@citizenreport.gov.bd" \
   --username "lead_admin" \
-  --password "YourStrongProductionPassword2026!" \
+  --password "YourSecureProductionPassword2026!" \
   --name "Lead Platform Administrator"
 ```
-*(If `--password` is omitted in an interactive terminal, the script securely prompts via `getpass`)*.
 
-### Step 3.3 — S3 Object Storage Provisioning
-1. Create a private bucket (e.g., `citizen-report-evidence-prod`).
-2. Generate IAM access credentials restricted to `s3:PutObject`, `s3:GetObject`, `s3:DeleteObject` for that bucket.
-3. Configure `STORAGE_BACKEND=s3`, `STORAGE_ENDPOINT`, `STORAGE_BUCKET`, `STORAGE_ACCESS_KEY`, and `STORAGE_SECRET_KEY`.
-
-### Step 3.4 — Backend Deployment & Start Command
-Deploy the FastAPI backend container or process:
-```bash
-cd backend
-source .venv/bin/activate
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4 --proxy-headers --forwarded-allow-ips='*'
-```
-
-### Step 3.5 — Frontend Next.js Deployment & Start Command
-Build and start the Next.js production server:
-```bash
-cd frontend
-npm ci
-npm run build
-npm run start -p 3000
-```
+**Security Guarantees:**
+- If `--password` is omitted in an interactive terminal, the script securely prompts via `getpass` without echoing characters.
+- In `ENVIRONMENT=production`, fallback default passwords are strictly rejected.
+- Admin credentials are never stored in git or public registration APIs.
 
 ---
 
-## 4. Health Checks & Observability
+## 6. Database Migration Handoff
 
-### Health Probe (`GET /api/v1/health`)
-Used by load balancers, Kubernetes liveness/readiness probes, and monitoring services:
-- **HTTP 200 OK** (Database reachable):
+The platform uses **Alembic** for safe, versioned database schema management.
+
+### Apply Migrations to Production
+```bash
+cd backend
+source .venv/bin/activate
+alembic upgrade head
+```
+
+### Verify Migration Lineage
+```bash
+alembic current
+alembic history
+```
+
+### Rollback (If needed)
+```bash
+alembic downgrade -1
+```
+
+> [!WARNING]
+> Never execute raw `DROP TABLE` or destructive SQL scripts directly in production. All schema modifications must go through Alembic revisions.
+
+---
+
+## 7. Storage Handoff
+
+- **Binary File Isolation:** PostgreSQL stores strictly metadata (filenames, MIME types, byte sizes, storage keys). Binary files reside in object storage.
+- **MIME & Magic-Byte Validation:** All uploads are inspected at the byte header level (JPEG, PNG, WebP, PDF, MP4). Executable files (`.exe`, `.sh`, `.php`, etc.) and mismatched content types are rejected with HTTP 400.
+- **Access Control:** Public users can stream evidence only for `APPROVED` reports. Private drafts and unapproved report media are restricted to the report owner and authorized administrators.
+
+---
+
+## 8. Deployment Platform Guidance
+
+| Component | Recommended Target | Build Command | Start Command | Health Endpoint |
+|---|---|---|---|---|
+| **Backend** | Container / Python 3.12 VM | `pip install -r requirements.txt` | `uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4` | `GET /api/v1/health` |
+| **Frontend** | Node.js 20+ / Next.js host | `npm ci && npm run build` | `npm run start -p 3000` | `GET /` |
+| **Database** | Managed PostgreSQL 15+ | N/A | Managed service | Monitored by backend probe |
+| **Storage** | S3 / Cloudflare R2 | N/A | Managed service | Validated via upload API |
+
+---
+
+## 9. Post-Deployment Smoke Test Checklist
+
+Execute these 22 steps on the deployed production environment:
+
+1. [ ] **Open production website:** Verify home page loads over HTTPS with 200 OK.
+2. [ ] **Register normal user:** Register citizen account via `/register`.
+3. [ ] **Login:** Authenticate and verify JWT cookie/storage is established.
+4. [ ] **Create a report:** Open `/reports/create`, fill in title, description, category, and location.
+5. [ ] **Save draft:** Verify draft is created with status `DRAFT`.
+6. [ ] **Submit report:** Submit the report and confirm status transitions to `SUBMITTED`.
+7. [ ] **Login as admin:** Sign in with the bootstrapped admin credentials.
+8. [ ] **Review submitted report:** Open `/admin/reports` and move report to `UNDER_REVIEW`.
+9. [ ] **Approve report:** Add moderation notes and approve the report (`APPROVED`).
+10. [ ] **Confirm public feed:** Open home page `/` unauthenticated and verify approved report appears.
+11. [ ] **Test anonymous report:** Submit report with "Submit Anonymously" checked.
+12. [ ] **Confirm anonymous identity hidden:** Verify public view shows "Anonymous Citizen" and hides username/email.
+13. [ ] **Upload evidence:** Attach an image/PDF to a draft report.
+14. [ ] **Verify authorized evidence access:** Ensure evidence displays on report page and unauthorized users cannot stream drafts.
+15. [ ] **Add comment:** Post a community comment on the approved report.
+16. [ ] **React:** Toggle reaction (`SUPPORT`, `URGENT`, `VERIFIED`) and check count updates.
+17. [ ] **Flag content:** Submit a safety flag on a report or comment.
+18. [ ] **Verify notification behavior:** Check navbar notification bell for status change alerts.
+19. [ ] **Test Bangla/English switch:** Toggle language in header and check all UI labels update.
+20. [ ] **Test mobile layout:** Inspect layout on mobile viewport width (375px).
+21. [ ] **Logout:** Click Logout and verify auth state is cleared.
+22. [ ] **Verify protected routes:** Confirm direct access to `/dashboard` or `/admin` redirects to `/login`.
+
+---
+
+## 10. Security Launch Checklist
+
+- [x] **HTTPS Enforcement:** TLS certificates active; `Strict-Transport-Security` header sent in production.
+- [x] **No Secrets Exposed:** `.env` files not committed; client bundle only receives `NEXT_PUBLIC_*` variables.
+- [x] **Password Hashing:** Passwords hashed using `bcrypt` with unique salts.
+- [x] **JWT Security:** Signed with SHA-256 HMAC using high-entropy secret; expired/tampered tokens rejected.
+- [x] **IDOR Guards:** Report edits, evidence deletion, and notifications verified against `current_user.id`.
+- [x] **CORS Origin Filtering:** Prohibits wildcard `*` with credentials; exact origins whitelist parsed safely.
+- [x] **Admin Privileges:** RBAC checks (`require_admin`) enforced on all administrative endpoints.
+- [x] **Anonymous Reporter Shield:** DB stores user ID internally for moderation audit, but public serializers completely strip reporter identifiers.
+- [x] **File Validation:** Magic-byte validation, extension whitelist, and size caps enforced on all evidence uploads.
+- [x] **Safe Error Masks:** Unhandled server exceptions return generic HTTP 500 JSON without stack traces.
+
+---
+
+## 11. Monitoring & Operations
+
+### Health Probe Endpoint
+- **URL:** `GET /api/v1/health`
+- **Healthy Response (HTTP 200):**
   ```json
   {
     "status": "ok",
@@ -130,7 +260,7 @@ Used by load balancers, Kubernetes liveness/readiness probes, and monitoring ser
     "database": "connected"
   }
   ```
-- **HTTP 503 Service Unavailable** (Database unreachable):
+- **Degraded Response (HTTP 503):**
   ```json
   {
     "status": "degraded",
@@ -140,52 +270,44 @@ Used by load balancers, Kubernetes liveness/readiness probes, and monitoring ser
     "database": "unavailable"
   }
   ```
-*Guaranteed Zero Disclosure: The health probe never discloses host IPs, credentials, or SQL connection strings.*
+
+### Operational Log Monitoring
+- Backend logs structured output to stdout: `%(asctime)s [%(levelname)s] %(name)s: %(message)s`.
+- Monitor for `[ERROR]` entries to detect unhandled exceptions or database connectivity degradation.
 
 ---
 
-## 5. Security & Verification Checklist
+## 12. Backup & Recovery Notes
 
-- [x] **No Secrets in Source Control:** `.env*`, `.venv`, and certificates are strictly `.gitignore`d.
-- [x] **Strict Public Visibility:** Public news feed and search display **only** `APPROVED` reports.
-- [x] **Anonymous Whistleblower Privacy:** Reporter identity is masked on public APIs and interfaces.
-- [x] **CORS Guard:** Wildcard `*` is prohibited when credentials are enabled. Comma-delimited and JSON origin arrays are safely parsed.
-- [x] **HTTP Security Headers:** `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `X-XSS-Protection: 1; mode=block`, `Referrer-Policy: strict-origin-when-cross-origin`, and `Strict-Transport-Security` in production.
-- [x] **MIME & Magic-Byte Validation:** Evidence uploads verified at header and byte level before storing in cloud storage.
-- [x] **IDOR Protection:** Ownership validation on drafts, evidence attachments, comments, and notifications.
-- [x] **Role Demotion Protection:** Admins cannot demote themselves or deactivate the last active administrator.
-- [x] **Category Relational Integrity:** Soft-deactivates categories referenced by existing reports to preserve history.
-- [x] **Automated Tests:** **80 backend test scenarios passing** (`pytest -v`).
-- [x] **Frontend Quality:** TypeScript compilation (`tsc --noEmit`), ESLint, and Next.js production build passing with zero errors.
+### Database Backups
+- **Recommended:** Enable automated daily snapshots and Point-In-Time-Recovery (PITR) with a 7-to-30 day retention window on your managed PostgreSQL provider (e.g., AWS RDS, Supabase, Neon).
+- **Currently Configured:** Schema revisions version-controlled in Alembic with reversible downgrade scripts.
 
----
+### Evidence & Object Storage Durability
+- **Recommended:** Enable S3 Versioning and Cross-Region Replication on the evidence bucket to protect against accidental deletion.
+- **Currently Configured:** Files stored under sanitized random UUID keys in `data/storage` (local) or S3 bucket.
 
-## 6. Ready Now vs. User Must Configure in Cloud
-
-| Resource / Setting | Status | Action Required by Operator |
-|---|---|---|
-| Application Code & APIs | **READY** | Deploy backend & frontend containers |
-| Database Migrations | **READY** | Run `alembic upgrade head` against target DB |
-| Seed Incident Categories | **READY** | Automatically seeded in migration revision 1 |
-| Admin Bootstrap CLI | **READY** | Run `python -m app.db.create_admin` |
-| Security Headers & CORS | **READY** | Set `CORS_ORIGINS` to production domain |
-| Production PostgreSQL DB | *OPERATOR PROVIDED* | Provision managed PostgreSQL & set `DATABASE_URL` |
-| S3 Object Storage Bucket | *OPERATOR PROVIDED* | Provision S3/R2 bucket & set `STORAGE_*` keys |
-| Production Domain & SSL | *OPERATOR PROVIDED* | Point DNS A/CNAME and configure TLS certificates |
+### Environment Secrets Backup
+- Store production `.env` files in a dedicated secrets manager (e.g. AWS Secrets Manager, HashiCorp Vault, Doppler, or cloud hosting environment manager).
 
 ---
 
-## 7. Rollback & Maintenance Procedures
+## 13. Local Verification & Development Commands
 
-### Database Rollback
-To roll back the most recent migration revision:
+### Run Full Test Suite (80 Tests)
 ```bash
 cd backend
 source .venv/bin/activate
-alembic downgrade -1
+pytest -v
 ```
 
-### Application Rollback
-Revert the container tag or Git commit to the previous stable release hash. No destructive database alterations are performed during application startup.
+### Frontend Type-Check, Lint & Build
+```bash
+cd frontend
+npm run lint
+npm run type-check
+npm run build
+```
+
 
 
