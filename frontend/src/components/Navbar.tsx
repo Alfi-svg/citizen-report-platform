@@ -100,7 +100,7 @@ export default function Navbar() {
   const navLinks = [
     { href: "/", label: "Home", bn: "হোম" },
     {
-      href: isAuthenticated ? "/reports/mine" : "/",
+      href: "/reports",
       label: "Reports",
       bn: "রিপোর্ট",
     },

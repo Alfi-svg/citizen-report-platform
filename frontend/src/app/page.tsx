@@ -36,7 +36,7 @@ export default function HomePage() {
 
   const t = translations[lang];
 
-  // 1. Category Data
+  // 1. Categories
   const [categories, setCategories] = useState<PublicCategory[]>([]);
 
   // 2. Report Feed Data & Filters
@@ -144,6 +144,16 @@ export default function HomePage() {
     setActiveLocation(locationQuery);
   };
 
+  const clearAllFilters = () => {
+    setSelectedCategory("");
+    setSearchQuery("");
+    setActiveSearch("");
+    setLocationQuery("");
+    setActiveLocation("");
+    setSortOrder("latest");
+    setPage(0);
+  };
+
   const totalPages = data ? Math.ceil(data.total / PAGE_SIZE) : 1;
 
   const apiBase = getApiBaseUrl();
@@ -155,80 +165,75 @@ export default function HomePage() {
   };
 
   return (
-    <div className="space-y-12 sm:space-y-16 pb-12">
+    <div className="space-y-10 sm:space-y-12 pb-12">
       {/* =================================================================== */}
-      {/* 1. HERO SECTION: Clean, Bangladesh Artwork, Trustworthy Messaging  */}
+      {/* 1. HERO SECTION (Matching User Reference media_1788378720889.png)   */}
       {/* =================================================================== */}
-      <section className="relative overflow-hidden bg-zinc-950 text-white border-b border-zinc-800/80">
-        {/* Background Image with Dark Emerald/Neutral Overlay */}
+      <section className="relative overflow-hidden bg-zinc-950 text-white">
+        {/* Background Image with Dark Emerald Overlay */}
         <div className="absolute inset-0 z-0">
           <Image
             src="/brand/bangladesh-hero-bg.jpg"
-            alt="Bangladesh National Heritage"
+            alt="Bangladesh National Monument and Heritage"
             fill
-            className="object-cover object-center opacity-25"
+            className="object-cover object-center opacity-35"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/85 to-emerald-950/75" />
+          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/80 to-emerald-950/70" />
         </div>
 
         {/* Hero Content */}
         <div className="relative z-10 mx-auto max-w-5xl px-4 py-12 sm:py-20 text-center space-y-5">
           {/* Trust Pill */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 backdrop-blur-xs">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 backdrop-blur-xs">
+            <span>🛡️</span>
             <span>
               {lang === "bn"
                 ? "যাচাইকৃত নাগরিক রিপোর্টিং নেটওয়ার্ক • বাংলাদেশ"
-                : "Platform-Reviewed Citizen Reporting • Bangladesh"}
+                : "Platform-Verified Citizen Reporting • বাংলাদেশ"}
             </span>
           </div>
 
-          {/* Compact Emblem */}
-          <div className="mx-auto h-14 w-14 sm:h-16 sm:w-16 relative rounded-2xl overflow-hidden shadow-md border border-emerald-500/40">
+          {/* White Card Emblem Frame */}
+          <div className="mx-auto h-16 w-16 sm:h-20 sm:w-20 relative rounded-2xl overflow-hidden shadow-xl border-2 border-emerald-500/40 bg-white p-1">
             <Image
               src="/brand/logo-sm.jpg"
               alt="Bangladesh Citizen Report Emblem"
               fill
-              className="object-cover"
+              className="object-contain p-1"
               priority
             />
           </div>
 
-          {/* Heading */}
-          <div className="space-y-2">
-            <h1 className="text-3xl sm:text-5xl font-black tracking-tight max-w-3xl mx-auto leading-tight">
-              {lang === "bn"
-                ? "রিপোর্ট করুন। সুরক্ষা নিশ্চিত করুন। একসাথে গড়ি নিরাপদ বাংলাদেশ।"
-                : "Report. Protect. Understand."}
-            </h1>
-            <p className="text-emerald-400 text-base sm:text-xl font-bold tracking-tight">
-              {lang === "bn" ? "Together for a safer Bangladesh." : "Together for a safer Bangladesh."}
-            </p>
-          </div>
-
-          {/* Supporting Copy */}
-          <p className="text-xs sm:text-sm text-zinc-300 max-w-2xl mx-auto leading-relaxed">
+          {/* Headline */}
+          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight max-w-3xl mx-auto leading-tight">
             {lang === "bn"
-              ? "নাগরিক সমস্যা ও ঘটনা রিপোর্ট করুন, কাছাকাছি জরুরি সেবা খুঁজুন এবং যাচাইকৃত পর্যালোচিত তথ্যের মাধ্যমে সচেতন থাকুন।"
-              : "Report incidents, discover community safety information, find help near you, and stay informed through platform-reviewed reports."}
+              ? "বাংলাদেশ সিটিজেন ইনসিডেন্ট অ্যান্ড সেফটি নেটওয়ার্ক"
+              : "Bangladesh Citizen Incident & Safety Network"}
+          </h1>
+
+          {/* Subtitle */}
+          <p className="text-sm sm:text-base text-zinc-300 max-w-2xl mx-auto leading-relaxed">
+            {lang === "bn"
+              ? "নাগরিক সমস্যা ও দুর্ঘটনা রিপোর্ট করুন, জরুরি সেবা খুঁজুন এবং গোপনীয়তা বজায় রেখে নিখোঁজদের সন্ধানে তথ্য দিন।"
+              : "Report civic hazards, track community alerts, find nearby emergency services, and support verified missing person searches with privacy protection across Bangladesh."}
           </p>
 
-          {/* Hero Action CTAs */}
-          <div className="pt-3 flex flex-wrap items-center justify-center gap-3">
+          {/* CTA Buttons */}
+          <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/reports/create"
-              className="rounded-xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white px-6 py-3 text-xs sm:text-sm font-bold shadow-md shadow-emerald-700/25 transition active:scale-95 flex items-center gap-2"
+              className="rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 text-xs sm:text-sm font-bold shadow-lg shadow-emerald-700/30 transition active:scale-95 flex items-center gap-2"
             >
               <span>+</span>
-              <span>{lang === "bn" ? "রিপোর্ট করুন" : "Report an Issue"}</span>
+              <span>{lang === "bn" ? "রিপোর্ট করুন" : "Report an Incident"}</span>
             </Link>
 
             <Link
               href="/safety"
-              className="rounded-xl bg-red-600 hover:bg-red-500 active:bg-red-700 text-white px-5 py-3 text-xs sm:text-sm font-bold shadow-md shadow-red-700/25 transition active:scale-95 flex items-center gap-2"
+              className="rounded-xl bg-red-600 hover:bg-red-500 text-white px-5 py-3 text-xs sm:text-sm font-bold shadow-lg shadow-red-700/30 transition active:scale-95 flex items-center gap-2"
             >
-              <span className="animate-ping h-2 w-2 rounded-full bg-white" />
+              <span>🚨</span>
               <span>{lang === "bn" ? "কাছাকাছি সাহায্য খুঁজুন" : "Find Help Near Me"}</span>
             </Link>
 
@@ -241,151 +246,103 @@ export default function HomePage() {
             </Link>
           </div>
 
-          {/* Logged-in personalization notice */}
+          {/* Logged in state */}
           {isAuthenticated && user && (
-            <p className="text-[11px] text-zinc-400 pt-2">
-              {lang === "bn" ? "স্বাগতম, " : "Welcome back, "}
-              <span className="text-zinc-200 font-semibold">{user.full_name || user.username}</span>.{" "}
-              <Link href="/dashboard" className="text-emerald-400 hover:underline ml-1">
-                {lang === "bn" ? "আপনার ড্যাশবোর্ড দেখুন →" : "View your citizen dashboard →"}
+            <p className="text-xs text-zinc-400 pt-2">
+              {lang === "bn" ? "স্বাগতম, " : "Logged in as "}
+              <span className="text-zinc-200 font-bold">{user.full_name || user.username}</span>
+              {" • "}
+              <Link href="/dashboard" className="text-emerald-400 hover:underline">
+                {lang === "bn" ? "ড্যাশবোর্ড খুলুন →" : "Open Citizen Dashboard →"}
               </Link>
             </p>
           )}
         </div>
       </section>
 
-      {/* Main Page Container */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-12 sm:space-y-16">
+      {/* Main Container */}
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-10 sm:space-y-14">
         {/* =================================================================== */}
-        {/* 2. SAFETY TOOLS SECTION: 4 Clean Reusable Tool Cards                */}
+        {/* 2. CIVIC QUICK ACTIONS (Matching media_1788378720889.png)          */}
         {/* =================================================================== */}
-        <section className="space-y-4">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">
-              {lang === "bn" ? "নিরাপত্তা সেবাসমূহ" : "Safety Tools"}
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          <Link
+            href="/safety"
+            className="group rounded-2xl border border-red-950/60 bg-red-950/20 p-4 hover:border-red-400/80 transition"
+          >
+            <div className="h-9 w-9 rounded-xl bg-red-600 text-white flex items-center justify-center text-lg mb-2 group-hover:scale-105 transition shadow-2xs">
+              🚨
+            </div>
+            <h2 className="font-bold text-sm text-zinc-900 dark:text-zinc-100 leading-tight">
+              {lang === "bn" ? "সেফটি নেভিগেটর" : "Safety Navigator"}
             </h2>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-              {lang === "bn"
-                ? "জরুরি সেবা ও নাগরিক সুরক্ষার গুরুত্বপূর্ণ ফিচারসমূহে দ্রুত প্রবেশ করুন।"
-                : "Quick access to important safety features across Bangladesh."}
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1 leading-snug">
+              {lang === "bn" ? "৯৯৯ হটলাইন ও নিকটস্থ পুলিশ ইউনিট।" : "999 hotline & verified nearby police units."}
             </p>
-          </div>
+          </Link>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
-            {/* Tool 1: Find Help */}
-            <Link
-              href="/safety"
-              className="group rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 sm:p-5 shadow-2xs hover:border-red-500/40 hover:shadow-xs transition-all flex flex-col justify-between space-y-3"
-            >
-              <div>
-                <div className="h-9 w-9 rounded-lg bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 flex items-center justify-center text-lg mb-3 shadow-2xs group-hover:scale-105 transition">
-                  🚨
-                </div>
-                <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100 group-hover:text-red-600 transition">
-                  {lang === "bn" ? "সাহায্য খুঁজুন" : "Find Help"}
-                </h3>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 leading-relaxed">
-                  {lang === "bn"
-                    ? "নিকটস্থ থানা, পুলিশ বক্স, ফায়ার সার্ভিস ও জরুরি ৯৯৯ হটলাইন খুঁজুন।"
-                    : "Find nearby police stations, police boxes, fire services and 999 emergency hotline."}
-                </p>
-              </div>
-              <span className="text-xs font-bold text-red-600 dark:text-red-400 flex items-center gap-1 pt-1">
-                <span>{lang === "bn" ? "জরুরি সাহায্য নিন" : "Open Navigator"}</span>
-                <span>→</span>
-              </span>
-            </Link>
+          <Link
+            href="/missing-person"
+            className="group rounded-2xl border border-amber-950/60 bg-amber-950/20 p-4 hover:border-amber-400/80 transition"
+          >
+            <div className="h-9 w-9 rounded-xl bg-amber-600 text-white flex items-center justify-center text-lg mb-2 group-hover:scale-105 transition shadow-2xs">
+              🔍
+            </div>
+            <h2 className="font-bold text-sm text-zinc-900 dark:text-zinc-100 leading-tight">
+              {lang === "bn" ? "নিখোঁজ ব্যক্তি" : "Missing Persons"}
+            </h2>
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1 leading-snug">
+              {lang === "bn" ? "সক্রিয় অনুসন্ধান ও সাইটিং রেসপন্স।" : "Active search alerts & sighting responses."}
+            </p>
+          </Link>
 
-            {/* Tool 2: Missing Persons */}
-            <Link
-              href="/missing-person"
-              className="group rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 sm:p-5 shadow-2xs hover:border-amber-500/40 hover:shadow-xs transition-all flex flex-col justify-between space-y-3"
-            >
-              <div>
-                <div className="h-9 w-9 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center text-lg mb-3 shadow-2xs group-hover:scale-105 transition">
-                  🔍
-                </div>
-                <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100 group-hover:text-amber-600 transition">
-                  {lang === "bn" ? "নিখোঁজ ব্যক্তি" : "Missing Persons"}
-                </h3>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 leading-relaxed">
-                  {lang === "bn"
-                    ? "সক্রিয় নিখোঁজ অ্যালার্ট দেখুন এবং অনুসন্ধানে তথ্য জমা দিন।"
-                    : "View active missing-person alerts and submit verified community sightings to help families."}
-                </p>
-              </div>
-              <span className="text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1 pt-1">
-                <span>{lang === "bn" ? "অ্যালার্ট নেটওয়ার্ক" : "View Alerts"}</span>
-                <span>→</span>
-              </span>
-            </Link>
+          <Link
+            href="/safety-map"
+            className="group rounded-2xl border border-emerald-950/60 bg-emerald-950/20 p-4 hover:border-emerald-400/80 transition"
+          >
+            <div className="h-9 w-9 rounded-xl bg-emerald-700 text-white flex items-center justify-center text-lg mb-2 group-hover:scale-105 transition shadow-2xs">
+              🗺️
+            </div>
+            <h2 className="font-bold text-sm text-zinc-900 dark:text-zinc-100 leading-tight">
+              {lang === "bn" ? "কমিউনিটি মানচিত্র" : "Community Map"}
+            </h2>
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1 leading-snug">
+              {lang === "bn" ? "বিপদ ক্লাস্টারিং ও সুরক্ষা অ্যালার্ট।" : "Geographic hazard clustering & safety alerts."}
+            </p>
+          </Link>
 
-            {/* Tool 3: Safety Map */}
-            <Link
-              href="/safety-map"
-              className="group rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 sm:p-5 shadow-2xs hover:border-emerald-600/40 hover:shadow-xs transition-all flex flex-col justify-between space-y-3"
-            >
-              <div>
-                <div className="h-9 w-9 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-lg mb-3 shadow-2xs group-hover:scale-105 transition">
-                  🗺️
-                </div>
-                <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100 group-hover:text-emerald-700 transition">
-                  {lang === "bn" ? "নিরাপত্তা মানচিত্র" : "Safety Map"}
-                </h3>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 leading-relaxed">
-                  {lang === "bn"
-                    ? "ইন্টারেক্টিভ মানচিত্রে নাগরিক রিপোর্ট ও এলাকার বিপদ ক্লাস্টার পর্যবেক্ষণ করুন।"
-                    : "Explore community-reported incidents, hazards and cluster patterns across Bangladesh on an interactive map."}
-                </p>
-              </div>
-              <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1 pt-1">
-                <span>{lang === "bn" ? "ম্যাপ দেখুন" : "Explore Map"}</span>
-                <span>→</span>
-              </span>
-            </Link>
-
-            {/* Tool 4: Safety Alerts & Preferences */}
-            <Link
-              href={isAuthenticated ? "/dashboard" : "/login"}
-              className="group rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 sm:p-5 shadow-2xs hover:border-blue-500/40 hover:shadow-xs transition-all flex flex-col justify-between space-y-3"
-            >
-              <div>
-                <div className="h-9 w-9 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center text-lg mb-3 shadow-2xs group-hover:scale-105 transition">
-                  🔔
-                </div>
-                <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100 group-hover:text-blue-600 transition">
-                  {lang === "bn" ? "সুরক্ষা অ্যালার্ট" : "Safety Alerts"}
-                </h3>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 leading-relaxed">
-                  {lang === "bn"
-                    ? "আপনার এলাকার যাচাইকৃত নাগরিক সমস্যা ও জরুরি সতর্কবার্তা গ্রহণ করুন।"
-                    : "Configure district notifications to receive alerts about nearby safety incidents and missing persons."}
-                </p>
-              </div>
-              <span className="text-xs font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1 pt-1">
-                <span>{lang === "bn" ? "অ্যালার্ট সেটিংস" : "Configure Alerts"}</span>
-                <span>→</span>
-              </span>
-            </Link>
-          </div>
+          <Link
+            href="/transparency"
+            className="group rounded-2xl border border-blue-950/60 bg-blue-950/20 p-4 hover:border-blue-400/80 transition"
+          >
+            <div className="h-9 w-9 rounded-xl bg-blue-600 text-white flex items-center justify-center text-lg mb-2 group-hover:scale-105 transition shadow-2xs">
+              📊
+            </div>
+            <h2 className="font-bold text-sm text-zinc-900 dark:text-zinc-100 leading-tight">
+              {lang === "bn" ? "স্বচ্ছতা ও তথ্য" : "Transparency"}
+            </h2>
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1 leading-snug">
+              {lang === "bn" ? "রিপোর্ট অ্যানালিটিক্স ও বার্ষিক প্রবণতা।" : "Platform report analytics & annual trends."}
+            </p>
+          </Link>
         </section>
 
         {/* =================================================================== */}
-        {/* 3. RECENT COMMUNITY REPORTS FEED                                   */}
+        {/* 3. RECENT COMMUNITY REPORTS FEED (Step 4 Core UI)                  */}
         {/* =================================================================== */}
         <section className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 border-b border-zinc-100 dark:border-zinc-800/80 pb-3">
             <div>
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-emerald-600 animate-pulse" />
-                <h2 className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">
-                  {lang === "bn" ? "সাম্প্রতিক নাগরিক রিপোর্ট" : "Recent Community Reports"}
+                <h2 className="text-xl sm:text-2xl font-extrabold text-zinc-900 dark:text-zinc-100 tracking-tight">
+                  {lang === "bn" ? "যাচাইকৃত নাগরিক ফিড" : "Verified Incident Feed"}
                 </h2>
               </div>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
                 {lang === "bn"
-                  ? "সারাদেশের প্ল্যাটফর্ম-যাচাইকৃত এবং অনুমোদিত নাগরিক প্রতিবেদনসমূহ।"
-                  : "Platform-reviewed community reports across Bangladesh."}
+                  ? "অনুমোদিত নাগরিক রিপোর্ট ও কমিউনিটি পর্যবেক্ষণসমূহ।"
+                  : "Public reports reviewed by authorized moderators across Bangladesh."}
               </p>
             </div>
 
@@ -425,7 +382,7 @@ export default function HomePage() {
           {/* Search & Location Filter Toolbar */}
           <form
             onSubmit={handleSearchSubmit}
-            className="grid grid-cols-1 sm:grid-cols-12 gap-2 bg-white dark:bg-zinc-900 p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-2xs"
+            className="grid grid-cols-1 sm:grid-cols-12 gap-2 bg-white dark:bg-zinc-900 p-3 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xs"
           >
             <div className="sm:col-span-6 relative">
               <input
@@ -434,10 +391,10 @@ export default function HomePage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={
                   lang === "bn"
-                    ? "কীওয়ার্ড লিখে খুঁজুন (যেমন: বিদ্যুৎ, সড়ক, বর্জ্য)..."
+                    ? "কীওয়ার্ড দিয়ে রিপোর্ট খুঁজুন (যেমন: আগুন, সড়ক, পানি)..."
                     : "Search incident keywords (e.g. fire, road, water)..."
                 }
-                className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/80 px-3.5 py-2 text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-emerald-700"
+                className="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/80 px-3.5 py-2.5 text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-700"
               />
             </div>
 
@@ -448,22 +405,103 @@ export default function HomePage() {
                 onChange={(e) => setLocationQuery(e.target.value)}
                 placeholder={
                   lang === "bn"
-                    ? "এলাকা বা জেলা (যেমন: ঢাকা, মিরপুর)..."
+                    ? "জেলা বা এলাকা (যেমন: ঢাকা, মিরপুর)..."
                     : "District or Area (e.g. Dhaka, Mirpur)..."
                 }
-                className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/80 px-3.5 py-2 text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-emerald-700"
+                className="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/80 px-3.5 py-2.5 text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-700"
               />
             </div>
 
             <div className="sm:col-span-2">
               <button
                 type="submit"
-                className="w-full rounded-lg bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white py-2 text-xs font-bold transition shadow-2xs"
+                className="w-full rounded-xl bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white py-2.5 text-xs font-bold transition shadow-xs"
               >
                 {lang === "bn" ? "অনুসন্ধান" : "Search"}
               </button>
             </div>
           </form>
+
+          {/* Active Filter Chips Summary */}
+          {(selectedCategory || activeSearch || activeLocation || sortOrder !== "latest") && (
+            <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
+              <span className="text-zinc-400 font-medium">Active filters:</span>
+
+              {selectedCategory && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 text-xs font-semibold">
+                  Category: {categories.find((c) => c.id === selectedCategory)?.name || "Selected"}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedCategory("");
+                      setPage(0);
+                    }}
+                    className="hover:text-emerald-950 dark:hover:text-white"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+
+              {activeSearch && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200 text-xs font-semibold">
+                  Keyword: &quot;{activeSearch}&quot;
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveSearch("");
+                      setSearchQuery("");
+                      setPage(0);
+                    }}
+                    className="hover:text-black dark:hover:text-white"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+
+              {activeLocation && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200 text-xs font-semibold">
+                  Location: {activeLocation}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveLocation("");
+                      setLocationQuery("");
+                      setPage(0);
+                    }}
+                    className="hover:text-black dark:hover:text-white"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+
+              {sortOrder !== "latest" && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 text-xs font-semibold">
+                  Sort: Trending
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSortOrder("latest");
+                      setPage(0);
+                    }}
+                    className="hover:text-blue-950 dark:hover:text-white"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+
+              <button
+                type="button"
+                onClick={clearAllFilters}
+                className="text-xs text-red-600 dark:text-red-400 hover:underline font-bold ml-1"
+              >
+                Clear all
+              </button>
+            </div>
+          )}
 
           {/* Category Chips Bar */}
           {categories.length > 0 && (
@@ -474,13 +512,13 @@ export default function HomePage() {
                   setSelectedCategory("");
                   setPage(0);
                 }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition select-none ${
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition select-none ${
                   selectedCategory === ""
                     ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 shadow-2xs font-bold"
                     : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700"
                 }`}
               >
-                {lang === "bn" ? "সকল ধরন" : "All Categories"}
+                {lang === "bn" ? "সকল ধরন" : "All Incident Types"}
               </button>
               {categories.map((cat) => (
                 <button
@@ -490,7 +528,7 @@ export default function HomePage() {
                     setSelectedCategory(cat.id);
                     setPage(0);
                   }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition select-none ${
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition select-none ${
                     selectedCategory === cat.id
                       ? "bg-emerald-700 text-white shadow-2xs font-bold"
                       : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700"
@@ -504,11 +542,11 @@ export default function HomePage() {
 
           {/* Feed Content Grid */}
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[...Array(6)].map((_, i) => (
                 <div
                   key={i}
-                  className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 space-y-3 animate-pulse"
+                  className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 space-y-3 animate-pulse"
                 >
                   <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-1/3" />
                   <div className="h-5 bg-zinc-200 dark:bg-zinc-800 rounded w-3/4" />
@@ -518,84 +556,74 @@ export default function HomePage() {
               ))}
             </div>
           ) : error ? (
-            <div className="rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 p-6 text-center">
+            <div className="rounded-2xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/20 p-6 text-center">
               <p className="text-sm font-semibold text-red-800 dark:text-red-300 mb-3">
                 {error}
               </p>
               <button
                 onClick={() => setPage(0)}
-                className="px-4 py-2 rounded-lg bg-red-600 text-white text-xs font-bold hover:bg-red-500 transition"
+                className="px-4 py-2 rounded-xl bg-red-600 text-white text-xs font-bold hover:bg-red-500 transition"
               >
                 {lang === "bn" ? "পুনরায় চেষ্টা করুন" : "Retry Loading Feed"}
               </button>
             </div>
           ) : !data || data.items.length === 0 ? (
-            <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-10 text-center space-y-3">
-              <div className="text-3xl">📋</div>
+            <div className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-12 text-center space-y-3">
+              <div className="text-4xl">📋</div>
               <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
                 {lang === "bn" ? "কোনো রিপোর্ট পাওয়া যায়নি" : "No Verified Reports Found"}
               </h3>
               <p className="text-xs text-zinc-500 max-w-sm mx-auto leading-relaxed">
                 {lang === "bn"
-                  ? "আপনার অনুসন্ধান বা নির্বাচিত ক্যাটাগরির সাথে সামঞ্জস্যপূর্ণ কোনো রিপোর্ট নেই।"
+                  ? "আপনার অনুসন্ধান বা ফিল্টারের সাথে সামঞ্জস্যপূর্ণ কোনো রিপোর্ট নেই।"
                   : "There are currently no approved community reports matching your search or filter criteria."}
               </p>
-              <Link
-                href="/reports/create"
-                className="inline-block mt-2 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-2xs hover:bg-emerald-600 transition"
-              >
-                {lang === "bn" ? "প্রথম রিপোর্ট জমা দিন" : "Submit First Report"}
-              </Link>
+              <div className="flex items-center justify-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={clearAllFilters}
+                  className="rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2 text-xs font-bold hover:bg-zinc-50 transition"
+                >
+                  Clear Filters
+                </button>
+                <Link
+                  href="/reports/create"
+                  className="rounded-xl bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-emerald-600 transition"
+                >
+                  Submit Incident
+                </Link>
+              </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {data.items.map((report) => (
                 <PublicReportCard key={report.id} report={report} />
               ))}
             </div>
           )}
 
-          {/* Pagination & View All Link */}
-          {data && (
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2 border-t border-zinc-100 dark:border-zinc-800/80">
-              <Link
-                href="/"
-                onClick={() => {
-                  setSelectedCategory("");
-                  setActiveSearch("");
-                  setSearchQuery("");
-                  setActiveLocation("");
-                  setLocationQuery("");
-                  setPage(0);
-                }}
-                className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:underline"
+          {/* Pagination */}
+          {data && totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 pt-4">
+              <button
+                type="button"
+                disabled={page === 0}
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-semibold disabled:opacity-40 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition"
               >
-                {lang === "bn" ? "← সব রিপোর্ট প্রদর্শন করুন" : "← View All Reports"}
-              </Link>
-
-              {totalPages > 1 && (
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    disabled={page === 0}
-                    onClick={() => setPage((p) => Math.max(0, p - 1))}
-                    className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-semibold disabled:opacity-40 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition"
-                  >
-                    ← Previous
-                  </button>
-                  <span className="text-xs text-zinc-500 px-2 font-medium">
-                    Page {page + 1} of {totalPages}
-                  </span>
-                  <button
-                    type="button"
-                    disabled={page >= totalPages - 1}
-                    onClick={() => setPage((p) => p + 1)}
-                    className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-semibold disabled:opacity-40 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition"
-                  >
-                    Next →
-                  </button>
-                </div>
-              )}
+                ← Previous
+              </button>
+              <span className="text-xs text-zinc-500 px-2 font-medium">
+                Page {page + 1} of {totalPages}
+              </span>
+              <button
+                type="button"
+                disabled={page >= totalPages - 1}
+                onClick={() => setPage((p) => p + 1)}
+                className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-semibold disabled:opacity-40 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition"
+              >
+                Next →
+              </button>
             </div>
           )}
         </section>
@@ -603,7 +631,7 @@ export default function HomePage() {
         {/* =================================================================== */}
         {/* 4. PLATFORM TRANSPARENCY PREVIEW: Dynamic Real Metrics             */}
         {/* =================================================================== */}
-        <section className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 sm:p-8 shadow-2xs space-y-6">
+        <section className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 sm:p-8 shadow-2xs space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
@@ -623,7 +651,7 @@ export default function HomePage() {
 
             <Link
               href="/transparency"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 hover:bg-blue-100 transition text-xs font-bold shrink-0 self-start sm:self-auto"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 hover:bg-blue-100 transition text-xs font-bold shrink-0 self-start sm:self-auto"
             >
               <span>{lang === "bn" ? "পূর্ণাঙ্গ ড্যাশবোর্ড" : "Full Analytics"}</span>
               <span>→</span>
@@ -632,7 +660,7 @@ export default function HomePage() {
 
           {/* Dynamic Metric KPI Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-            <div className="rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-800/40 p-4 space-y-1">
+            <div className="rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-800/40 p-4 space-y-1">
               <p className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400">
                 {lang === "bn" ? t.kpi_total_reports : "Total Reviewed Reports"}
               </p>
@@ -644,7 +672,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-800/40 p-4 space-y-1">
+            <div className="rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-800/40 p-4 space-y-1">
               <p className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400">
                 {lang === "bn" ? t.kpi_this_month : "Reviewed This Month"}
               </p>
@@ -656,7 +684,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-800/40 p-4 space-y-1">
+            <div className="rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-800/40 p-4 space-y-1">
               <p className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400">
                 {lang === "bn" ? t.kpi_this_year : "Reviewed This Year"}
               </p>
@@ -668,7 +696,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-800/40 p-4 space-y-1">
+            <div className="rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-800/40 p-4 space-y-1">
               <p className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400">
                 {lang === "bn" ? t.kpi_active_missing : "Active Missing Alerts"}
               </p>
@@ -693,7 +721,7 @@ export default function HomePage() {
         </section>
 
         {/* =================================================================== */}
-        {/* 5. ACTIVE MISSING PERSON HIGHLIGHT: Real Alerts Preview             */}
+        {/* 5. ACTIVE MISSING PERSON HIGHLIGHT                                  */}
         {/* =================================================================== */}
         <section className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -727,16 +755,16 @@ export default function HomePage() {
               {[...Array(3)].map((_, i) => (
                 <div
                   key={i}
-                  className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 space-y-3 animate-pulse"
+                  className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 space-y-3 animate-pulse"
                 >
-                  <div className="h-32 bg-zinc-200 dark:bg-zinc-800 rounded-lg w-full" />
+                  <div className="h-32 bg-zinc-200 dark:bg-zinc-800 rounded-xl w-full" />
                   <div className="h-4 bg-zinc-200 dark:bg-zinc-800 rounded w-2/3" />
                   <div className="h-3 bg-zinc-100 dark:bg-zinc-800/50 rounded w-1/2" />
                 </div>
               ))}
             </div>
           ) : missingAlerts.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-8 text-center space-y-2">
+            <div className="rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-8 text-center space-y-2">
               <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
                 {lang === "bn"
                   ? "বর্তমানে কোনো সক্রিয় নিখোঁজ ব্যক্তি সতর্কতা নেই।"
@@ -750,7 +778,7 @@ export default function HomePage() {
               <div className="pt-2">
                 <Link
                   href="/missing-person/create"
-                  className="inline-block px-3.5 py-1.5 rounded-lg bg-amber-600 text-white text-xs font-bold hover:bg-amber-500 transition"
+                  className="inline-block px-3.5 py-2 rounded-xl bg-amber-600 text-white text-xs font-bold hover:bg-amber-500 transition"
                 >
                   {lang === "bn" ? "নিখোঁজ ব্যক্তির তথ্য দিন" : "Submit Missing Alert"}
                 </Link>
@@ -762,7 +790,7 @@ export default function HomePage() {
                 <Link
                   key={alert.id}
                   href={`/missing-person/${alert.id}`}
-                  className="group rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-2xs hover:border-amber-500/40 hover:shadow-xs transition overflow-hidden flex flex-col justify-between"
+                  className="group rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-2xs hover:border-amber-500/40 hover:shadow-xs transition overflow-hidden flex flex-col justify-between"
                 >
                   <div>
                     {/* Alert Photo */}
@@ -807,110 +835,76 @@ export default function HomePage() {
         </section>
 
         {/* =================================================================== */}
-        {/* 6. HOW IT WORKS & TRUST & SAFETY PIPELINE                          */}
+        {/* 6. HOW CITIZEN REPORTS ARE VERIFIED (Pipeline)                      */}
         {/* =================================================================== */}
-        <section className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 sm:p-10 shadow-2xs space-y-8">
-          <div className="text-center max-w-xl mx-auto space-y-1.5">
+        <section className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-8 sm:p-10 shadow-2xs space-y-6">
+          <div className="text-center max-w-xl mx-auto space-y-1">
             <h2 className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">
-              {lang === "bn" ? "প্ল্যাটফর্মটি যেভাবে কাজ করে" : "How the Platform Works"}
+              {lang === "bn" ? "কীভাবে নাগরিক রিপোর্ট যাচাই করা হয়" : "How Citizen Reports Are Verified"}
             </h2>
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
               {lang === "bn"
-                ? "নাগরিক রিপোর্ট থেকে সরকারি সমন্বয় ও জনসুরক্ষা নিশ্চিতকরণ।"
-                : "From citizen submission to verified community safety awareness."}
+                ? "প্রত্যেকটি রিপোর্ট জনসাধারণের সামনে প্রকাশের আগে কঠোরভাবে নিরীক্ষা করা হয়।"
+                : "Every report on this platform undergoes rigorous checks before public publication."}
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="rounded-xl bg-zinc-50 dark:bg-zinc-800/50 p-4 space-y-2 border border-zinc-100 dark:border-zinc-800">
-              <span className="text-xs font-black text-emerald-700 dark:text-emerald-400">01</span>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+            <div className="rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 p-5 space-y-2 border border-zinc-100 dark:border-zinc-800">
+              <div className="h-8 w-8 rounded-lg bg-emerald-700 text-white flex items-center justify-center font-bold text-sm">
+                1
+              </div>
               <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
-                {lang === "bn" ? "রিপোর্ট জমা" : "Report"}
+                {lang === "bn" ? "প্রমাণ জমা" : "Evidence Submission"}
               </h3>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
                 {lang === "bn"
-                  ? "ছবি বা ডকুমেন্টসহ সমস্যা রিপোর্ট করুন। নাম প্রকাশ না করে গোপনীয়ভাবে রিপোর্ট সম্ভব।"
-                  : "Citizens submit civic hazards or alerts with verifiable photos. Anonymous reporting protects privacy."}
+                  ? "নাগরিকরা যাচাইযোগ্য ছবি বা তথ্য দিয়ে রিপোর্ট করেন। বেনামী রিপোর্টিংয়ের মাধ্যমে পরিচয় নিরাপদ থাকে।"
+                  : "Citizens submit reports with verifiable photographic or document evidence. Anonymous reporting protects reporter identity."}
               </p>
             </div>
 
-            <div className="rounded-xl bg-zinc-50 dark:bg-zinc-800/50 p-4 space-y-2 border border-zinc-100 dark:border-zinc-800">
-              <span className="text-xs font-black text-blue-600 dark:text-blue-400">02</span>
+            <div className="rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 p-5 space-y-2 border border-zinc-100 dark:border-zinc-800">
+              <div className="h-8 w-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-sm">
+                2
+              </div>
               <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
-                {lang === "bn" ? "মডারেশন যাচাই" : "Review"}
+                {lang === "bn" ? "মডারেটর নিরীক্ষা" : "Moderator Review"}
               </h3>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
                 {lang === "bn"
-                  ? "অনুমোদিত মডারেটর টিম প্রমাণের সত্যতা ও অবস্থান যাচাই করে ভূয়া রিপোর্ট প্রতিহত করেন।"
-                  : "Authorized moderators review media authenticity and check for duplicates or false information."}
+                  ? "অনুমোদিত মডারেটররা প্রমাণের সত্যতা ও স্থানাঙ্ক নিরীক্ষা করে ভূয়া তথ্য প্রতিহত করেন।"
+                  : "Authorized moderators review media authenticity, verify location data, and inspect reports against hoax and duplicate signals."}
               </p>
             </div>
 
-            <div className="rounded-xl bg-zinc-50 dark:bg-zinc-800/50 p-4 space-y-2 border border-zinc-100 dark:border-zinc-800">
-              <span className="text-xs font-black text-amber-600 dark:text-amber-400">03</span>
+            <div className="rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 p-5 space-y-2 border border-zinc-100 dark:border-zinc-800">
+              <div className="h-8 w-8 rounded-lg bg-purple-600 text-white flex items-center justify-center font-bold text-sm">
+                3
+              </div>
               <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
-                {lang === "bn" ? "কমিউনিটি প্রকাশ" : "Community"}
+                {lang === "bn" ? "জনসুরক্ষা ও পদক্ষেপ" : "Public Action & Safety"}
               </h3>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
                 {lang === "bn"
-                  ? "অনুমোদিত রিপোর্টগুলো গোপনীয়তা বজায় রেখে আনুমানিক স্থানাঙ্কে মানচিত্রে প্রকাশিত হয়।"
-                  : "Approved information appears on the public feed and map with privacy-sanitized approximate locations."}
-              </p>
-            </div>
-
-            <div className="rounded-xl bg-zinc-50 dark:bg-zinc-800/50 p-4 space-y-2 border border-zinc-100 dark:border-zinc-800">
-              <span className="text-xs font-black text-purple-600 dark:text-purple-400">04</span>
-              <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
-                {lang === "bn" ? "সুরক্ষা ও স্বচ্ছতা" : "Understand"}
-              </h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                {lang === "bn"
-                  ? "স্বচ্ছতা ড্যাশবোর্ড ও ক্রাইম অ্যানালিটিক্সের মাধ্যমে এলাকার নিরাপত্তা পরিস্থিতি বুঝুন।"
-                  : "Explore safety trends, verified directory contacts, and civic transparency dashboards."}
-              </p>
-            </div>
-          </div>
-
-          {/* Trust & Safety Assurance Badges */}
-          <div className="border-t border-zinc-100 dark:border-zinc-800 pt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-            <div className="space-y-1">
-              <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                🛡️ 100% Privacy Protection
-              </p>
-              <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                Exact residential coordinates and private identities are never exposed publicly.
-              </p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                👁️ Moderated Verification
-              </p>
-              <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                All submissions undergo checks to eliminate spam, hoaxes, and personal harassment.
-              </p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                🏛️ Civic Authority Integration
-              </p>
-              <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                Direct integration with verified national directory numbers (999, 109, 333).
+                  ? "অনুমোদিত রিপোর্টগুলো গোপনীয়তা বজায় রেখে ফিড, ম্যাপ এবং অ্যালার্ট সিস্টেমে প্রকাশিত হয়।"
+                  : "Approved reports appear on the public feed, community safety map, and civic transparency dashboard with full location privacy."}
               </p>
             </div>
           </div>
         </section>
 
         {/* =================================================================== */}
-        {/* 7. EMERGENCY CTA SECTION: 999 Hotline Support                      */}
+        {/* 7. EMERGENCY 999 SECTION                                           */}
         {/* =================================================================== */}
-        <section className="rounded-2xl border border-red-200 dark:border-red-950/80 bg-red-50/60 dark:bg-red-950/20 p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-2xs">
+        <section className="rounded-3xl border border-red-200 dark:border-red-950/80 bg-red-50/60 dark:bg-red-950/20 p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-2xs">
           <div className="flex items-center gap-4 text-center sm:text-left">
-            <div className="h-12 w-12 rounded-xl bg-red-600 text-white flex items-center justify-center text-2xl shrink-0 shadow-2xs mx-auto sm:mx-0">
+            <div className="h-12 w-12 rounded-2xl bg-red-600 text-white flex items-center justify-center text-2xl shrink-0 shadow-2xs mx-auto sm:mx-0">
               🚨
             </div>
             <div className="space-y-1">
               <h3 className="text-base sm:text-lg font-black text-red-950 dark:text-red-100 leading-tight">
-                {lang === "bn" ? "জরুরি সাহায্য প্রয়োজন?" : "Need Immediate Emergency Assistance?"}
+                {lang === "bn" ? "জরুরি সাহায্য প্রয়োজন?" : "Need Immediate Emergency Assistance?"}
               </h3>
               <p className="text-xs text-red-800 dark:text-red-300 leading-relaxed">
                 {lang === "bn"
@@ -923,14 +917,14 @@ export default function HomePage() {
           <div className="flex items-center gap-2.5 shrink-0">
             <a
               href="tel:999"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-xs font-bold shadow-2xs transition"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-xs font-bold shadow-2xs transition"
             >
               <span>📞</span>
               <span>{lang === "bn" ? "কল ৯৯৯" : "Call 999"}</span>
             </a>
             <Link
               href="/safety"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg border border-red-300 dark:border-red-900 bg-white dark:bg-zinc-900 text-red-700 dark:text-red-300 text-xs font-bold hover:bg-red-50 dark:hover:bg-red-950/40 transition"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-red-300 dark:border-red-900 bg-white dark:bg-zinc-900 text-red-700 dark:text-red-300 text-xs font-bold hover:bg-red-50 dark:hover:bg-red-950/40 transition"
             >
               <span>{lang === "bn" ? "কাছাকাছি সেবা খুঁজুন" : "Find Units Near Me"}</span>
               <span>→</span>

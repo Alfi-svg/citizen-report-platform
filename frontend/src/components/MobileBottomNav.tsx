@@ -3,11 +3,9 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
-  const { isAuthenticated } = useAuth();
 
   const navItems = [
     {
@@ -20,7 +18,7 @@ export default function MobileBottomNav() {
       ),
     },
     {
-      href: isAuthenticated ? "/reports/mine" : "/",
+      href: "/reports",
       label: "Reports",
       icon: (
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
