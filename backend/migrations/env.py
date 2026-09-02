@@ -51,21 +51,38 @@ def do_run_migrations(connection: Connection) -> None:
         context.run_migrations()
 
 
+from sqlalchemy.ext.asyncio import create_async_engine
+
 async def run_async_migrations() -> None:
     """Run migrations in 'online' mode with async engine."""
-    configuration = config.get_section(config.config_ini_section, {})
-    configuration["sqlalchemy.url"] = config.get_main_option("sqlalchemy.url")
+    db_url = config.get_main_option("sqlalchemy.url")
+    is_sqlite = db_url.startswith("sqlite")
+    connect_args = {}
+    if not is_sqlite:
+        if "ssl=" in db_url or "sslmode=" in db_url or os.getenv("ENVIRONMENT", "").lower() == "production":
+            connect_args["ssl"] = "require"
+            if "?" in db_url:
+                from urllib.parse import urlparse, parse_qs, urlencode
+                parsed = urlparse(db_url)
+                query_params = parse_qs(parsed.query)
+                filtered_params = {
+                    k: v for k, v in query_params.items()
+                    if k not in ("sslmode", "channel_binding", "ssl")
+                }
+                new_query = urlencode(filtered_params, doseq=True)
+                db_url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}" + (f"?{new_query}" if new_query else "")
 
-    connectable = async_engine_from_config(
-        configuration,
-        prefix="sqlalchemy.",
+    connectable = create_async_engine(
+        db_url,
         poolclass=pool.NullPool,
+        connect_args=connect_args,
     )
 
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)
 
     await connectable.dispose()
+
 
 
 def run_migrations_online() -> None:
