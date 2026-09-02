@@ -1,125 +1,76 @@
 # Bangladesh Citizen Report Platform
 
-> **Current Stage:** `STEP 9 — Notifications & User Activity`
+> **Current Stage:** `STEP 10 — Full System Testing, Security Hardening & Quality Assurance`
 
 ---
 
 ## 1. Project Overview
 
-The **Bangladesh Citizen Report Platform** is a secure, production-grade citizen reporting system designed to empower citizens to submit community incident reports accompanied by multimedia supporting evidence (photos, videos, documents). Reports undergo administrative moderation and verification before publication to the public news feed with interactive citizen discussion, endorsements, safety controls, and real-time in-app activity notifications.
+The **Bangladesh Citizen Report Platform** is a production-hardened citizen reporting system designed to empower citizens to submit community incident reports accompanied by multimedia supporting evidence (photos, videos, documents). Reports undergo administrative moderation and verification before publication to the public news feed with interactive citizen discussion, endorsements, safety controls, and real-time in-app activity notifications.
 
-### Core Architectural Principles
+### Core Architectural Guarantees & Hardening
 - **Strict Public Visibility Policy:** Public feeds, comments, reactions, and APIs display **ONLY** reports in `APPROVED` status. Unapproved reports (`DRAFT`, `SUBMITTED`, `UNDER_REVIEW`, `NEEDS_MORE_INFORMATION`, `REJECTED`, `ARCHIVED`) return `404 Not Found` across all public endpoints.
+- **HTTP Security Headers & Global Exception Safety:** All API responses include `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `X-XSS-Protection: 1; mode=block`, and `Referrer-Policy: strict-origin-when-cross-origin`. Unhandled exceptions are masked behind standardized JSON error bodies to prevent stack trace or path disclosure.
 - **Database-Backed In-App Notifications:** Lightweight, transactional notification system alerting citizens whenever their incident reports are submitted, placed under review, approved, rejected, or updated by administrators.
 - **Safety Flags as Review Signals:** A flag submitted by a citizen is an allegation/request for moderation review. A flag **never automatically marks content as false, illegal, or malicious**; human administrators make final moderation determinations.
 - **Privacy by Design:** Supports anonymous reporting where reporter identity is masked on public interfaces. Notifications, flagger identities, and private moderation notes are **strictly confidential** and isolated per user.
-- **Cloud-Compatible Object Storage:** PostgreSQL stores **only file metadata**; all binary evidence files reside in dedicated object storage via a provider-agnostic abstraction layer.
+- **Cloud-Compatible Object Storage:** PostgreSQL stores **only file metadata**; all binary evidence files reside in dedicated object storage via a provider-agnostic abstraction layer with MIME-type and magic-byte validation.
 
 ---
 
-## 2. In-App Notification Architecture (Step 9)
+## 2. System Architecture
 
 ```
-[Incident Event / Moderation Action]
-  - Report Submission
-  - Admin Moves to UNDER_REVIEW
-  - Admin APPROVES Report
-  - Admin REJECTS Report
-  - Admin Requests Information
-  - Comment Moderation Action
-  - Content Flag Reviewed
-         |
-         v
+[Citizen Client / Public Browser]
+        |
+        |  (JSON API / JWT Bearer)
+        v
 +---------------------------------------------------------------+
-|                 Notification Service Helper                   |
-|                                                               |
-|  * `notify_report_owner(db, report, type, title, message)`    |
-|  * `create_notification(db, user_id, type, title, message)`   |
-|  * Transactionally committed alongside domain event           |
-+-------------------------------+-------------------------------+
-                                |
-                                v
-                +-------------------------------+
-                |      notifications Table      |
+|                       FastAPI Backend                         |
+|  - HTTP Security Headers Middleware                           |
+|  - Strict Role-Based Access Control (USER vs ADMIN)           |
+|  - Rate & Spam Throttling Guards                              |
+|  - Anonymous Reporter Masking Logic                           |
+|  - Global Safe Exception Handler                              |
++---------------+-------------------------------+---------------+
                 |                               |
-                | * id (UUID PK)                |
-                | * user_id (FK CASCADE)        |
-                | * type (Enum NotificationType)|
-                | * title (String)              |
-                | * message (Text)              |
-                | * report_id (FK CASCADE)      |
-                | * comment_id (FK CASCADE)     |
-                | * read_at (Nullable DateTime) |
-                | * created_at (DateTime)       |
-                +---------------+---------------+
-                                |
-                                v
-+---------------------------------------------------------------+
-|                    Authenticated User UI                      |
-|  * Navbar Bell Icon with dynamic unread badge (`🔔 3`)        |
-|  * Interactive quick notification dropdown                    |
-|  * Dedicated Notifications Center (`/notifications`)          |
-|  * Mark as Read & Mark All as Read actions                    |
-+---------------------------------------------------------------+
+                v                               v
++-------------------------------+ +-----------------------------+
+|    PostgreSQL Relational DB   | |    Cloud Object Storage     |
+|  * Users & Auth               | |  * Encrypted file store     |
+|  * Categories                 | |  * Images / Docs / Videos   |
+|  * Incident Reports           | |  * Magic-byte validated     |
+|  * Moderation Records         | |  * Sanitized storage paths  |
+|  * Comments & Reactions       | +-----------------------------+
+|  * Safety Flags               |
+|  * In-App Notifications       |
++-------------------------------+
 ```
 
 ---
 
-## 3. Supported Notification Types & Lifecycle
+## 3. End-to-End User & Moderation Workflow
 
-| Notification Type | Trigger Event | Semantic Badge / Icon |
-| :--- | :--- | :--- |
-| `REPORT_SUBMITTED` | Citizen submits draft incident report for review | 🔵 Blue (`Submitted`) |
-| `REPORT_UNDER_REVIEW` | Admin begins active investigation and review | 🟡 Amber (`Under Review`) |
-| `REPORT_APPROVED` | Report approved and verified for public news feed | 🟢 Emerald (`Approved & Verified`) |
-| `REPORT_REJECTED` | Report reviewed and rejected with reason | 🔴 Red (`Moderation Decision`) |
-| `REPORT_NEEDS_MORE_INFORMATION` | Moderator requests additional evidence/details | 🟣 Purple (`More Info Needed`) |
-| `REPORT_ARCHIVED` | Report moved to archive | ⚪ Gray (`Archived`) |
-| `COMMENT_MODERATED` | Inappropriate comment hidden or removed | 🟠 Orange (`Comment Moderation`) |
-| `FLAG_REVIEWED` | Submitted safety flag reviewed by administrator | 🔷 Cyan (`Flag Inspected`) |
+1. **Citizen Registration & Authentication:** Citizen registers via `/auth/register` (strictly assigned `USER` role) and authenticates via `/auth/login` to receive JWT access tokens.
+2. **Incident Creation & Evidence Attachment:** Citizen drafts report (`POST /reports`) and uploads images/documents (`POST /reports/{id}/media`).
+3. **Submission for Review:** Citizen submits draft (`POST /reports/{id}/submit`), triggering a `REPORT_SUBMITTED` notification.
+4. **Administrative Moderation:** Admin inspects queue (`GET /admin/reports`), begins review (`POST /admin/reports/{id}/review`), and approves (`POST /admin/reports/{id}/approve`), triggering `REPORT_APPROVED` notification.
+5. **Public Verification & Discussion:** Report is published to public news feed (`GET /public/reports`). Community members endorse with reactions and post constructive comments.
+6. **Safety & Content Flagging:** Community members flag suspicious or duplicate entries. Admins resolve flags in the moderation queue (`PATCH /admin/flags/{id}`).
+7. **In-App Activity Notifications:** Citizen tracks real-time status changes via the Navbar bell dropdown and dedicated `/notifications` activity center.
 
 ---
 
-## 4. API Endpoints
+## 4. Local Setup & Verification Commands
 
-### Notifications Endpoints (`/api/v1/notifications`)
-| Method | Endpoint | Access | Description |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/api/v1/notifications` | Authenticated | Paginated list of notifications for current user (supports `unread_only` filter) |
-| `GET` | `/api/v1/notifications/unread-count` | Authenticated | Returns unread notification count (`{ "unread_count": int }`) |
-| `PATCH` | `/api/v1/notifications/{id}/read` | Authenticated | Marks a specific notification as read (strictly owned by current user) |
-| `PATCH` | `/api/v1/notifications/read-all` | Authenticated | Marks all unread notifications of the current user as read |
-
-### Safety & Flagging Endpoints (`/api/v1/flags`)
-| Method | Endpoint | Access | Description |
-| :--- | :--- | :--- | :--- |
-| `POST` | `/api/v1/reports/{id}/flags` | Authenticated | Submit safety/content flag for an `APPROVED` report |
-| `POST` | `/api/v1/comments/{id}/flags` | Authenticated | Submit safety/content flag for a visible comment |
-| `GET` | `/api/v1/admin/flags` | Admin | List paginated flag queue with target type and status filters |
-| `PATCH` | `/api/v1/admin/flags/{id}` | Admin | Update flag status (`REVIEWED`, `DISMISSED`, `ACTION_TAKEN`) |
-
-### Community Interaction Endpoints
-| Method | Endpoint | Access | Description |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/api/v1/public/reports/{id}/comments` | Public | Paginated list of visible comments on an `APPROVED` report |
-| `GET` | `/api/v1/public/reports/{id}/reactions` | Public / Auth | Aggregated reaction counts (`SUPPORT`, `IMPORTANT`) |
-| `POST` | `/api/v1/reports/{id}/comments` | Authenticated | Post a comment on an `APPROVED` report |
-| `DELETE` | `/api/v1/comments/{comment_id}` | Owner / Admin | Delete own comment or remove comment as administrator |
-| `POST` | `/api/v1/reports/{id}/reactions` | Authenticated | Toggle reaction (`SUPPORT` or `IMPORTANT`) on an `APPROVED` report |
-| `DELETE` | `/api/v1/reports/{id}/reactions/{type}` | Authenticated | Remove a specific reaction |
-
----
-
-## 5. Local Setup & Verification Commands
-
-### Backend Tests
+### Backend Verification (73 Automated Pytest Scenarios)
 ```bash
 cd backend
 source .venv/bin/activate
 pytest -v
 ```
 
-### Frontend Type-Check, Lint & Build
+### Frontend Type-Check, Lint & Production Build
 ```bash
 cd frontend
 npm run type-check
@@ -127,11 +78,26 @@ npm run lint
 npm run build
 ```
 
-### Running Locally
+### Running the Full Stack Locally
 ```bash
-# Backend (Port 8000)
+# Backend (FastAPI on Port 8000)
 cd backend && source .venv/bin/activate && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
-# Frontend (Port 3000)
+# Frontend (Next.js 16 on Port 3000)
 cd frontend && npm run dev
 ```
+
+---
+
+## 5. Security Checklist Verified
+- [x] Passwords securely hashed with bcrypt.
+- [x] JWT access token issuance and signature verification.
+- [x] IDOR protection on Reports, Comments, Reactions, Flags, Evidence, and Notifications.
+- [x] Public endpoints strictly restricted to `APPROVED` reports.
+- [x] Anonymous reporting privacy guaranteed on all public APIs.
+- [x] Binary files stored strictly in object storage (outside PostgreSQL).
+- [x] MIME-type, extension, and magic-byte upload validation enforced.
+- [x] Standard HTTP security response headers configured.
+- [x] Global safe exception handler active (no traceback or path leakage).
+- [x] All 73 backend tests passing.
+- [x] TypeScript type-check, ESLint, and Next.js production build passing.

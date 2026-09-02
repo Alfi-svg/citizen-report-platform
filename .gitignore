@@ -41,6 +41,12 @@ out/
 build/
 dist/
 
+# Local Storage & Uploads
+data/
+storage/
+uploads/
+
+
 # Logs
 logs/
 *.log
