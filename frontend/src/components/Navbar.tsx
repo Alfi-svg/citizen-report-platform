@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import NotificationBell from "@/components/NotificationBell";
 
 export default function Navbar() {
   const { user, isAuthenticated, isAdmin, logout, isLoading } = useAuth();
@@ -19,7 +20,7 @@ export default function Navbar() {
           </Link>
         </div>
 
-        <nav className="flex items-center gap-3 sm:gap-4">
+        <nav className="flex items-center gap-2.5 sm:gap-4">
           <Link
             href="/"
             className="text-sm font-medium text-zinc-700 hover:text-emerald-600 dark:text-zinc-300 dark:hover:text-emerald-400"
@@ -52,6 +53,8 @@ export default function Navbar() {
                   Admin Panel
                 </Link>
               )}
+
+              <NotificationBell />
 
               <div className="hidden md:flex flex-col text-right">
                 <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">

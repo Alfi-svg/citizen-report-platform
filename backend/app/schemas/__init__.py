@@ -13,6 +13,11 @@ from app.schemas.flag import (
     AdminFlagResponse,
     AdminFlagPagination,
 )
+from app.schemas.notification import (
+    NotificationResponse,
+    NotificationUnreadCountResponse,
+    NotificationPagination,
+)
 
 __all__ = [
     "UserBase",
@@ -50,4 +55,7 @@ __all__ = [
     "AdminFlagUpdate",
     "AdminFlagResponse",
     "AdminFlagPagination",
+    "NotificationResponse",
+    "NotificationUnreadCountResponse",
+    "NotificationPagination",
 ]

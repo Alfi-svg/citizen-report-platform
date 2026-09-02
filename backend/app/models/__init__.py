@@ -7,6 +7,7 @@ from app.models.moderation import ModerationRecord, ModerationAction
 from app.models.comment import Comment, CommentStatus
 from app.models.reaction import Reaction, ReactionType
 from app.models.flag import ContentFlag, FlagTargetType, FlagStatus, ReportFlagReason, CommentFlagReason
+from app.models.notification import Notification, NotificationType
 
 __all__ = [
     "Base",
@@ -29,4 +30,6 @@ __all__ = [
     "FlagStatus",
     "ReportFlagReason",
     "CommentFlagReason",
+    "Notification",
+    "NotificationType",
 ]

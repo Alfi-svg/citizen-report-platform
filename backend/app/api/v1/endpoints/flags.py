@@ -8,6 +8,7 @@ from app.api.deps import get_current_user, get_current_active_admin
 from app.db.session import get_db
 from app.models.comment import Comment, CommentStatus
 from app.models.flag import ContentFlag, FlagTargetType, FlagStatus
+from app.models.notification import NotificationType
 from app.models.report import Report, ReportStatus
 from app.models.user import User
 from app.schemas.flag import (
@@ -18,6 +19,7 @@ from app.schemas.flag import (
     AdminFlagResponse,
     AdminFlagPagination,
 )
+from app.services.notification import create_notification
 
 router = APIRouter()
 
@@ -284,6 +286,17 @@ async def update_admin_flag(
         flag.admin_notes = payload.admin_notes
     flag.reviewed_by = current_admin.id
     flag.reviewed_at = datetime.now(timezone.utc)
+
+    if flag.user_id:
+        await create_notification(
+            db=db,
+            user_id=flag.user_id,
+            notification_type=NotificationType.FLAG_REVIEWED,
+            title="Safety Flag Reviewed",
+            message=f"Your {flag.target_type.value.lower()} flag has been reviewed by the moderation team.",
+            report_id=flag.report_id,
+            comment_id=flag.comment_id,
+        )
 
     await db.commit()
     await db.refresh(flag)

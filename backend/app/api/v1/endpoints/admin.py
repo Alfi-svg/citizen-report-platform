@@ -5,6 +5,7 @@ from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_current_active_admin
 from app.db.session import get_db
+from app.models.notification import NotificationType
 from app.models.moderation import ModerationRecord, ModerationAction
 from app.models.report import Report, ReportStatus
 from app.models.comment import Comment, CommentStatus
@@ -18,6 +19,7 @@ from app.schemas.report import (
     AdminReportPagination,
 )
 from app.schemas.comment import AdminCommentResponse, CommentStatusUpdate
+from app.services.notification import notify_report_owner, create_notification
 
 router = APIRouter()
 
@@ -199,6 +201,16 @@ async def start_report_review(
         internal_notes=payload.internal_notes if payload else None,
     )
     db.add(record)
+    await db.flush()
+
+    await notify_report_owner(
+        db=db,
+        report=report,
+        notification_type=NotificationType.REPORT_UNDER_REVIEW,
+        title="Incident Under Review",
+        message=f"Your incident report '{report.title}' is now being reviewed by moderators.",
+    )
+
     await db.commit()
     await db.refresh(report)
     return report
@@ -246,6 +258,16 @@ async def approve_report(
         internal_notes=payload.internal_notes if payload else None,
     )
     db.add(record)
+    await db.flush()
+
+    await notify_report_owner(
+        db=db,
+        report=report,
+        notification_type=NotificationType.REPORT_APPROVED,
+        title="Incident Report Approved",
+        message=f"Your incident report '{report.title}' has been approved and published to the public news feed.",
+    )
+
     await db.commit()
     await db.refresh(report)
     return report
@@ -292,6 +314,17 @@ async def reject_report(
         internal_notes=payload.internal_notes if payload else None,
     )
     db.add(record)
+    await db.flush()
+
+    msg_reason = f": {payload.user_message}" if payload and payload.user_message else "."
+    await notify_report_owner(
+        db=db,
+        report=report,
+        notification_type=NotificationType.REPORT_REJECTED,
+        title="Incident Report Rejected",
+        message=f"Your incident report '{report.title}' was reviewed and rejected{msg_reason}",
+    )
+
     await db.commit()
     await db.refresh(report)
     return report
@@ -344,6 +377,16 @@ async def request_more_information(
         internal_notes=payload.internal_notes.strip() if payload.internal_notes else None,
     )
     db.add(record)
+    await db.flush()
+
+    await notify_report_owner(
+        db=db,
+        report=report,
+        notification_type=NotificationType.REPORT_NEEDS_MORE_INFORMATION,
+        title="Additional Information Needed",
+        message=f"Moderators requested more information for '{report.title}': {payload.user_message.strip()}",
+    )
+
     await db.commit()
     await db.refresh(report)
     return report
@@ -401,6 +444,17 @@ async def update_comment_status(
         )
 
     comment.status = payload.status
+    if payload.status in (CommentStatus.HIDDEN, CommentStatus.REMOVED) and comment.user_id:
+        await create_notification(
+            db=db,
+            user_id=comment.user_id,
+            notification_type=NotificationType.COMMENT_MODERATED,
+            title="Comment Moderation Notice",
+            message="A comment you posted was moderated by the community review team.",
+            comment_id=comment.id,
+            report_id=comment.report_id,
+        )
+
     await db.commit()
     await db.refresh(comment)
     return comment

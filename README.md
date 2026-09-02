@@ -1,107 +1,102 @@
 # Bangladesh Citizen Report Platform
 
-> **Current Stage:** `STEP 8 — Report Flags, Content Moderation & Safety Controls`
+> **Current Stage:** `STEP 9 — Notifications & User Activity`
 
 ---
 
 ## 1. Project Overview
 
-The **Bangladesh Citizen Report Platform** is a secure, production-grade citizen reporting system designed to empower citizens to submit community incident reports accompanied by multimedia supporting evidence (photos, videos, documents). Reports undergo administrative moderation and verification before publication to the public news feed with interactive citizen discussion, endorsements, and safety controls.
+The **Bangladesh Citizen Report Platform** is a secure, production-grade citizen reporting system designed to empower citizens to submit community incident reports accompanied by multimedia supporting evidence (photos, videos, documents). Reports undergo administrative moderation and verification before publication to the public news feed with interactive citizen discussion, endorsements, safety controls, and real-time in-app activity notifications.
 
 ### Core Architectural Principles
 - **Strict Public Visibility Policy:** Public feeds, comments, reactions, and APIs display **ONLY** reports in `APPROVED` status. Unapproved reports (`DRAFT`, `SUBMITTED`, `UNDER_REVIEW`, `NEEDS_MORE_INFORMATION`, `REJECTED`, `ARCHIVED`) return `404 Not Found` across all public endpoints.
+- **Database-Backed In-App Notifications:** Lightweight, transactional notification system alerting citizens whenever their incident reports are submitted, placed under review, approved, rejected, or updated by administrators.
 - **Safety Flags as Review Signals:** A flag submitted by a citizen is an allegation/request for moderation review. A flag **never automatically marks content as false, illegal, or malicious**; human administrators make final moderation determinations.
-- **Privacy by Design:** Supports anonymous reporting where reporter identity is masked on public interfaces. Flagger identities, reason selections, and private explanations are **strictly confidential** and never exposed publicly.
-- **Community Interaction & Controls:** Moderated comments and toggleable endorsements (`SUPPORT` / `IMPORTANT`) paired with safety flagging for both public reports and comments.
+- **Privacy by Design:** Supports anonymous reporting where reporter identity is masked on public interfaces. Notifications, flagger identities, and private moderation notes are **strictly confidential** and isolated per user.
 - **Cloud-Compatible Object Storage:** PostgreSQL stores **only file metadata**; all binary evidence files reside in dedicated object storage via a provider-agnostic abstraction layer.
 
 ---
 
-## 2. Safety & Content Flagging Architecture (Step 8)
+## 2. In-App Notification Architecture (Step 9)
 
 ```
-[Authenticated Citizen]
-         |
-         +---> (1) Flag Approved Report: POST /api/v1/reports/{id}/flags
-         |         (Reason + Optional Private Explanation up to 500 chars)
-         |
-         +---> (2) Flag Public Comment: POST /api/v1/comments/{id}/flags
-         |         (Reason + Optional Private Explanation up to 500 chars)
+[Incident Event / Moderation Action]
+  - Report Submission
+  - Admin Moves to UNDER_REVIEW
+  - Admin APPROVES Report
+  - Admin REJECTS Report
+  - Admin Requests Information
+  - Comment Moderation Action
+  - Content Flag Reviewed
          |
          v
 +---------------------------------------------------------------+
-|                      FastAPI Backend                          |
+|                 Notification Service Helper                   |
 |                                                               |
-|  * Verifies target report/comment is APPROVED & VISIBLE       |
-|  * Enforces DB-level duplicate flag prevention per reason     |
-|  * Preserves flagger privacy (never leaks flag counts/details)|
+|  * `notify_report_owner(db, report, type, title, message)`    |
+|  * `create_notification(db, user_id, type, title, message)`   |
+|  * Transactionally committed alongside domain event           |
 +-------------------------------+-------------------------------+
                                 |
                                 v
                 +-------------------------------+
-                |      content_flags Table      |
+                |      notifications Table      |
                 |                               |
                 | * id (UUID PK)                |
                 | * user_id (FK CASCADE)        |
-                | * target_type (REPORT/COMMENT)|
+                | * type (Enum NotificationType)|
+                | * title (String)              |
+                | * message (Text)              |
                 | * report_id (FK CASCADE)      |
                 | * comment_id (FK CASCADE)     |
-                | * reason (String)             |
-                | * details (Private Text)      |
-                | * status (PENDING / REVIEWED  |
-                |   / DISMISSED / ACTION_TAKEN) |
-                | * reviewed_by, reviewed_at    |
-                | * admin_notes (Internal Text) |
+                | * read_at (Nullable DateTime) |
+                | * created_at (DateTime)       |
                 +---------------+---------------+
                                 |
                                 v
 +---------------------------------------------------------------+
-|                    Admin Safety Queue                         |
-|  * List & Filter Flags (by target type and moderation status) |
-|  * Inspect Target Report or Moderate Comment                  |
-|  * Mark Reviewed, Dismiss, or Record Action Taken             |
+|                    Authenticated User UI                      |
+|  * Navbar Bell Icon with dynamic unread badge (`🔔 3`)        |
+|  * Interactive quick notification dropdown                    |
+|  * Dedicated Notifications Center (`/notifications`)          |
+|  * Mark as Read & Mark All as Read actions                    |
 +---------------------------------------------------------------+
 ```
 
 ---
 
-## 3. Flag Reasons & Lifecycle
+## 3. Supported Notification Types & Lifecycle
 
-### Supported Report Flag Reasons
-- `FALSE_OR_MISLEADING`: Factual inaccuracies, fabrications, or manipulated media.
-- `SPAM`: Commercial promotional content or irrelevant advertising.
-- `DUPLICATE`: Repeated incident report already existing on the platform.
-- `PRIVACY_CONCERN`: Non-consensual personal information or sensitive document leaks.
-- `HARASSMENT_OR_ABUSE`: Unsubstantiated personal attacks or defamatory statements.
-- `INAPPROPRIATE_CONTENT`: Excessively graphic violence or vulgar content.
-- `OTHER`: Other civic safety concerns requiring administrative review.
-
-### Supported Comment Flag Reasons
-- `SPAM`: Promotional links or repetitive text.
-- `HARASSMENT_OR_ABUSE`: Targeted bullying, threats, or abuse.
-- `HATEFUL_OR_OFFENSIVE`: Attacks on identity, religion, or community.
-- `PERSONAL_INFORMATION`: Doxxing or private contact information leaks.
-- `THREATENING_CONTENT`: Threats of physical violence.
-- `INAPPROPRIATE_CONTENT`: Explicit or inappropriate commentary.
-- `OTHER`: Other moderation concerns.
-
-### Flag Statuses
-- `PENDING`: Newly submitted, awaiting administrative inspection.
-- `REVIEWED`: Inspected by administrator; no policy violation found.
-- `DISMISSED`: Rejected as invalid or frivolous flag.
-- `ACTION_TAKEN`: Content edited, hidden, rejected, or updated by moderation team.
+| Notification Type | Trigger Event | Semantic Badge / Icon |
+| :--- | :--- | :--- |
+| `REPORT_SUBMITTED` | Citizen submits draft incident report for review | 🔵 Blue (`Submitted`) |
+| `REPORT_UNDER_REVIEW` | Admin begins active investigation and review | 🟡 Amber (`Under Review`) |
+| `REPORT_APPROVED` | Report approved and verified for public news feed | 🟢 Emerald (`Approved & Verified`) |
+| `REPORT_REJECTED` | Report reviewed and rejected with reason | 🔴 Red (`Moderation Decision`) |
+| `REPORT_NEEDS_MORE_INFORMATION` | Moderator requests additional evidence/details | 🟣 Purple (`More Info Needed`) |
+| `REPORT_ARCHIVED` | Report moved to archive | ⚪ Gray (`Archived`) |
+| `COMMENT_MODERATED` | Inappropriate comment hidden or removed | 🟠 Orange (`Comment Moderation`) |
+| `FLAG_REVIEWED` | Submitted safety flag reviewed by administrator | 🔷 Cyan (`Flag Inspected`) |
 
 ---
 
 ## 4. API Endpoints
 
-### Safety & Flagging Endpoints
+### Notifications Endpoints (`/api/v1/notifications`)
+| Method | Endpoint | Access | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/v1/notifications` | Authenticated | Paginated list of notifications for current user (supports `unread_only` filter) |
+| `GET` | `/api/v1/notifications/unread-count` | Authenticated | Returns unread notification count (`{ "unread_count": int }`) |
+| `PATCH` | `/api/v1/notifications/{id}/read` | Authenticated | Marks a specific notification as read (strictly owned by current user) |
+| `PATCH` | `/api/v1/notifications/read-all` | Authenticated | Marks all unread notifications of the current user as read |
+
+### Safety & Flagging Endpoints (`/api/v1/flags`)
 | Method | Endpoint | Access | Description |
 | :--- | :--- | :--- | :--- |
 | `POST` | `/api/v1/reports/{id}/flags` | Authenticated | Submit safety/content flag for an `APPROVED` report |
 | `POST` | `/api/v1/comments/{id}/flags` | Authenticated | Submit safety/content flag for a visible comment |
 | `GET` | `/api/v1/admin/flags` | Admin | List paginated flag queue with target type and status filters |
-| `PATCH` | `/api/v1/admin/flags/{id}` | Admin | Update flag status (`REVIEWED`, `DISMISSED`, `ACTION_TAKEN`) and record admin notes |
+| `PATCH` | `/api/v1/admin/flags/{id}` | Admin | Update flag status (`REVIEWED`, `DISMISSED`, `ACTION_TAKEN`) |
 
 ### Community Interaction Endpoints
 | Method | Endpoint | Access | Description |

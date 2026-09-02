@@ -15,9 +15,11 @@ from app.db.session import get_db
 from app.models.category import Category
 from app.models.report import Report, ReportStatus
 from app.models.report_media import ReportMedia
+from app.models.notification import NotificationType
 from app.models.user import User, UserRole
 from app.schemas.report import ReportCreate, ReportUpdate, ReportResponse
 from app.schemas.report_media import ReportMediaResponse
+from app.services.notification import create_notification
 from app.services.storage import get_storage_service
 
 router = APIRouter()
@@ -70,6 +72,18 @@ async def create_report(
         submitted_at=submitted_at,
     )
     db.add(report)
+    await db.flush()
+
+    if initial_status == ReportStatus.SUBMITTED:
+        await create_notification(
+            db=db,
+            user_id=current_user.id,
+            notification_type=NotificationType.REPORT_SUBMITTED,
+            title="Incident Report Submitted",
+            message=f"Your incident report '{report.title}' has been submitted for moderation review.",
+            report_id=report.id,
+        )
+
     await db.commit()
     await db.refresh(report)
 
@@ -249,6 +263,16 @@ async def submit_report(
 
     report.status = ReportStatus.SUBMITTED
     report.submitted_at = datetime.now(timezone.utc)
+
+    if report.user_id:
+        await create_notification(
+            db=db,
+            user_id=report.user_id,
+            notification_type=NotificationType.REPORT_SUBMITTED,
+            title="Incident Report Submitted",
+            message=f"Your incident report '{report.title}' has been submitted for moderation review.",
+            report_id=report.id,
+        )
 
     await db.commit()
     await db.refresh(report)

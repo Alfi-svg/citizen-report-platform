@@ -291,3 +291,36 @@ export interface AdminFlagPagination {
   limit: number;
   offset: number;
 }
+
+export type NotificationType =
+  | "REPORT_SUBMITTED"
+  | "REPORT_UNDER_REVIEW"
+  | "REPORT_APPROVED"
+  | "REPORT_REJECTED"
+  | "REPORT_NEEDS_MORE_INFORMATION"
+  | "REPORT_ARCHIVED"
+  | "COMMENT_MODERATED"
+  | "FLAG_REVIEWED";
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  report_id?: string | null;
+  comment_id?: string | null;
+  read_at?: string | null;
+  created_at: string;
+}
+
+export interface NotificationUnreadCount {
+  unread_count: number;
+}
+
+export interface NotificationPagination {
+  items: Notification[];
+  total: number;
+  limit: number;
+  offset: number;
+}
