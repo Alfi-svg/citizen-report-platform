@@ -1,19 +1,40 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
+import { apiFetch } from "@/lib/api";
+import { Report } from "@/lib/types";
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading, logout, isAdmin } = useAuth();
+  const [reports, setReports] = useState<Report[]>([]);
+  const [loadingReports, setLoadingReports] = useState(true);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push("/login");
     }
   }, [isLoading, isAuthenticated, router]);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (isAuthenticated) {
+      apiFetch<Report[]>("/reports/mine")
+        .then((data) => {
+          if (isMounted) setReports(data);
+        })
+        .catch(() => {})
+        .finally(() => {
+          if (isMounted) setLoadingReports(false);
+        });
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuthenticated]);
 
   if (isLoading) {
     return (
@@ -27,9 +48,15 @@ export default function DashboardPage() {
     return null;
   }
 
+  const draftsCount = reports.filter((r) => r.status === "DRAFT").length;
+  const submittedCount = reports.filter(
+    (r) => r.status === "SUBMITTED" || r.status === "UNDER_REVIEW"
+  ).length;
+  const approvedCount = reports.filter((r) => r.status === "APPROVED").length;
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
             Citizen Dashboard
@@ -53,6 +80,66 @@ export default function DashboardPage() {
           >
             Sign Out
           </button>
+        </div>
+      </div>
+
+      {/* Quick Action Banner */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-500/10 to-teal-500/5 p-6 dark:border-emerald-900/60 dark:from-emerald-950/40 dark:to-teal-950/20 shadow-sm flex flex-col justify-between">
+          <div>
+            <span className="text-2xl mb-2 block">📝</span>
+            <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
+              Submit an Incident Report
+            </h2>
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+              File a verified community incident report or confidential whistleblowing allegation.
+            </p>
+          </div>
+          <div className="mt-4">
+            <Link
+              href="/reports/create"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-500 transition"
+            >
+              + Create Report
+            </Link>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 p-6 shadow-sm flex flex-col justify-between">
+          <div>
+            <span className="text-2xl mb-2 block">📋</span>
+            <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
+              My Submissions
+            </h2>
+            <div className="grid grid-cols-3 gap-2 mt-3 text-center">
+              <div className="p-2 rounded-lg bg-zinc-50 dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700">
+                <span className="text-xs text-zinc-500 block">Drafts</span>
+                <span className="text-base font-bold text-zinc-800 dark:text-zinc-200">
+                  {loadingReports ? "—" : draftsCount}
+                </span>
+              </div>
+              <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900">
+                <span className="text-xs text-blue-600 dark:text-blue-400 block">Submitted</span>
+                <span className="text-base font-bold text-blue-700 dark:text-blue-300">
+                  {loadingReports ? "—" : submittedCount}
+                </span>
+              </div>
+              <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900">
+                <span className="text-xs text-emerald-600 dark:text-emerald-400 block">Approved</span>
+                <span className="text-base font-bold text-emerald-700 dark:text-emerald-300">
+                  {loadingReports ? "—" : approvedCount}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="mt-4">
+            <Link
+              href="/reports/mine"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
+            >
+              View All My Reports ({reports.length}) →
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -109,28 +196,28 @@ export default function DashboardPage() {
         <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 p-6 shadow-sm flex flex-col justify-between">
           <div>
             <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-              Auth Status
+              Platform Status
             </h2>
             <p className="text-xs text-zinc-500 mb-4">
-              Step 2 Authentication & Authorization verified.
+              Step 3 Report Submission System active.
             </p>
             <div className="space-y-2 text-xs">
               <div className="flex items-center justify-between py-1 border-b border-zinc-100 dark:border-zinc-800">
-                <span className="text-zinc-500">JWT Bearer:</span>
-                <span className="font-semibold text-emerald-600">Active</span>
+                <span className="text-zinc-500">Incident Reporting:</span>
+                <span className="font-semibold text-emerald-600">Enabled</span>
               </div>
               <div className="flex items-center justify-between py-1 border-b border-zinc-100 dark:border-zinc-800">
-                <span className="text-zinc-500">Role Authority:</span>
-                <span className="font-semibold text-zinc-900 dark:text-zinc-100">{user.role}</span>
+                <span className="text-zinc-500">Draft Management:</span>
+                <span className="font-semibold text-emerald-600">Enabled</span>
               </div>
               <div className="flex items-center justify-between py-1">
-                <span className="text-zinc-500">Protected Route:</span>
-                <span className="font-semibold text-emerald-600">Unlocked</span>
+                <span className="text-zinc-500">Anonymous Mode:</span>
+                <span className="font-semibold text-emerald-600">Enabled</span>
               </div>
             </div>
           </div>
           <div className="mt-6 pt-4 border-t border-zinc-100 dark:border-zinc-800 text-[11px] text-zinc-400">
-            Awaiting Step 3 for report submission workflows.
+            Awaiting Step 4 for evidence attachments & moderation queue.
           </div>
         </div>
       </div>

@@ -25,10 +25,17 @@ export default function Navbar() {
           ) : isAuthenticated && user ? (
             <>
               <Link
-                href="/dashboard"
+                href="/reports/mine"
                 className="text-sm font-medium text-zinc-700 hover:text-emerald-600 dark:text-zinc-300 dark:hover:text-emerald-400"
               >
-                Dashboard
+                My Reports
+              </Link>
+
+              <Link
+                href="/reports/create"
+                className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-500 transition"
+              >
+                + New Report
               </Link>
 
               {isAdmin && (
