@@ -674,5 +674,175 @@ export interface SuggestedRelatedReportResponse {
   similarity: SimilarityBreakdown;
 }
 
+export type AnalyticsDataSourceType =
+  | "PLATFORM_REVIEWED_REPORTS"
+  | "OFFICIAL_SOURCE"
+  | "THIRD_PARTY_DATASET"
+  | "IMPORTED_DATASET";
+
+export type TrendDirection =
+  | "INCREASED"
+  | "DECREASED"
+  | "STABLE"
+  | "INSUFFICIENT_DATA";
+
+export interface AnalyticsDataSourceInfo {
+  source_type: AnalyticsDataSourceType;
+  source_name: string;
+  source_name_bn: string;
+  coverage_start?: string | null;
+  coverage_end?: string | null;
+  last_verified_at: string;
+  methodology_note: string;
+  methodology_note_bn: string;
+}
+
+export interface KPICardsResponse {
+  total_reviewed_reports: number;
+  reports_this_month: number;
+  reports_this_year: number;
+  active_missing_alerts: number;
+  total_categories: number;
+  total_districts: number;
+  approval_rate_percentage: number;
+  last_updated_at: string;
+  data_source: AnalyticsDataSourceInfo;
+}
+
+export interface MonthlyDataPoint {
+  year: number;
+  month: number;
+  month_name: string;
+  month_name_bn: string;
+  count: number;
+  prev_month_count?: number | null;
+  percentage_change?: number | null;
+  trend: TrendDirection;
+  trend_label: string;
+  trend_label_bn: string;
+}
+
+export interface MonthlyAnalyticsResponse {
+  year: number;
+  total_reports_for_year: number;
+  category_id?: string | null;
+  category_name?: string | null;
+  district?: string | null;
+  monthly_data: MonthlyDataPoint[];
+  sample_size_note: string;
+  last_updated_at: string;
+  data_source: AnalyticsDataSourceInfo;
+}
+
+export interface YearlyDataPoint {
+  year: number;
+  count: number;
+  prev_year_count?: number | null;
+  percentage_change?: number | null;
+  trend: TrendDirection;
+  trend_label: string;
+  trend_label_bn: string;
+}
+
+export interface YearlyAnalyticsResponse {
+  available_years: number[];
+  category_id?: string | null;
+  category_name?: string | null;
+  district?: string | null;
+  yearly_data: YearlyDataPoint[];
+  last_updated_at: string;
+  data_source: AnalyticsDataSourceInfo;
+}
+
+export interface CategoryAnalyticsItem {
+  category_id: string;
+  category_name: string;
+  category_slug: string;
+  count: number;
+  percentage_share: number;
+  prev_period_count?: number | null;
+  percentage_change?: number | null;
+  trend: TrendDirection;
+}
+
+export interface CategoryAnalyticsResponse {
+  total_reviewed_reports: number;
+  year_filter?: number | null;
+  month_filter?: number | null;
+  categories: CategoryAnalyticsItem[];
+  last_updated_at: string;
+  data_source: AnalyticsDataSourceInfo;
+}
+
+export interface GeographicAnalyticsItem {
+  division?: string | null;
+  district?: string | null;
+  area?: string | null;
+  report_count: number;
+  percentage_share: number;
+  approximate_latitude?: number | null;
+  approximate_longitude?: number | null;
+}
+
+export interface GeographicAnalyticsResponse {
+  total_geocoded_reports: number;
+  year_filter?: number | null;
+  divisions: GeographicAnalyticsItem[];
+  districts: GeographicAnalyticsItem[];
+  clusters_count: number;
+  last_updated_at: string;
+  data_source: AnalyticsDataSourceInfo;
+}
+
+export interface PublicTransparencyOverviewResponse {
+  kpis: KPICardsResponse;
+  monthly: MonthlyAnalyticsResponse;
+  yearly: YearlyAnalyticsResponse;
+  categories: CategoryAnalyticsResponse;
+  geography: GeographicAnalyticsResponse;
+  last_updated_at: string;
+  data_source: AnalyticsDataSourceInfo;
+}
+
+export interface StatusDistributionItem {
+  status: string;
+  count: number;
+  percentage: number;
+}
+
+export interface ModeratorPerformanceItem {
+  admin_id: string;
+  admin_name: string;
+  actions_count: number;
+  approved_count: number;
+  rejected_count: number;
+  info_requested_count: number;
+}
+
+export interface AdminOperationsAnalyticsResponse {
+  total_reports_all_statuses: number;
+  pending_review_count: number;
+  draft_count: number;
+  approved_count: number;
+  rejected_count: number;
+  needs_more_info_count: number;
+  archived_count: number;
+  approval_rate_percentage: number;
+  rejection_rate_percentage: number;
+  status_distribution: StatusDistributionItem[];
+  avg_review_turnaround_hours?: number | null;
+  total_flags: number;
+  pending_flags: number;
+  resolved_flags: number;
+  flag_resolution_rate_percentage: number;
+  total_missing_alerts: number;
+  active_missing_alerts: number;
+  found_missing_alerts: number;
+  missing_resolution_rate_percentage: number;
+  moderator_performance: ModeratorPerformanceItem[];
+  last_updated_at: string;
+}
+
+
 
 

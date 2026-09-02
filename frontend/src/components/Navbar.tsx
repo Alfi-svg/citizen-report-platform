@@ -51,6 +51,14 @@ export default function Navbar() {
           >
             Missing Persons
           </Link>
+
+          <Link
+            href="/transparency"
+            className="text-sm font-medium text-zinc-700 hover:text-blue-600 dark:text-zinc-300 dark:hover:text-blue-400 flex items-center gap-1"
+          >
+            <span>📊</span>
+            <span>Transparency</span>
+          </Link>
           {isLoading ? (
             <div className="h-8 w-20 animate-pulse rounded bg-zinc-200 dark:bg-zinc-800" />
           ) : isAuthenticated && user ? (

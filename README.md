@@ -65,6 +65,18 @@ The **Community Safety Map** (`/safety-map`) and **Incident Clustering Intellige
 - **Related Reports on Public Detail:** Approved reports automatically display related cluster co-members and high-similarity reports on `/reports/[id]`.
 - **Admin Intelligence Console:** Full administrative controls (`/admin/clusters`) to create clusters, add/remove members, and inspect transparent similarity breakdowns.
 
+### 1.4. Advanced Transparency & Bangladesh Crime Analysis Dashboard
+The **Transparency & Crime Analysis Dashboard** (`/transparency`) and **Admin Operations Analytics Console** (`/admin/analytics`) deliver open civic auditability, monthly/yearly trend tracking, category breakdowns, and geographic analysis across Bangladesh:
+- **Civic Transparency Principle:** Prominently clarifies that statistics represent platform-reviewed citizen submissions, NOT official government crime records or proven allegations.
+- **Core KPI Cards:** Real-time totals for reviewed reports, current month volume, current year volume, active missing alerts, and districts represented.
+- **Monthly & Yearly Time-Series Analysis:** Pure SVG responsive line charts with date/category/district filters, sample size disclosures, and accessible HTML data tables.
+- **Deterministic Increase / Decrease Scoring:** Comparative period change calculations with explicit `INSUFFICIENT_DATA` guards for sample sizes under 5 reports.
+- **Category Analysis:** Visual bar charts and tabular shares for civic hazard and safety categories.
+- **Bangladesh Geographic Density:** Aggregated division/district breakdown with direct link to the interactive Community Safety Map.
+- **Extensible Data Source Architecture:** `AnalyticsDataSource` model supporting future official/third-party dataset imports.
+- **Aggregated Data Export:** One-click sanitized CSV and JSON downloads of public platform statistics.
+- **Admin Operations Analytics:** Internal moderation throughput, review queue depths, approval/rejection rates, turnaround times, and flag resolution metrics.
+
 ---
 
 ## 2. Production Deployment Checklist
