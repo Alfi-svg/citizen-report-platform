@@ -18,8 +18,13 @@ engine_kwargs = {
 }
 
 db_url = settings.DATABASE_URL
+if db_url.startswith("postgres://"):
+    db_url = "postgresql+asyncpg://" + db_url[len("postgres://"):]
+elif db_url.startswith("postgresql://") and not db_url.startswith("postgresql+asyncpg://"):
+    db_url = "postgresql+asyncpg://" + db_url[len("postgresql://"):]
 
 if not is_sqlite:
+
     connect_args = {}
     # If SSL is requested or in production mode, configure SSL for asyncpg
     if "ssl=" in db_url or "sslmode=" in db_url or settings.ENVIRONMENT.lower() == "production":

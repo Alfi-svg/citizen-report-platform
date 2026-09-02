@@ -51,10 +51,23 @@ class Settings(BaseSettings):
     MAX_DOCUMENT_SIZE_BYTES: int = 20 * 1024 * 1024  # 20 MB
     MAX_MEDIA_PER_REPORT: int = 10
 
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def assemble_database_url(cls, v: str) -> str:
+        if isinstance(v, str):
+            v_stripped = v.strip().strip("'\"")
+            if v_stripped.startswith("postgres://"):
+                return "postgresql+asyncpg://" + v_stripped[len("postgres://"):]
+            elif v_stripped.startswith("postgresql://") and not v_stripped.startswith("postgresql+asyncpg://"):
+                return "postgresql+asyncpg://" + v_stripped[len("postgresql://"):]
+            return v_stripped
+        return v
+
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
         if isinstance(v, str):
+
             v_stripped = v.strip()
             if v_stripped.startswith("[") and v_stripped.endswith("]"):
                 try:
