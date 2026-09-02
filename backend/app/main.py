@@ -21,6 +21,23 @@ async def lifespan(app: FastAPI):
         f"[env={settings.ENVIRONMENT}, docs={'enabled' if settings.is_docs_enabled else 'disabled'}, "
         f"cors_origins={len(settings.CORS_ORIGINS)} configured]"
     )
+    # Ensure database schema and columns are synced
+    try:
+        from sqlalchemy import text
+        from app.db.session import engine
+        from app.models.base import Base
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+            try:
+                await conn.execute(text("ALTER TABLE missing_person_sightings ADD COLUMN IF NOT EXISTS clothing TEXT;"))
+                await conn.execute(text("ALTER TABLE missing_person_sightings ADD COLUMN IF NOT EXISTS direction VARCHAR(255);"))
+                await conn.execute(text("ALTER TABLE missing_person_sightings ADD COLUMN IF NOT EXISTS additional_information TEXT;"))
+            except Exception:
+                pass
+        logger.info("Database schema synchronized on startup.")
+    except Exception as e:
+        logger.warning(f"Startup schema sync notice: {e}")
+
     yield
     logger.info(f"Shutting down {settings.PROJECT_NAME}.")
 
