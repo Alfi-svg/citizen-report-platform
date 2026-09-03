@@ -307,3 +307,170 @@ async def test_missing_person_direct_submit(
     assert data["profile"]["age"] == 14
     assert data["profile"]["last_seen_location"] == "Mirpur 10 roundabout, Dhaka"
 
+
+@pytest.mark.asyncio
+async def test_admin_missing_person_removal_and_public_feed_purge(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+):
+    """
+    CRITICAL REGRESSION TEST:
+    1. Create & publish missing person alert.
+    2. Verify it appears in Public News Feed (/public/reports), Public Alerts (/missing-person/alerts), and direct URL.
+    3. Normal user attempts to deactivate/delete -> Forbidden (403).
+    4. Admin deactivates / removes from public feed via POST /admin/missing-person/alerts/{id}/deactivate.
+    5. Verify underlying Report is ARCHIVED and alert is CLOSED.
+    6. Verify it is IMMEDIATELY PURGED from Public News Feed (/public/reports).
+    7. Verify it is PURGED from Public Missing Person list (/missing-person/alerts).
+    8. Verify direct public URL (/missing-person/alerts/{id}) returns 404 (Direct URL Protection).
+    9. Verify sightings endpoint returns 404.
+    10. Admin re-activates alert -> Returns to Public News Feed and Direct URL works.
+    11. Admin permanently deletes alert -> Cascade deleted completely.
+    """
+    admin = User(
+        email="admin_purge@example.com",
+        username="admin_purge",
+        hashed_password=get_password_hash("AdminPass123!"),
+        role=UserRole.ADMIN,
+        is_active=True,
+    )
+    citizen = User(
+        email="citizen_purge@example.com",
+        username="citizen_purge",
+        hashed_password=get_password_hash("Pass123!"),
+        role=UserRole.USER,
+        is_active=True,
+    )
+    db_session.add_all([admin, citizen])
+    await db_session.commit()
+    await db_session.refresh(admin)
+    await db_session.refresh(citizen)
+
+    admin_headers = {"Authorization": f"Bearer {create_access_token(subject=admin.id, role='ADMIN')}"}
+    citizen_headers = {"Authorization": f"Bearer {create_access_token(subject=citizen.id, role='USER')}"}
+
+    # 1. Citizen creates a missing person alert
+    payload = {
+        "full_name": "Tanvir Hasan",
+        "name_bn": "তানভীর হাসান",
+        "age": 22,
+        "gender": "MALE",
+        "last_seen_location": "Gulshan 1 Circle, Dhaka",
+        "description": "University student, last seen wearing navy blue jacket.",
+    }
+    create_res = await async_client.post(
+        "/api/v1/missing-person/submit",
+        json=payload,
+        headers=citizen_headers,
+    )
+    assert create_res.status_code == 201
+    created_data = create_res.json()
+    alert_id = created_data["alert_id"]
+    report_id = created_data["report_id"]
+
+    # 2. Verify it appears publicly in News Feed, Public Alerts, and Direct URL
+    # News Feed
+    feed_res = await async_client.get("/api/v1/public/reports")
+    assert feed_res.status_code == 200
+    feed_ids = [r["id"] for r in feed_res.json()["items"]]
+    assert report_id in feed_ids
+
+    # Public Alerts list
+    alerts_res = await async_client.get("/api/v1/missing-person/alerts")
+    assert alerts_res.status_code == 200
+    alert_ids = [a["id"] for a in alerts_res.json()["items"]]
+    assert alert_id in alert_ids
+
+    # Direct URL
+    detail_res = await async_client.get(f"/api/v1/missing-person/alerts/{alert_id}")
+    assert detail_res.status_code == 200
+    assert detail_res.json()["profile"]["full_name"] == "Tanvir Hasan"
+
+    # 3. Unauthorized citizen attempts deactivation/deletion
+    unauth_deact = await async_client.post(
+        f"/api/v1/admin/missing-person/alerts/{alert_id}/deactivate",
+        json={"deactivation_notes": "Citizen trying to remove"},
+        headers=citizen_headers,
+    )
+    assert unauth_deact.status_code == 403
+
+    unauth_del = await async_client.delete(
+        f"/api/v1/admin/missing-person/alerts/{alert_id}",
+        headers=citizen_headers,
+    )
+    assert unauth_del.status_code == 403
+
+    # 4. Admin deactivates / removes from public feed
+    admin_deact = await async_client.post(
+        f"/api/v1/admin/missing-person/alerts/{alert_id}/deactivate",
+        json={"deactivation_notes": "Case resolved privately by family"},
+        headers=admin_headers,
+    )
+    assert admin_deact.status_code == 200
+    assert admin_deact.json()["status"] == "CLOSED"
+    assert admin_deact.json()["is_active"] is False
+
+    # 5. Verify database state: Report is ARCHIVED
+    db_report = await db_session.get(Report, uuid.UUID(report_id))
+    assert db_report.status == ReportStatus.ARCHIVED
+
+    # 6. Verify PURGED from Public News Feed (/public/reports)
+    feed_after = await async_client.get("/api/v1/public/reports")
+    assert feed_after.status_code == 200
+    feed_after_ids = [r["id"] for r in feed_after.json()["items"]]
+    assert report_id not in feed_after_ids
+
+    # 7. Verify PURGED from Public Missing Person list (/missing-person/alerts)
+    alerts_after = await async_client.get("/api/v1/missing-person/alerts")
+    assert alerts_after.status_code == 200
+    alerts_after_ids = [a["id"] for a in alerts_after.json()["items"]]
+    assert alert_id not in alerts_after_ids
+
+    # 8. Verify Direct URL Protection: returns 404
+    detail_after = await async_client.get(f"/api/v1/missing-person/alerts/{alert_id}")
+    assert detail_after.status_code == 404
+
+    # 9. Verify Sighting Endpoint Protection: returns 404
+    sightings_after = await async_client.get(f"/api/v1/missing-person/alerts/{alert_id}/sightings")
+    assert sightings_after.status_code == 404
+
+    # Sighting submission blocked
+    sight_submit = await async_client.post(
+        f"/api/v1/missing-person/alerts/{alert_id}/sightings",
+        json={
+            "approximate_location": "Gulshan 2",
+            "description": "Saw someone walking by",
+        },
+        headers=citizen_headers,
+    )
+    assert sight_submit.status_code == 400
+
+    # 10. Admin re-activates alert
+    reactivate_res = await async_client.post(
+        f"/api/v1/admin/missing-person/alerts/{alert_id}/activate",
+        json={"alert_radius_km": 12.0, "activation_notes": "New lead opened"},
+        headers=admin_headers,
+    )
+    assert reactivate_res.status_code == 200
+    assert reactivate_res.json()["status"] == "ALERT_ACTIVE"
+    assert reactivate_res.json()["is_active"] is True
+
+    # Re-activated alert reappears in public news feed and direct URL works again
+    feed_reactivated = await async_client.get("/api/v1/public/reports")
+    assert report_id in [r["id"] for r in feed_reactivated.json()["items"]]
+    detail_reactivated = await async_client.get(f"/api/v1/missing-person/alerts/{alert_id}")
+    assert detail_reactivated.status_code == 200
+
+    # 11. Admin permanently deletes the alert
+    del_res = await async_client.delete(
+        f"/api/v1/admin/missing-person/alerts/{alert_id}",
+        headers=admin_headers,
+    )
+    assert del_res.status_code == 200
+
+    # Verify completely deleted from database
+    db_report_del = await db_session.get(Report, uuid.UUID(report_id))
+    assert db_report_del is None
+    db_alert_del = await db_session.get(MissingPersonAlert, uuid.UUID(alert_id))
+    assert db_alert_del is None
+

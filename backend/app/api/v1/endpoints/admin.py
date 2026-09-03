@@ -75,6 +75,7 @@ from app.schemas.emergency_service import (
 from app.schemas.missing_person import (
     MissingPersonAlertActivateRequest,
     MissingPersonFoundRequest,
+    MissingPersonDeactivateRequest,
     AdminMissingPersonAlertResponse,
     AdminMissingPersonAlertPagination,
     AdminMissingPersonSightingResponse,
@@ -390,6 +391,14 @@ async def approve_report(
         message=f"Your incident report '{report.title}' has been approved and published to the public news feed.",
     )
 
+    # Synchronize attached missing person alert if present
+    mp_alert_stmt = select(MissingPersonAlert).where(MissingPersonAlert.report_id == report.id)
+    mp_alert_res = await db.execute(mp_alert_stmt)
+    mp_alert = mp_alert_res.scalar_one_or_none()
+    if mp_alert and mp_alert.status == AlertStatus.ALERT_PENDING:
+        mp_alert.status = AlertStatus.ALERT_ACTIVE
+        mp_alert.is_active = True
+
     await db.commit()
     await db.refresh(report)
     return report
@@ -443,6 +452,14 @@ async def reject_report(
         title="Incident Report Rejected",
         message=f"Your incident report '{report.title}' was reviewed and rejected{msg_reason}",
     )
+
+    # Synchronize attached missing person alert if present: close and deactivate
+    mp_alert_stmt = select(MissingPersonAlert).where(MissingPersonAlert.report_id == report.id)
+    mp_alert_res = await db.execute(mp_alert_stmt)
+    mp_alert = mp_alert_res.scalar_one_or_none()
+    if mp_alert:
+        mp_alert.status = AlertStatus.CLOSED
+        mp_alert.is_active = False
 
     await db.commit()
     await db.refresh(report)
@@ -549,6 +566,14 @@ async def archive_report(
         title="Incident Report Archived",
         message=f"Your incident report '{report.title}' has been moved to the platform archives.",
     )
+
+    # Synchronize attached missing person alert if present: close and deactivate
+    mp_alert_stmt = select(MissingPersonAlert).where(MissingPersonAlert.report_id == report.id)
+    mp_alert_res = await db.execute(mp_alert_stmt)
+    mp_alert = mp_alert_res.scalar_one_or_none()
+    if mp_alert:
+        mp_alert.status = AlertStatus.CLOSED
+        mp_alert.is_active = False
 
     await db.commit()
     await db.refresh(report)
@@ -2091,7 +2116,7 @@ async def mark_missing_person_found(
     "/missing-person/alerts/{alert_id}/close",
     response_model=AdminMissingPersonAlertResponse,
     status_code=status.HTTP_200_OK,
-    summary="Close missing person alert manually",
+    summary="Close missing person alert manually and archive associated report",
 )
 async def close_missing_person_alert(
     alert_id: uuid.UUID,
@@ -2109,6 +2134,14 @@ async def close_missing_person_alert(
 
     alert.status = AlertStatus.CLOSED
     alert.is_active = False
+
+    # Synchronize associated report: Archive report so it is immediately removed from public feeds and safety map
+    rep_stmt = select(Report).where(Report.id == alert.report_id)
+    rep_res = await db.execute(rep_stmt)
+    report = rep_res.scalar_one_or_none()
+    if report and report.status != ReportStatus.ARCHIVED:
+        report.status = ReportStatus.ARCHIVED
+
     await db.commit()
     await db.refresh(alert)
 
@@ -2132,6 +2165,103 @@ async def close_missing_person_alert(
         profile=MissingPersonProfileResponse.model_validate(profile) if profile else None,
         created_at=alert.created_at,
     )
+
+
+@router.post(
+    "/missing-person/alerts/{alert_id}/deactivate",
+    response_model=AdminMissingPersonAlertResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Deactivate missing person alert and purge from public news feed and map",
+)
+async def deactivate_missing_person_alert(
+    alert_id: uuid.UUID,
+    payload: Optional[MissingPersonDeactivateRequest] = None,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    stmt = select(MissingPersonAlert).where(MissingPersonAlert.id == alert_id)
+    res = await db.execute(stmt)
+    alert = res.scalar_one_or_none()
+    if not alert:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Missing person alert not found.",
+        )
+
+    alert.status = AlertStatus.CLOSED
+    alert.is_active = False
+    if payload and payload.deactivation_notes:
+        existing_notes = alert.activation_notes or ""
+        alert.activation_notes = f"{existing_notes}\n[Deactivated]: {payload.deactivation_notes}".strip()
+
+    # Synchronize associated report: Archive report so it is immediately purged from public news feed and map
+    rep_stmt = select(Report).where(Report.id == alert.report_id)
+    rep_res = await db.execute(rep_stmt)
+    report = rep_res.scalar_one_or_none()
+    if report and report.status != ReportStatus.ARCHIVED:
+        report.status = ReportStatus.ARCHIVED
+
+    await db.commit()
+    await db.refresh(alert)
+
+    prof_stmt = select(MissingPersonProfile).where(MissingPersonProfile.report_id == alert.report_id)
+    prof_res = await db.execute(prof_stmt)
+    profile = prof_res.scalar_one_or_none()
+
+    return AdminMissingPersonAlertResponse(
+        id=alert.id,
+        report_id=alert.report_id,
+        status=alert.status,
+        is_active=alert.is_active,
+        alert_radius_km=alert.alert_radius_km,
+        alert_expiry=alert.alert_expiry,
+        activated_at=alert.activated_at,
+        found_at=alert.found_at,
+        activated_by_admin_id=alert.activated_by_admin_id,
+        activation_notes=alert.activation_notes,
+        found_by_admin_id=alert.found_by_admin_id,
+        found_notes=alert.found_notes,
+        profile=MissingPersonProfileResponse.model_validate(profile) if profile else None,
+        created_at=alert.created_at,
+    )
+
+
+@router.delete(
+    "/missing-person/alerts/{alert_id}",
+    status_code=status.HTTP_200_OK,
+    summary="Permanently delete missing person alert and associated report",
+)
+async def delete_missing_person_alert(
+    alert_id: uuid.UUID,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    stmt = select(MissingPersonAlert).where(MissingPersonAlert.id == alert_id)
+    res = await db.execute(stmt)
+    alert = res.scalar_one_or_none()
+    if not alert:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Missing person alert not found.",
+        )
+
+    report_id = alert.report_id
+
+    # If associated report exists, deleting it CASCADE deletes alert, profile, sightings, deliveries, and media
+    rep_stmt = select(Report).where(Report.id == report_id)
+    rep_res = await db.execute(rep_stmt)
+    report = rep_res.scalar_one_or_none()
+
+    if report:
+        await db.delete(report)
+    else:
+        await db.delete(alert)
+
+    await db.commit()
+    return {
+        "message": "Missing person alert and associated records permanently deleted.",
+        "id": str(alert_id),
+    }
 
 
 @router.get(
@@ -2224,6 +2354,33 @@ async def moderate_missing_person_sighting(
     await db.commit()
     await db.refresh(sighting)
     return AdminMissingPersonSightingResponse.model_validate(sighting)
+
+
+@router.delete(
+    "/missing-person/sightings/{sighting_id}",
+    status_code=status.HTTP_200_OK,
+    summary="Permanently delete a community sighting tip",
+)
+async def delete_admin_missing_person_sighting(
+    sighting_id: uuid.UUID,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    stmt = select(MissingPersonSighting).where(MissingPersonSighting.id == sighting_id)
+    res = await db.execute(stmt)
+    sighting = res.scalar_one_or_none()
+    if not sighting:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Sighting record not found.",
+        )
+
+    await db.delete(sighting)
+    await db.commit()
+    return {
+        "message": "Sighting record permanently deleted.",
+        "id": str(sighting_id),
+    }
 
 
 # ==============================================================================

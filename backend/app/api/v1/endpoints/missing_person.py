@@ -107,21 +107,25 @@ async def list_public_missing_person_alerts(
     Returns public missing person alerts.
     Includes active, pending, and found alerts so submitted alerts appear immediately in real time.
     """
-    conditions = []
+    conditions = [
+        Report.status == ReportStatus.APPROVED,
+        MissingPersonAlert.status != AlertStatus.CLOSED,
+    ]
     if alert_status:
         conditions.append(MissingPersonAlert.status == alert_status)
+        if alert_status == AlertStatus.ALERT_ACTIVE:
+            conditions.append(MissingPersonAlert.is_active == True)
     else:
-        # Include active, pending, found, and expired alerts
+        # Default public directory includes active alerts and found/resolved cases
         conditions.append(MissingPersonAlert.status.in_([
             AlertStatus.ALERT_ACTIVE,
-            AlertStatus.ALERT_PENDING,
             AlertStatus.FOUND,
-            AlertStatus.EXPIRED,
         ]))
 
     stmt = (
         select(MissingPersonAlert)
         .join(MissingPersonProfile, MissingPersonProfile.report_id == MissingPersonAlert.report_id)
+        .join(Report, Report.id == MissingPersonAlert.report_id)
         .where(and_(*conditions))
     )
 
@@ -209,6 +213,22 @@ async def get_public_missing_person_alert(
             detail="Missing person alert not found.",
         )
 
+    # Direct URL Protection: ensure underlying report is approved and alert is active or found
+    rep_stmt = select(Report).where(Report.id == alert.report_id)
+    rep_res = await db.execute(rep_stmt)
+    report = rep_res.scalar_one_or_none()
+
+    if (
+        not report
+        or report.status != ReportStatus.APPROVED
+        or alert.status == AlertStatus.CLOSED
+        or (alert.status != AlertStatus.ALERT_ACTIVE and alert.status != AlertStatus.FOUND)
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Missing person alert not found or is no longer publicly available.",
+        )
+
     prof_stmt = select(MissingPersonProfile).where(MissingPersonProfile.report_id == alert.report_id)
     prof_res = await db.execute(prof_stmt)
     profile = prof_res.scalar_one_or_none()
@@ -270,6 +290,22 @@ async def get_public_missing_person_sightings(
             detail="Missing person alert not found.",
         )
 
+    # Verify public visibility rules
+    rep_stmt = select(Report).where(Report.id == alert.report_id)
+    rep_res = await db.execute(rep_stmt)
+    report = rep_res.scalar_one_or_none()
+
+    if (
+        not report
+        or report.status != ReportStatus.APPROVED
+        or alert.status == AlertStatus.CLOSED
+        or (alert.status != AlertStatus.ALERT_ACTIVE and alert.status != AlertStatus.FOUND)
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Missing person alert not found or is no longer publicly available.",
+        )
+
     sightings_stmt = (
         select(MissingPersonSighting)
         .where(
@@ -308,8 +344,12 @@ async def submit_missing_person_sighting(
             detail="Missing person alert not found.",
         )
 
-    # Reject submissions on inactive or resolved alerts
-    if alert.status != AlertStatus.ALERT_ACTIVE or not alert.is_active:
+    rep_stmt = select(Report).where(Report.id == alert.report_id)
+    rep_res = await db.execute(rep_stmt)
+    report = rep_res.scalar_one_or_none()
+
+    # Reject submissions on inactive or resolved alerts or non-approved reports
+    if not report or report.status != ReportStatus.APPROVED or alert.status != AlertStatus.ALERT_ACTIVE or not alert.is_active:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Cannot submit sightings for an inactive or resolved missing person alert.",

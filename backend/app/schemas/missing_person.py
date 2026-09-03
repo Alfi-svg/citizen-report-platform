@@ -134,6 +134,10 @@ class MissingPersonFoundRequest(BaseModel):
     found_notes: Optional[str] = None
 
 
+class MissingPersonDeactivateRequest(BaseModel):
+    deactivation_notes: Optional[str] = None
+
+
 class PublicMissingPersonAlertResponse(BaseModel):
     id: uuid.UUID
     report_id: uuid.UUID

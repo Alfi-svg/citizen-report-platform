@@ -22,12 +22,13 @@ export default function AdminMissingPersonPage() {
 
   // Modal States
   const [activeModalAlert, setActiveModalAlert] = useState<AdminMissingPersonAlertResponse | null>(null);
-  const [modalType, setModalType] = useState<"ACTIVATE" | "FOUND" | "CLOSE" | null>(null);
+  const [modalType, setModalType] = useState<"ACTIVATE" | "FOUND" | "CLOSE" | "DEACTIVATE" | "DELETE" | null>(null);
   const [alertRadius, setAlertRadius] = useState<number>(10.0);
   const [expiryDays, setExpiryDays] = useState<number>(30);
   const [notes, setNotes] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
   const loadAlerts = () => {
     setLoading(true);
@@ -49,13 +50,14 @@ export default function AdminMissingPersonPage() {
     loadAlerts();
   }, [statusFilter, search, page]);
 
-  const handleOpenModal = (alert: AdminMissingPersonAlertResponse, type: "ACTIVATE" | "FOUND" | "CLOSE") => {
+  const handleOpenModal = (alert: AdminMissingPersonAlertResponse, type: "ACTIVATE" | "FOUND" | "CLOSE" | "DEACTIVATE" | "DELETE") => {
     setActiveModalAlert(alert);
     setModalType(type);
     setNotes("");
     setAlertRadius(alert.alert_radius_km || 10.0);
     setExpiryDays(30);
     setModalError(null);
+    setActionSuccess(null);
   };
 
   const handleModalSubmit = async (e: React.FormEvent) => {
@@ -74,6 +76,7 @@ export default function AdminMissingPersonPage() {
             activation_notes: notes.trim() || null,
           }),
         });
+        setActionSuccess(`Alert for ${activeModalAlert.profile.full_name} has been activated and published.`);
       } else if (modalType === "FOUND") {
         await apiFetch(`/admin/missing-person/alerts/${activeModalAlert.id}/found`, {
           method: "POST",
@@ -81,10 +84,20 @@ export default function AdminMissingPersonPage() {
             found_notes: notes.trim() || null,
           }),
         });
-      } else if (modalType === "CLOSE") {
-        await apiFetch(`/admin/missing-person/alerts/${activeModalAlert.id}/close`, {
+        setActionSuccess(`Missing person ${activeModalAlert.profile.full_name} marked as FOUND / resolved.`);
+      } else if (modalType === "CLOSE" || modalType === "DEACTIVATE") {
+        await apiFetch(`/admin/missing-person/alerts/${activeModalAlert.id}/deactivate`, {
           method: "POST",
+          body: JSON.stringify({
+            deactivation_notes: notes.trim() || null,
+          }),
         });
+        setActionSuccess(`Alert for ${activeModalAlert.profile.full_name} removed from public feed and archived.`);
+      } else if (modalType === "DELETE") {
+        await apiFetch(`/admin/missing-person/alerts/${activeModalAlert.id}`, {
+          method: "DELETE",
+        });
+        setActionSuccess(`Record for ${activeModalAlert.profile.full_name} permanently deleted.`);
       }
       setActiveModalAlert(null);
       setModalType(null);
@@ -167,6 +180,13 @@ export default function AdminMissingPersonPage() {
       </div>
 
       {/* Directory Table */}
+      {actionSuccess && (
+        <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/40 p-4 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-200 flex items-center justify-between">
+          <span>✅ {actionSuccess}</span>
+          <button onClick={() => setActionSuccess(null)} className="text-emerald-600 hover:text-emerald-800 font-bold ml-2">✕</button>
+        </div>
+      )}
+
       {error && (
         <div className="rounded-xl bg-red-50 dark:bg-red-950/40 p-4 border border-red-200 text-xs text-red-700">
           {error}
@@ -265,21 +285,14 @@ export default function AdminMissingPersonPage() {
                     </td>
 
                     <td className="p-3.5 text-right space-x-2">
-                      <Link
-                        href={`/missing-person/${alert.id}`}
-                        target="_blank"
-                        className="font-semibold text-zinc-500 hover:underline"
-                      >
-                        Public View
-                      </Link>
-
-                      {alert.status !== "ALERT_ACTIVE" && alert.status !== "FOUND" && (
-                        <button
-                          onClick={() => handleOpenModal(alert, "ACTIVATE")}
-                          className="font-bold text-red-600 hover:underline"
+                      {alert.status !== "CLOSED" && (
+                        <Link
+                          href={`/missing-person/${alert.id}`}
+                          target="_blank"
+                          className="font-semibold text-zinc-500 hover:underline"
                         >
-                          Activate Alert
-                        </button>
+                          Public View
+                        </Link>
                       )}
 
                       {alert.status === "ALERT_ACTIVE" && (
@@ -291,13 +304,58 @@ export default function AdminMissingPersonPage() {
                             Mark Found
                           </button>
                           <button
-                            onClick={() => handleOpenModal(alert, "CLOSE")}
-                            className="font-semibold text-zinc-500 hover:underline"
+                            onClick={() => handleOpenModal(alert, "DEACTIVATE")}
+                            className="font-semibold text-amber-600 dark:text-amber-400 hover:underline"
+                            title="Deactivate and remove from public news feed and map"
                           >
-                            Close
+                            Remove from Feed
                           </button>
                         </>
                       )}
+
+                      {alert.status === "FOUND" && (
+                        <button
+                          onClick={() => handleOpenModal(alert, "DEACTIVATE")}
+                          className="font-semibold text-amber-600 dark:text-amber-400 hover:underline"
+                          title="Archive and remove from public news feed and map"
+                        >
+                          Remove from Feed
+                        </button>
+                      )}
+
+                      {alert.status === "ALERT_PENDING" && (
+                        <>
+                          <button
+                            onClick={() => handleOpenModal(alert, "ACTIVATE")}
+                            className="font-bold text-red-600 hover:underline"
+                          >
+                            Activate Alert
+                          </button>
+                          <button
+                            onClick={() => handleOpenModal(alert, "DEACTIVATE")}
+                            className="font-semibold text-zinc-500 hover:underline"
+                          >
+                            Reject & Close
+                          </button>
+                        </>
+                      )}
+
+                      {(alert.status === "CLOSED" || alert.status === "EXPIRED") && (
+                        <button
+                          onClick={() => handleOpenModal(alert, "ACTIVATE")}
+                          className="font-bold text-red-600 hover:underline"
+                        >
+                          Re-activate Alert
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => handleOpenModal(alert, "DELETE")}
+                        className="font-semibold text-red-600 hover:underline"
+                        title="Permanently delete record"
+                      >
+                        Delete
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -340,7 +398,9 @@ export default function AdminMissingPersonPage() {
                   ? "🚨 Activate Missing Person Alert"
                   : modalType === "FOUND"
                   ? "✅ Mark Missing Person as FOUND"
-                  : "Close Missing Person Alert"}
+                  : modalType === "DELETE"
+                  ? "🗑️ Permanently Delete Missing Person Record"
+                  : "🛑 Remove Alert from Public News Feed & Platform"}
               </h3>
               <button
                 onClick={() => {
@@ -411,22 +471,42 @@ export default function AdminMissingPersonPage() {
                 </>
               )}
 
-              <div>
-                <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
-                  {modalType === "ACTIVATE"
-                    ? "Verification Notes / Authority Record"
-                    : modalType === "FOUND"
-                    ? "Recovery Notes & Authority Confirmation"
-                    : "Closure Reason"}
-                </label>
-                <textarea
-                  rows={3}
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Enter moderation details, authority contact, or verification log..."
-                  className="w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 p-2.5"
-                />
-              </div>
+              {(modalType === "DEACTIVATE" || modalType === "CLOSE") && (
+                <div className="rounded-2xl bg-amber-50 dark:bg-amber-950/40 p-3.5 border border-amber-200 dark:border-amber-900/60 text-amber-900 dark:text-amber-200">
+                  <strong>⚠️ Public Feed & Platform Removal:</strong>
+                  <p className="text-[11px] mt-1">
+                    This will close the alert and archive the underlying report. It will immediately stop public display across the Public News Feed, the Missing Persons directory, and the Safety Map. Direct public URL access will return 404. All internal history, sightings, and evidence will remain safely preserved in the Admin Console.
+                  </p>
+                </div>
+              )}
+
+              {modalType === "DELETE" && (
+                <div className="rounded-2xl bg-red-50 dark:bg-red-950/40 p-3.5 border border-red-200 dark:border-red-900/60 text-red-900 dark:text-red-200">
+                  <strong>⚠️ PERMANENT DELETION WARNING:</strong>
+                  <p className="text-[11px] mt-1">
+                    This will permanently delete this missing person alert, biographical profile, sightings, and associated citizen report from the database. This action CANNOT be undone.
+                  </p>
+                </div>
+              )}
+
+              {modalType !== "DELETE" && (
+                <div>
+                  <label className="block font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                    {modalType === "ACTIVATE"
+                      ? "Verification Notes / Authority Record"
+                      : modalType === "FOUND"
+                      ? "Recovery Notes & Authority Confirmation"
+                      : "Removal / Deactivation Reason (Optional)"}
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Enter moderation details, authority contact, or verification log..."
+                    className="w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 p-2.5"
+                  />
+                </div>
+              )}
 
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-100 dark:border-zinc-800">
                 <button
@@ -442,15 +522,25 @@ export default function AdminMissingPersonPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className={`rounded-xl px-5 py-2 font-bold text-white shadow-sm disabled:opacity-50 ${
+                  className={`rounded-xl px-5 py-2 font-bold text-white shadow-sm disabled:opacity-50 transition ${
                     modalType === "ACTIVATE"
                       ? "bg-red-600 hover:bg-red-500"
                       : modalType === "FOUND"
                       ? "bg-emerald-600 hover:bg-emerald-500"
-                      : "bg-zinc-800 hover:bg-zinc-700"
+                      : modalType === "DELETE"
+                      ? "bg-red-600 hover:bg-red-500"
+                      : "bg-amber-600 hover:bg-amber-500"
                   }`}
                 >
-                  {submitting ? "Processing..." : `Confirm ${modalType}`}
+                  {submitting
+                    ? "Processing..."
+                    : modalType === "ACTIVATE"
+                    ? "Confirm & Broadcast Alert"
+                    : modalType === "FOUND"
+                    ? "Confirm Found & Resolve Alert"
+                    : modalType === "DELETE"
+                    ? "Permanently Delete Record"
+                    : "Remove from Public Feed"}
                 </button>
               </div>
             </form>
