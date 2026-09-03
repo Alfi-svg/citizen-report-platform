@@ -63,7 +63,7 @@ const STATUS_BADGES: Record<
 export default function ReportDetailPage() {
   const params = useParams();
   const reportId = params?.id as string;
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
 
   const [report, setReport] = useState<Report | null>(null);
   const [publicReport, setPublicReport] = useState<PublicReport | null>(null);
@@ -99,61 +99,62 @@ export default function ReportDetailPage() {
       })
       .catch(() => {});
 
-    // 1. If authenticated, attempt to fetch user/owner report
-    if (isAuthenticated) {
-      Promise.all([
-        apiFetch<Report>(`/reports/${reportId}`),
-        apiFetch<Category[]>("/categories"),
-      ])
-        .then(([reportData, categoryData]) => {
-          if (isMounted) {
-            setReport(reportData);
-            setCategories(categoryData);
-            setEditForm({
-              title: reportData.title,
-              categoryId: reportData.category_id,
-              description: reportData.description,
-              locationText: reportData.location_text,
-              incidentDate: reportData.incident_date
-                ? new Date(reportData.incident_date).toISOString().slice(0, 16)
-                : "",
-              isAnonymous: reportData.is_anonymous,
-            });
-            setLoading(false);
-          }
-        })
-        .catch(() => {
-          // If not owner/admin (403), fallback to public report endpoint
-          apiFetch<PublicReport>(`/public/reports/${reportId}`)
-            .then((pubData) => {
+    // 1. Always attempt to fetch the public report endpoint first.
+    // If the report is APPROVED, this succeeds for all visitors, citizens, authors, and admins,
+    // ensuring the live public discussion and comments section are always available.
+    apiFetch<PublicReport>(`/public/reports/${reportId}`)
+      .then((pubData) => {
+        if (isMounted) {
+          setPublicReport(pubData);
+          setLoading(false);
+        }
+        // If authenticated, also fetch the user/owner report details in the background
+        // to detect ownership/admin permissions and moderation notes.
+        if (isAuthenticated) {
+          apiFetch<Report>(`/reports/${reportId}`)
+            .then((repData) => {
+              if (isMounted) setReport(repData);
+            })
+            .catch(() => {});
+        }
+      })
+      .catch((pubErr) => {
+        // 2. If not found in public feed (e.g. unapproved draft, under review, needs info):
+        if (isAuthenticated) {
+          Promise.all([
+            apiFetch<Report>(`/reports/${reportId}`),
+            apiFetch<Category[]>("/categories"),
+          ])
+            .then(([reportData, categoryData]) => {
               if (isMounted) {
-                setPublicReport(pubData);
+                setReport(reportData);
+                setCategories(categoryData);
+                setEditForm({
+                  title: reportData.title,
+                  categoryId: reportData.category_id,
+                  description: reportData.description,
+                  locationText: reportData.location_text,
+                  incidentDate: reportData.incident_date
+                    ? new Date(reportData.incident_date).toISOString().slice(0, 16)
+                    : "",
+                  isAnonymous: reportData.is_anonymous,
+                });
                 setLoading(false);
               }
             })
-            .catch((pubErr) => {
+            .catch(() => {
               if (isMounted) {
-                setError(pubErr.message);
+                setError(pubErr.message || "This report was not found or has not yet been approved for public release.");
                 setLoading(false);
               }
             });
-        });
-    } else {
-      // 2. Unauthenticated visitor -> fetch from public endpoint
-      apiFetch<PublicReport>(`/public/reports/${reportId}`)
-        .then((pubData) => {
+        } else {
           if (isMounted) {
-            setPublicReport(pubData);
+            setError(pubErr.message || "This report was not found or has not yet been approved for public release.");
             setLoading(false);
           }
-        })
-        .catch((pubErr) => {
-          if (isMounted) {
-            setError(pubErr.message);
-            setLoading(false);
-          }
-        });
-    }
+        }
+      });
 
     return () => {
       isMounted = false;
@@ -315,9 +316,41 @@ export default function ReportDetailPage() {
   }
 
   // =========================================================================
-  // 1. PUBLIC CITIZEN REPORT VIEW
+  // 1. PUBLIC CITIZEN REPORT VIEW (Rendered for all approved public reports)
   // =========================================================================
-  if (publicReport && !report) {
+  const displayReport: PublicReport | null =
+    publicReport ||
+    (report && report.status === "APPROVED"
+      ? {
+          id: report.id,
+          category_id: report.category_id,
+          category: report.category,
+          title: report.title,
+          description: report.description,
+          location_text: report.location_text,
+          latitude: report.latitude,
+          longitude: report.longitude,
+          incident_date: report.incident_date,
+          submitted_at: report.submitted_at,
+          created_at: report.created_at,
+          is_anonymous: report.is_anonymous,
+          reporter_display_name: report.is_anonymous ? "Anonymous Citizen" : "Verified Citizen",
+          media: (report.media || []).map((m) => ({
+            id: m.id,
+            file_name: m.file_name,
+            mime_type: m.mime_type,
+            file_size: m.file_size,
+            caption: m.caption,
+            media_type: m.media_type,
+            download_url: m.download_url,
+          })),
+          media_count: report.media?.length || 0,
+          has_evidence: (report.media?.length || 0) > 0,
+          review_status: "Platform Reviewed",
+        }
+      : null);
+
+  if (displayReport) {
     return (
       <article className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8 space-y-6">
         {/* Breadcrumb / Back */}
@@ -333,27 +366,40 @@ export default function ReportDetailPage() {
 
         {/* Main Report Container */}
         <div className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 sm:p-10 shadow-2xs space-y-6">
+          {/* Owner / Admin Context Notice */}
+          {report && (report.user_id === user?.id || user?.role === "ADMIN") && (
+            <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/60 dark:border-emerald-900/60 dark:bg-emerald-950/20 p-3.5 flex flex-wrap items-center justify-between gap-2 text-xs text-emerald-800 dark:text-emerald-300">
+              <span className="font-semibold flex items-center gap-1.5">
+                <span>🛡️</span>
+                <span>{report.user_id === user?.id ? "You submitted this verified citizen report" : "Administrator Preview Mode"}</span>
+              </span>
+              <span className="font-mono text-[11px] text-emerald-700/70 dark:text-emerald-400/70">
+                Ref: {report.id}
+              </span>
+            </div>
+          )}
+
           {/* Header Row: Category Badge + Status Badge + Date */}
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100 dark:border-zinc-800 pb-5">
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-900/60">
-                {publicReport.category?.name || "Civic Incident"}
+                {displayReport.category?.name || "Civic Incident"}
               </span>
 
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/60">
                 <span className="h-1.5 w-1.5 rounded-full bg-blue-600 animate-pulse" />
-                <span>{publicReport.review_status || "Platform Reviewed"}</span>
+                <span>{displayReport.review_status || "Platform Reviewed"}</span>
               </span>
             </div>
 
             <span className="text-xs text-zinc-400">
-              Reported {new Date(publicReport.created_at).toLocaleDateString()}
+              Reported {new Date(displayReport.created_at).toLocaleDateString()}
             </span>
           </div>
 
           {/* Title */}
           <h1 className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight leading-tight">
-            {publicReport.title}
+            {displayReport.title}
           </h1>
 
           {/* Incident Metadata Strip */}
@@ -361,19 +407,19 @@ export default function ReportDetailPage() {
             <div>
               <span className="text-zinc-400 font-medium block">Approximate Location</span>
               <span className="font-bold text-zinc-800 dark:text-zinc-200 text-xs sm:text-sm mt-0.5 block truncate">
-                📍 {publicReport.location_text}
+                📍 {displayReport.location_text}
               </span>
             </div>
             <div>
               <span className="text-zinc-400 font-medium block">Incident Time</span>
               <span className="font-bold text-zinc-800 dark:text-zinc-200 text-xs sm:text-sm mt-0.5 block">
-                🕒 {publicReport.incident_date ? new Date(publicReport.incident_date).toLocaleString() : "Not specified"}
+                🕒 {displayReport.incident_date ? new Date(displayReport.incident_date).toLocaleString() : "Not specified"}
               </span>
             </div>
             <div>
               <span className="text-zinc-400 font-medium block">Reporter Identity</span>
               <span className="font-bold text-zinc-800 dark:text-zinc-200 text-xs sm:text-sm mt-0.5 block">
-                {publicReport.is_anonymous ? "🛡️ Anonymous Citizen" : `👤 ${publicReport.reporter_display_name || "Citizen"}`}
+                {displayReport.is_anonymous ? "🛡️ Anonymous Citizen" : `👤 ${displayReport.reporter_display_name || "Citizen"}`}
               </span>
             </div>
           </div>
@@ -395,28 +441,28 @@ export default function ReportDetailPage() {
               Incident Details
             </h2>
             <div className="p-6 rounded-2xl bg-zinc-50/50 dark:bg-zinc-800/20 border border-zinc-200/60 dark:border-zinc-800 text-sm leading-relaxed text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap">
-              {publicReport.description}
+              {displayReport.description}
             </div>
           </div>
 
           {/* Supporting Evidence Attachments */}
-          {publicReport.media && publicReport.media.length > 0 && (
+          {displayReport.media && displayReport.media.length > 0 && (
             <div className="space-y-3 pt-2">
               <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
-                Attached Supporting Evidence ({publicReport.media.length})
+                Attached Supporting Evidence ({displayReport.media.length})
               </h2>
-              <EvidenceGallery media={publicReport.media as ReportMedia[]} canDelete={false} />
+              <EvidenceGallery media={displayReport.media as ReportMedia[]} canDelete={false} />
             </div>
           )}
 
           {/* Social Action Bar: Reactions, Share, Flag */}
           <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-4">
-            <ReactionControls reportId={publicReport.id} />
+            <ReactionControls reportId={displayReport.id} />
 
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => handleShare(publicReport.title)}
+                onClick={() => handleShare(displayReport.title)}
                 className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-750 transition shadow-2xs"
               >
                 <span>↗</span>
@@ -477,15 +523,15 @@ export default function ReportDetailPage() {
           )}
 
           {/* Citizen Comments & Discussion */}
-          <CommentsSection reportId={publicReport.id} />
+          <CommentsSection reportId={displayReport.id} />
 
           {/* Flag Modal */}
           <FlagModal
             isOpen={isFlagModalOpen}
             onClose={() => setIsFlagModalOpen(false)}
             targetType="REPORT"
-            targetId={publicReport.id}
-            targetTitleOrSnippet={publicReport.title}
+            targetId={displayReport.id}
+            targetTitleOrSnippet={displayReport.title}
           />
         </div>
       </article>
@@ -782,6 +828,10 @@ export default function ReportDetailPage() {
             <div className="rounded-2xl border border-blue-200 bg-blue-50/50 p-4 dark:border-blue-900 dark:bg-blue-950/20 text-xs text-blue-800 dark:text-blue-300 leading-relaxed">
               ℹ️ This report has been submitted to the moderation team and is locked against modifications. You will be notified once administrators review and verify your submission.
             </div>
+          )}
+
+          {report.status === "APPROVED" && (
+            <CommentsSection reportId={report.id} />
           )}
         </div>
       )}

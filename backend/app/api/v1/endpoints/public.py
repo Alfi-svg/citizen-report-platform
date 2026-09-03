@@ -4,7 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select, func, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.api.deps import get_optional_current_user
+from sqlalchemy.orm import selectinload
+from app.api.deps import get_optional_current_user, get_current_user
 from app.db.session import get_db
 from app.models.category import Category
 from app.models.report import Report, ReportStatus
@@ -20,9 +21,10 @@ from app.schemas.public import (
     PublicMediaResponse,
 )
 from app.schemas.category import CategoryResponse
-from app.schemas.comment import PublicCommentResponse, CommentPagination
+from app.schemas.comment import CommentCreate, PublicCommentResponse, CommentPagination
 from app.schemas.reaction import ReactionSummaryResponse
 from app.services.storage import get_storage_service
+from app.api.v1.endpoints.comments import create_comment
 
 router = APIRouter()
 
@@ -326,6 +328,7 @@ async def get_public_report_comments(
     # 3. Fetch paginated comments
     comments_stmt = (
         select(Comment)
+        .options(selectinload(Comment.user))
         .where(
             Comment.report_id == report_id,
             Comment.status == CommentStatus.VISIBLE,
@@ -344,7 +347,7 @@ async def get_public_report_comments(
             body=c.body,
             status=c.status,
             created_at=c.created_at,
-            user_display_name=c.user.full_name or c.user.username if c.user else "Citizen",
+            user_display_name=((c.user.full_name or c.user.username) if c.user else "Citizen"),
             is_own_comment=(current_user is not None and c.user_id == current_user.id),
         )
         for c in comments
@@ -356,6 +359,21 @@ async def get_public_report_comments(
         limit=limit,
         offset=offset,
     )
+
+
+@router.post(
+    "/reports/{report_id}/comments",
+    response_model=PublicCommentResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a new comment on an APPROVED report (public prefix route)",
+)
+async def create_public_report_comment(
+    report_id: uuid.UUID,
+    payload: CommentCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    return await create_comment(report_id, payload, current_user, db)
 
 
 @router.get(

@@ -1,13 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get("redirect") || "/dashboard";
   const { login, isAuthenticated } = useAuth();
 
   const [formData, setFormData] = useState({
@@ -20,7 +22,7 @@ export default function LoginPage() {
 
   // Redirect if already logged in
   if (isAuthenticated) {
-    router.push("/dashboard");
+    router.push(redirectUrl);
     return null;
   }
 
@@ -44,7 +46,7 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       await login(formData.emailOrUsername.trim(), formData.password);
-      router.push("/dashboard");
+      router.push(redirectUrl);
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
@@ -144,5 +146,19 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-[calc(100vh-64px)] flex items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-600 border-t-transparent" />
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }

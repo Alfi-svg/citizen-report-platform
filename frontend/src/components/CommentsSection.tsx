@@ -27,19 +27,33 @@ export default function CommentsSection({ reportId }: CommentsSectionProps) {
 
   useEffect(() => {
     let isMounted = true;
-    apiFetch<CommentPagination>(`/public/reports/${reportId}/comments?limit=50&offset=0`)
-      .then((data) => {
+    const fetchComments = async () => {
+      try {
+        const data = await apiFetch<CommentPagination>(
+          `/public/reports/${reportId}/comments?limit=50&offset=0`
+        );
         if (isMounted) {
           setComments(data.items);
           setTotal(data.total);
         }
-      })
-      .catch((err: unknown) => {
-        if (isMounted && err instanceof Error) setError(err.message);
-      })
-      .finally(() => {
+      } catch {
+        try {
+          const fallbackData = await apiFetch<CommentPagination>(
+            `/reports/${reportId}/comments?limit=50&offset=0`
+          );
+          if (isMounted) {
+            setComments(fallbackData.items);
+            setTotal(fallbackData.total);
+          }
+        } catch (err: unknown) {
+          if (isMounted && err instanceof Error) setError(err.message);
+        }
+      } finally {
         if (isMounted) setLoading(false);
-      });
+      }
+    };
+
+    fetchComments();
 
     return () => {
       isMounted = false;
@@ -53,18 +67,43 @@ export default function CommentsSection({ reportId }: CommentsSectionProps) {
     setSubmitError(null);
     setSubmitting(true);
     try {
-      const newComment = await apiFetch<PublicComment>(
-        `/reports/${reportId}/comments`,
-        {
-          method: "POST",
-          body: JSON.stringify({ body: body.trim() }),
-        }
-      );
+      let newComment: PublicComment;
+      try {
+        newComment = await apiFetch<PublicComment>(
+          `/reports/${reportId}/comments`,
+          {
+            method: "POST",
+            body: JSON.stringify({ body: body.trim() }),
+          }
+        );
+      } catch {
+        // Fallback to public route in case endpoint is mounted under /public
+        newComment = await apiFetch<PublicComment>(
+          `/public/reports/${reportId}/comments`,
+          {
+            method: "POST",
+            body: JSON.stringify({ body: body.trim() }),
+          }
+        );
+      }
       setComments((prev) => [...prev, newComment]);
       setTotal((prev) => prev + 1);
       setBody("");
     } catch (err: unknown) {
-      if (err instanceof Error) setSubmitError(err.message);
+      if (err instanceof Error) {
+        const msg = err.message;
+        if (
+          msg.toLowerCase().includes("unauthorized") ||
+          msg.toLowerCase().includes("token") ||
+          msg.toLowerCase().includes("authentication required")
+        ) {
+          setSubmitError("Your session has expired. Please sign in again to comment.");
+        } else {
+          setSubmitError(msg);
+        }
+      } else {
+        setSubmitError("Failed to submit comment. Please try again.");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -113,9 +152,17 @@ export default function CommentsSection({ reportId }: CommentsSectionProps) {
           </div>
 
           {submitError && (
-            <p className="text-xs text-red-600 dark:text-red-400 font-medium">
-              {submitError}
-            </p>
+            <div className="rounded-xl bg-red-50 dark:bg-red-950/40 p-3 border border-red-200 dark:border-red-900/60 flex items-center justify-between text-xs text-red-700 dark:text-red-300">
+              <span>{submitError}</span>
+              {submitError.includes("sign in") && (
+                <Link
+                  href={`/login?redirect=/reports/${reportId}#comments`}
+                  className="font-bold underline ml-2 shrink-0 hover:text-red-900 dark:hover:text-red-100"
+                >
+                  Sign In
+                </Link>
+              )}
+            </div>
           )}
 
           <div className="flex items-center justify-between">
@@ -125,7 +172,7 @@ export default function CommentsSection({ reportId }: CommentsSectionProps) {
             <button
               type="submit"
               disabled={submitting || !body.trim()}
-              className="rounded-xl bg-emerald-700 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-800 transition disabled:opacity-40 shadow-2xs"
+              className="rounded-xl bg-emerald-700 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-800 transition disabled:opacity-40 shadow-2xs cursor-pointer"
             >
               {submitting ? "Posting..." : "Post Comment"}
             </button>
@@ -138,7 +185,7 @@ export default function CommentsSection({ reportId }: CommentsSectionProps) {
           </p>
           <div className="flex items-center justify-center gap-3">
             <Link
-              href={`/login?redirect=/reports/${reportId}`}
+              href={`/login?redirect=/reports/${reportId}#comments`}
               className="rounded-xl bg-emerald-700 hover:bg-emerald-800 px-4 py-2 text-xs font-bold text-white shadow-2xs transition"
             >
               Sign In to Comment

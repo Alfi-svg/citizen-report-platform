@@ -133,6 +133,20 @@ async def test_authenticated_can_comment_on_approved_report(
     assert data["is_own_comment"] is True
     assert data["status"] == "VISIBLE"
 
+    # Test GET via /reports/{id}/comments
+    res_get = await async_client.get(f"/api/v1/reports/{approved_report.id}/comments")
+    assert res_get.status_code == 200
+    assert len(res_get.json()["items"]) >= 1
+
+    # Test POST via /public/reports/{id}/comments
+    res_pub = await async_client.post(
+        f"/api/v1/public/reports/{approved_report.id}/comments",
+        headers=headers,
+        json={"body": "Second witness comment via public prefix."},
+    )
+    assert res_pub.status_code == 201
+    assert res_pub.json()["body"] == "Second witness comment via public prefix."
+
 
 @pytest.mark.asyncio
 async def test_cannot_comment_on_unapproved_reports(
