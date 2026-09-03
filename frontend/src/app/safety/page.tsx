@@ -244,31 +244,76 @@ export default function SafetyCenterPage() {
         </div>
       </section>
 
-      {/* 3. CIVIC SAFETY TOOLS STRIP (Clean, Compact, No Heavy Card Clutter) */}
-      <div className="flex flex-wrap items-center gap-2 text-xs">
-        <span className="text-zinc-400 font-semibold">{lang === "bn" ? "অন্যান্য সুরক্ষা টুলস:" : "Related Safety Tools:"}</span>
+      {/* 3. SAFETY CENTER QUICK LINKS HUB */}
+      <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <Link
           href="/safety-map"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:border-emerald-500 text-xs font-semibold shadow-2xs transition"
+          className="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-emerald-500 dark:hover:border-emerald-700 transition shadow-2xs flex flex-col justify-between"
         >
-          <span>🗺️</span>
-          <span>{lang === "bn" ? "লাইভ সেফটি ম্যাপ" : "Safety Map"}</span>
+          <div className="h-8 w-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-base mb-2">
+            🗺️
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+              {lang === "bn" ? "সেফটি ম্যাপ" : "Safety Map"}
+            </h4>
+            <p className="text-[11px] text-zinc-400 mt-0.5 line-clamp-1">
+              {lang === "bn" ? "লাইভ ক্লাস্টার পর্যবেক্ষণ" : "Live hazard clusters"}
+            </p>
+          </div>
         </Link>
+
         <Link
           href="/missing-person"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:border-amber-500 text-xs font-semibold shadow-2xs transition"
+          className="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-amber-500 dark:hover:border-amber-700 transition shadow-2xs flex flex-col justify-between"
         >
-          <span>🔍</span>
-          <span>{lang === "bn" ? "নিখোঁজ ব্যক্তি সন্ধান" : "Missing Persons"}</span>
+          <div className="h-8 w-8 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 flex items-center justify-center text-base mb-2">
+            🔍
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+              {lang === "bn" ? "নিখোঁজ ব্যক্তি সন্ধান" : "Missing Persons"}
+            </h4>
+            <p className="text-[11px] text-zinc-400 mt-0.5 line-clamp-1">
+              {lang === "bn" ? "সক্রিয় অনুসন্ধান সতর্কতা" : "Active verified alerts"}
+            </p>
+          </div>
         </Link>
+
         <Link
-          href="/blood-help"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:border-rose-500 text-xs font-semibold shadow-2xs transition"
+          href="/reports"
+          className="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-blue-500 dark:hover:border-blue-700 transition shadow-2xs flex flex-col justify-between"
         >
-          <span>🩸</span>
-          <span>{lang === "bn" ? "রক্ত সহায়তা" : "Blood Help"}</span>
+          <div className="h-8 w-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 flex items-center justify-center text-base mb-2">
+            📋
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+              {lang === "bn" ? "নাগরিক রিপোর্ট" : "Community Reports"}
+            </h4>
+            <p className="text-[11px] text-zinc-400 mt-0.5 line-clamp-1">
+              {lang === "bn" ? "যাচাইকৃত ঘটনার ফিড" : "Platform-reviewed feed"}
+            </p>
+          </div>
         </Link>
-      </div>
+
+        <Link
+          href="/reports/create"
+          className="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-emerald-500 dark:hover:border-emerald-700 transition shadow-2xs flex flex-col justify-between"
+        >
+          <div className="h-8 w-8 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 flex items-center justify-center text-base mb-2">
+            ➕
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+              {lang === "bn" ? "রিপোর্ট জমা দিন" : "Submit Incident"}
+            </h4>
+            <p className="text-[11px] text-zinc-400 mt-0.5 line-clamp-1">
+              {lang === "bn" ? "তথ্য বা প্রমাণ আপলোড" : "Secure report intake"}
+            </p>
+          </div>
+        </Link>
+      </section>
 
       {/* 4. FIND HELP NEAR ME (SAFETY NAVIGATOR) */}
       <section className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 sm:p-8 shadow-2xs space-y-6">

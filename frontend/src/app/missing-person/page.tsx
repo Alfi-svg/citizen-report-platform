@@ -8,21 +8,6 @@ import { translations, Language } from "@/lib/i18n";
 
 export default function MissingPersonsFeedPage() {
   const [lang, setLang] = useState<Language>("en");
-
-  // Sync language with global app_lang storage & event
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const saved = (localStorage.getItem("app_lang") as Language) || "en";
-      setLang(saved);
-      const handleLangChange = () => {
-        const next = (localStorage.getItem("app_lang") as Language) || "en";
-        setLang(next);
-      };
-      window.addEventListener("languagechange", handleLangChange);
-      return () => window.removeEventListener("languagechange", handleLangChange);
-    }
-  }, []);
-
   const t = translations[lang];
 
   const [data, setData] = useState<PublicMissingPersonAlertPagination | null>(null);
@@ -99,11 +84,11 @@ export default function MissingPersonsFeedPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-zinc-200/80 dark:border-zinc-800 pb-5">
+      {/* Top Header & Bilingual Toggle */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-500 text-white text-xl font-bold shadow-xs">
-            🔍
+          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-red-600 text-white text-xl font-bold shadow-sm">
+            🚨
           </span>
           <div>
             <h1 className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">
@@ -119,22 +104,41 @@ export default function MissingPersonsFeedPage() {
 
         <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
           <button
-            type="button"
             onClick={() => loadAlerts(false)}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 transition shadow-2xs shrink-0"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/60 px-3 py-2 text-xs font-bold text-red-800 dark:text-red-300 hover:bg-red-100 transition shadow-xs shrink-0"
             title="Refresh Live Alerts"
           >
-            <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+            <span className="h-2 w-2 rounded-full bg-red-500 animate-ping" />
             <span>{lang === "bn" ? "লাইভ আপডেট" : "Live Sync"}</span>
           </button>
 
           <Link
             href="/missing-person/create"
-            className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 active:bg-amber-700 px-4 py-2 text-xs font-bold text-white transition shadow-2xs shrink-0"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-red-600 hover:bg-red-500 px-4 py-2 text-xs font-bold text-white transition shadow-sm shrink-0"
           >
-            <span>+</span>
+            <span>🚨</span>
             <span>{lang === "bn" ? "নিখোঁজ ব্যক্তির তথ্য দিন" : "Report Missing Person"}</span>
           </Link>
+
+          {/* Language Switcher */}
+          <div className="inline-flex rounded-xl bg-zinc-100 dark:bg-zinc-800 p-1 border border-zinc-200 dark:border-zinc-700">
+            <button
+              onClick={() => setLang("en")}
+              className={`px-3 py-1 text-xs font-bold rounded-lg transition ${
+                lang === "en" ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-xs" : "text-zinc-500 hover:text-zinc-800"
+              }`}
+            >
+              English
+            </button>
+            <button
+              onClick={() => setLang("bn")}
+              className={`px-3 py-1 text-xs font-bold rounded-lg transition ${
+                lang === "bn" ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-xs" : "text-zinc-500 hover:text-zinc-800"
+              }`}
+            >
+              বাংলা
+            </button>
+          </div>
         </div>
       </div>
 

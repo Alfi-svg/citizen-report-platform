@@ -30,11 +30,9 @@ export default function Navbar() {
     }
   };
 
-  // Profile & Help Dropdown States
+  // Profile Dropdown State
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
-  const [helpOpen, setHelpOpen] = useState(false);
-  const helpRef = useRef<HTMLDivElement>(null);
 
   // Mobile Drawer State
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -50,9 +48,6 @@ export default function Navbar() {
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
         setProfileOpen(false);
       }
-      if (helpRef.current && !helpRef.current.contains(event.target as Node)) {
-        setHelpOpen(false);
-      }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -65,7 +60,6 @@ export default function Navbar() {
         setMobileMenuOpen(false);
         setSearchModalOpen(false);
         setProfileOpen(false);
-        setHelpOpen(false);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -91,7 +85,6 @@ export default function Navbar() {
   useEffect(() => {
     setMobileMenuOpen(false);
     setProfileOpen(false);
-    setHelpOpen(false);
     setSearchModalOpen(false);
   }, [pathname]);
 
@@ -103,32 +96,34 @@ export default function Navbar() {
     }
   };
 
-  // Primary Citizen Navigation Pillars
-  const pillarLinks = [
+  // Primary Citizen Navigation Links
+  const navLinks = [
+    { href: "/", label: "Home", bn: "হোম" },
     {
       href: "/reports",
       label: "Reports",
       bn: "রিপোর্ট",
-      isActive: pathname === "/reports" || (pathname.startsWith("/reports/") && pathname !== "/reports/create"),
     },
+    { href: "/safety-map", label: "Safety Map", bn: "নিরাপত্তা মানচিত্র" },
     {
       href: "/safety",
-      label: "Safety & 999",
-      bn: "সুরক্ষা ও ৯৯৯",
-      icon: "🛡️",
-      isActive: pathname.startsWith("/safety") && pathname !== "/safety-map",
+      label: "Find Help",
+      bn: "সাহায্য খুঁজুন",
+      isHelp: true,
     },
     {
-      href: "/safety-map",
-      label: "Safety Map",
-      bn: "নিরাপত্তা মানচিত্র",
-      icon: "🗺️",
-      isActive: pathname === "/safety-map",
+      href: "/blood-help",
+      label: "Blood Help",
+      bn: "রক্ত সহায়তা",
+      isBlood: true,
     },
+    {
+      href: "/missing-person",
+      label: "Missing Persons",
+      bn: "নিখোঁজ ব্যক্তি",
+    },
+    { href: "/transparency", label: "Transparency", bn: "স্বচ্ছতা" },
   ];
-
-  const isCommunityActive =
-    pathname.startsWith("/blood-help") || pathname.startsWith("/missing-person");
 
   return (
     <>
@@ -189,114 +184,40 @@ export default function Navbar() {
           </div>
 
           {/* ========================================================= */}
-          {/* CENTER: Desktop 4-Pillar Navigation Links */}
+          {/* CENTER: Desktop Navigation Links */}
           {/* ========================================================= */}
           <nav
-            className="hidden lg:flex items-center gap-1"
+            className="hidden lg:flex items-center gap-0.5 xl:gap-1"
             aria-label="Main Navigation"
           >
-            {pillarLinks.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors duration-150 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 ${
-                  item.isActive
-                    ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold"
-                    : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:text-zinc-100 dark:hover:bg-zinc-800"
-                }`}
-              >
-                {item.icon && <span>{item.icon}</span>}
-                <span>{lang === "bn" ? item.bn : item.label}</span>
-              </Link>
-            ))}
+            {navLinks.map((item) => {
+              const isActive =
+                item.href === "/"
+                  ? pathname === "/"
+                  : pathname.startsWith(item.href);
 
-            {/* Community Help Dropdown (Pillar 3: Help) */}
-            <div className="relative" ref={helpRef}>
-              <button
-                type="button"
-                onClick={() => setHelpOpen(!helpOpen)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors duration-150 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 cursor-pointer ${
-                  isCommunityActive
-                    ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold"
-                    : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:text-zinc-100 dark:hover:bg-zinc-800"
-                }`}
-                aria-expanded={helpOpen}
-              >
-                <span>🤝</span>
-                <span>{lang === "bn" ? "কমিউনিটি সহায়তা" : "Community Help"}</span>
-                <svg
-                  className={`h-3 w-3 text-zinc-400 transition-transform duration-150 ${
-                    helpOpen ? "rotate-180" : ""
+              return (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors duration-150 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 ${
+                    isActive
+                      ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold"
+                      : item.isHelp
+                      ? "text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50/60 dark:hover:bg-emerald-950/40 font-bold"
+                      : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:text-zinc-100 dark:hover:bg-zinc-800"
                   }`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-
-              {helpOpen && (
-                <div className="absolute left-0 mt-2 w-64 rounded-2xl bg-white dark:bg-zinc-900 shadow-xl border border-zinc-200 dark:border-zinc-800 p-1.5 z-50 text-xs animate-in fade-in zoom-in-95 duration-150 space-y-1">
-                  <Link
-                    href="/blood-help"
-                    onClick={() => setHelpOpen(false)}
-                    className={`flex items-start gap-2.5 p-2.5 rounded-xl transition ${
-                      pathname.startsWith("/blood-help")
-                        ? "bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 font-bold"
-                        : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                    }`}
-                  >
-                    <span className="text-base shrink-0">🩸</span>
-                    <div>
-                      <span className="font-bold block leading-tight">
-                        {lang === "bn" ? "রক্ত সহায়তা" : "Blood Help"}
-                      </span>
-                      <span className="text-[10px] text-zinc-400 font-normal">
-                        {lang === "bn" ? "জরুরি রক্ত প্রয়োজন ও রক্তদাতা নেটওয়ার্ক" : "Emergency requests & volunteer donors"}
-                      </span>
-                    </div>
-                  </Link>
-
-                  <Link
-                    href="/missing-person"
-                    onClick={() => setHelpOpen(false)}
-                    className={`flex items-start gap-2.5 p-2.5 rounded-xl transition ${
-                      pathname.startsWith("/missing-person")
-                        ? "bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 font-bold"
-                        : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                    }`}
-                  >
-                    <span className="text-base shrink-0">🔍</span>
-                    <div>
-                      <span className="font-bold block leading-tight">
-                        {lang === "bn" ? "নিখোঁজ ব্যক্তি" : "Missing Persons"}
-                      </span>
-                      <span className="text-[10px] text-zinc-400 font-normal">
-                        {lang === "bn" ? "সন্ধান অ্যালার্ট ও তথ্য প্রদান" : "Active alerts & sighting reports"}
-                      </span>
-                    </div>
-                  </Link>
-                </div>
-              )}
-            </div>
-
-            {/* Transparency (Pillar 4: Understand) */}
-            <Link
-              href="/transparency"
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors duration-150 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 ${
-                pathname === "/transparency"
-                  ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold"
-                  : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:text-zinc-100 dark:hover:bg-zinc-800"
-              }`}
-            >
-              <span>📊</span>
-              <span>{lang === "bn" ? "স্বচ্ছতা" : "Transparency"}</span>
-            </Link>
+                  {item.isHelp && <span className="text-emerald-600 dark:text-emerald-400">🛡️</span>}
+                  {item.isBlood && <span className="text-rose-600 dark:text-rose-400">🩸</span>}
+                  <span>{lang === "bn" ? item.bn : item.label}</span>
+                </Link>
+              );
+            })}
           </nav>
 
           {/* ========================================================= */}
-          {/* RIGHT: Search, SOS 999, Report CTA, Language, Notifications, Profile */}
+          {/* RIGHT: Search, SOS, Report CTA, Language, Notifications, Profile */}
           {/* ========================================================= */}
           <div className="flex items-center gap-1.5 sm:gap-2">
             {/* Quick Search Button */}
@@ -323,20 +244,20 @@ export default function Navbar() {
               </svg>
             </button>
 
-            {/* Emergency Hotline 999 (Subtle, calm design) */}
+            {/* Emergency SOS 999 Shortcut (Desktop) */}
             <Link
               href="/safety"
-              className="hidden xl:inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition"
+              className="hidden sm:inline-flex items-center gap-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white px-2.5 py-1.5 text-xs font-bold shadow-2xs transition shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600"
               title="Emergency Service & 999 Hotline"
             >
-              <span className="h-1.5 w-1.5 rounded-full bg-red-600 animate-ping" />
+              <span className="h-1.5 w-1.5 rounded-full bg-white animate-ping" />
               <span>{lang === "bn" ? "জরুরি ৯৯৯" : "SOS 999"}</span>
             </Link>
 
-            {/* Single Dominant Primary Action: Report an Incident */}
+            {/* Primary Action: Report an Issue */}
             <Link
               href="/reports/create"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white px-3 sm:px-3.5 py-1.5 text-xs font-bold shadow-2xs transition shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white px-3 sm:px-3.5 py-1.5 text-xs font-bold shadow-2xs transition shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
             >
               <span className="text-sm leading-none font-bold">+</span>
               <span className="hidden sm:inline">{lang === "bn" ? "রিপোর্ট করুন" : "Report"}</span>
@@ -537,126 +458,111 @@ export default function Navbar() {
                 </button>
               </div>
 
-              {/* Grouped Drawer Links (4 Pillars) */}
-              <div className="p-4 space-y-5 text-xs">
-                {/* 1. REPORT PILLAR */}
+              {/* Grouped Drawer Links */}
+              <div className="p-4 space-y-6 text-xs">
+                {/* 1. MAIN */}
                 <div className="space-y-1">
                   <p className="text-[10px] font-bold tracking-wider text-zinc-400 uppercase px-2">
-                    {lang === "bn" ? "১. রিপোর্ট ও পর্যবেক্ষণ" : "1. Report & Incidents"}
+                    {lang === "bn" ? "প্রধান মেনু" : "Main Navigation"}
                   </p>
                   <Link
-                    href="/reports"
-                    className={`flex items-center gap-3 px-3 py-2 rounded-xl font-semibold transition ${
-                      pathname === "/reports"
+                    href="/"
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg font-semibold transition ${
+                      pathname === "/"
                         ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold"
                         : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                     }`}
                   >
-                    <span>📋</span>
-                    <span>{lang === "bn" ? "নাগরিক রিপোর্ট ফিড" : "Public Reports Feed"}</span>
+                    <span>🏠</span>
+                    <span>{lang === "bn" ? "হোম ফিড" : "Home Feed"}</span>
                   </Link>
-                  <Link
-                    href="/reports/create"
-                    className="flex items-center gap-3 px-3 py-2 rounded-xl font-bold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50/60 dark:hover:bg-emerald-950/40 transition"
-                  >
-                    <span>➕</span>
-                    <span>{lang === "bn" ? "নতুন ঘটনা রিপোর্ট করুন" : "Report an Incident"}</span>
-                  </Link>
-                  {isAuthenticated && (
-                    <Link
-                      href="/reports/mine"
-                      className={`flex items-center gap-3 px-3 py-2 rounded-xl font-semibold transition ${
-                        pathname === "/reports/mine"
-                          ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold"
-                          : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                      }`}
-                    >
-                      <span>📁</span>
-                      <span>{lang === "bn" ? "আমার রিপোর্টসমূহ" : "My Submitted Reports"}</span>
-                    </Link>
-                  )}
-                </div>
 
-                {/* 2. PROTECT PILLAR */}
-                <div className="space-y-1">
-                  <p className="text-[10px] font-bold tracking-wider text-zinc-400 uppercase px-2">
-                    {lang === "bn" ? "২. নাগরিক সুরক্ষা" : "2. Civic Protection"}
-                  </p>
-                  <Link
-                    href="/safety"
-                    className={`flex items-center gap-3 px-3 py-2 rounded-xl font-bold transition text-red-600 dark:text-red-400 ${
-                      pathname === "/safety"
-                        ? "bg-red-50 dark:bg-red-950/60"
-                        : "hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                    }`}
-                  >
-                    <span>🚨</span>
-                    <span>{lang === "bn" ? "সুরক্ষা কেন্দ্র ও ৯৯৯ হটলাইন" : "Safety Center & 999"}</span>
-                  </Link>
                   <Link
                     href="/safety-map"
-                    className={`flex items-center gap-3 px-3 py-2 rounded-xl font-semibold transition ${
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg font-semibold transition ${
                       pathname === "/safety-map"
                         ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold"
                         : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                     }`}
                   >
                     <span>🗺️</span>
-                    <span>{lang === "bn" ? "ইন্টারেক্টিভ সেফটি ম্যাপ" : "Interactive Safety Map"}</span>
+                    <span>{lang === "bn" ? "নিরাপত্তা মানচিত্র" : "Safety Map"}</span>
+                  </Link>
+
+                  <Link
+                    href="/safety"
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg font-bold transition text-emerald-700 dark:text-emerald-400 ${
+                      pathname === "/safety"
+                        ? "bg-emerald-50 dark:bg-emerald-950/60"
+                        : "hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                    }`}
+                  >
+                    <span>🚨</span>
+                    <span>{lang === "bn" ? "জরুরি সেবা ও ৯৯৯" : "Find Help & SOS 999"}</span>
                   </Link>
                 </div>
 
-                {/* 3. HELP PILLAR */}
+                {/* 2. SAFETY & COMMUNITY */}
                 <div className="space-y-1">
                   <p className="text-[10px] font-bold tracking-wider text-zinc-400 uppercase px-2">
-                    {lang === "bn" ? "৩. কমিউনিটি সহায়তা" : "3. Community Help"}
+                    {lang === "bn" ? "নিরাপত্তা ও রিপোর্ট" : "Safety & Reports"}
                   </p>
                   <Link
                     href="/blood-help"
-                    className={`flex items-center gap-3 px-3 py-2 rounded-xl font-semibold transition ${
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg font-semibold transition ${
                       pathname.startsWith("/blood-help")
                         ? "bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 font-bold"
                         : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                     }`}
                   >
                     <span>🩸</span>
-                    <span>{lang === "bn" ? "রক্ত সহায়তা নেটওয়ার্ক" : "Blood Help Network"}</span>
+                    <span>{lang === "bn" ? "রক্ত সহায়তা" : "Blood Help"}</span>
                   </Link>
+
                   <Link
                     href="/missing-person"
-                    className={`flex items-center gap-3 px-3 py-2 rounded-xl font-semibold transition ${
-                      pathname.startsWith("/missing-person") && pathname !== "/missing-person/create"
-                        ? "bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 font-bold"
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg font-semibold transition ${
+                      pathname.startsWith("/missing-person")
+                        ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold"
                         : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                     }`}
                   >
                     <span>🔍</span>
-                    <span>{lang === "bn" ? "নিখোঁজ ব্যক্তি অনুসন্ধান" : "Missing Persons Search"}</span>
+                    <span>{lang === "bn" ? "নিখোঁজ ব্যক্তি অনুসন্ধান" : "Missing Persons"}</span>
                   </Link>
+
+                  <Link
+                    href="/reports/create"
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg font-semibold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30 transition"
+                  >
+                    <span>➕</span>
+                    <span>{lang === "bn" ? "ঘটনা রিপোর্ট করুন" : "Report an Incident"}</span>
+                  </Link>
+
                   <Link
                     href="/missing-person/create"
-                    className="flex items-center gap-3 px-3 py-2 rounded-xl font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
                   >
                     <span>📢</span>
                     <span>{lang === "bn" ? "নিখোঁজ ব্যক্তির তথ্য দিন" : "Submit Missing Alert"}</span>
                   </Link>
                 </div>
 
-                {/* 4. UNDERSTAND PILLAR */}
+                {/* 3. INSIGHTS */}
                 <div className="space-y-1">
                   <p className="text-[10px] font-bold tracking-wider text-zinc-400 uppercase px-2">
-                    {lang === "bn" ? "৪. স্বচ্ছতা ও বিশ্লেষণ" : "4. Transparency & Trends"}
+                    {lang === "bn" ? "তথ্য ও বিশ্লেষণ" : "Insights & Transparency"}
                   </p>
                   <Link
                     href="/transparency"
-                    className={`flex items-center gap-3 px-3 py-2 rounded-xl font-semibold transition ${
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg font-semibold transition ${
                       pathname === "/transparency"
                         ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold"
                         : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                     }`}
                   >
                     <span>📊</span>
-                    <span>{lang === "bn" ? "প্ল্যাটফর্ম অ্যানালিটিক্স" : "Platform Analytics"}</span>
+                    <span>{lang === "bn" ? "স্বচ্ছতা ও ক্রাইম অ্যানালিটিক্স" : "Transparency & Analytics"}</span>
                   </Link>
                 </div>
 
