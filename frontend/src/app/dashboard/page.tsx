@@ -103,13 +103,22 @@ export default function DashboardPage() {
         </div>
 
         {/* Contribution KPI Cards */}
-        <div className="grid grid-cols-3 gap-3 sm:gap-4 mt-6 pt-6 border-t border-zinc-100 dark:border-zinc-800">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-6 pt-6 border-t border-zinc-100 dark:border-zinc-800">
           <div className="rounded-2xl bg-zinc-50 dark:bg-zinc-800/60 p-4 text-center">
             <span className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-zinc-100 block">
               {reports.length}
             </span>
             <span className="text-[11px] text-zinc-500 font-medium">
               Total Submissions
+            </span>
+          </div>
+
+          <div className="rounded-2xl bg-zinc-100/80 dark:bg-zinc-800/80 p-4 text-center">
+            <span className="text-xl sm:text-2xl font-black text-zinc-700 dark:text-zinc-300 block">
+              {draftsCount}
+            </span>
+            <span className="text-[11px] text-zinc-500 font-medium">
+              Saved Drafts
             </span>
           </div>
 

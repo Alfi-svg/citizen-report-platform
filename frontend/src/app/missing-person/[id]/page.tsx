@@ -374,7 +374,7 @@ export default function MissingPersonDetailPage() {
           </div>
         ) : (
           <div className="relative border-l-2 border-red-200 dark:border-red-900/60 ml-4 pl-6 space-y-6">
-            {alert.approved_sightings.map((sighting, idx) => (
+            {alert.approved_sightings.map((sighting) => (
               <div key={sighting.id} className="relative group space-y-2">
                 {/* Timeline Node Dot */}
                 <div className="absolute -left-[31px] top-1.5 h-3.5 w-3.5 rounded-full border-2 border-white dark:border-zinc-900 bg-red-600 shadow-xs" />

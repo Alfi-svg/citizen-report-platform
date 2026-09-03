@@ -34,7 +34,6 @@ export default function AdminEmergencyServicesPage() {
   const [search, setSearch] = useState("");
   const [selectedType, setSelectedType] = useState<string>("");
   const [selectedDivision, setSelectedDivision] = useState<string>("");
-  const [selectedDistrict, setSelectedDistrict] = useState<string>("");
   const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [selectedFreshness, setSelectedFreshness] = useState<string>("");
   const [page, setPage] = useState(0);
@@ -108,7 +107,6 @@ export default function AdminEmergencyServicesPage() {
     if (search.trim()) params.append("search", search.trim());
     if (selectedType) params.append("service_type", selectedType);
     if (selectedDivision) params.append("division", selectedDivision);
-    if (selectedDistrict) params.append("district", selectedDistrict);
     if (selectedStatus) params.append("verification_status", selectedStatus);
     if (selectedFreshness) params.append("freshness", selectedFreshness);
     params.append("limit", PAGE_SIZE.toString());
@@ -131,7 +129,7 @@ export default function AdminEmergencyServicesPage() {
 
   useEffect(() => {
     loadServices();
-  }, [search, selectedType, selectedDivision, selectedDistrict, selectedStatus, selectedFreshness, page]);
+  }, [search, selectedType, selectedDivision, selectedStatus, selectedFreshness, page]);
 
   // Bulk Selection Handlers
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {

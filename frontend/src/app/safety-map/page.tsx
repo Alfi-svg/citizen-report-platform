@@ -465,6 +465,53 @@ export default function SafetyMapPage() {
             </div>
           )}
 
+          {/* Selected Point Compact Floating Panel */}
+          {selectedPoint && (
+            <div className="absolute top-4 right-4 z-20 max-w-sm w-80 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl p-4 border border-zinc-200 dark:border-zinc-800 shadow-xl space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                  {"report_count" in selectedPoint
+                    ? `🔶 Incident Cluster (${selectedPoint.report_count} reports)`
+                    : "is_missing_person" in selectedPoint && selectedPoint.is_missing_person
+                    ? "🚨 Missing Person"
+                    : "category_name" in selectedPoint
+                    ? selectedPoint.category_name
+                    : "Incident"}
+                </span>
+                <button
+                  onClick={() => setSelectedPoint(null)}
+                  className="text-zinc-400 hover:text-zinc-600 text-xs font-bold p-1 cursor-pointer"
+                  aria-label="Close"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 line-clamp-2">
+                {selectedPoint.title}
+              </h4>
+
+              <p className="text-xs text-zinc-500">
+                📍 {"location_text" in selectedPoint ? selectedPoint.location_text : selectedPoint.area || "Approximate area"}
+              </p>
+
+              {"id" in selectedPoint && (
+                <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                  <Link
+                    href={
+                      "is_missing_person" in selectedPoint && selectedPoint.is_missing_person && selectedPoint.missing_person_alert_id
+                        ? `/missing-person/${selectedPoint.missing_person_alert_id}`
+                        : `/reports/${selectedPoint.id}`
+                    }
+                    className="text-xs font-bold text-emerald-600 hover:underline"
+                  >
+                    {t.view_incident_detail} →
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Map Legend */}
           <div className="absolute bottom-4 left-4 z-20 rounded-2xl bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md p-3 border border-zinc-200 dark:border-zinc-800 shadow-md text-[11px] space-y-1.5 hidden sm:block">
             <div className="font-extrabold text-zinc-800 dark:text-zinc-200 uppercase text-[9px]">Legend</div>

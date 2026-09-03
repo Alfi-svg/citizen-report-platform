@@ -7,7 +7,6 @@ import { apiFetch } from "@/lib/api";
 import {
   AdminMissingPersonAlertResponse,
   AdminMissingPersonAlertPagination,
-  AlertStatus,
 } from "@/lib/types";
 
 export default function AdminMissingPersonPage() {

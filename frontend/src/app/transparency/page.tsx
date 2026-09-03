@@ -5,7 +5,6 @@ import Link from "next/link";
 import { apiFetch, getApiBaseUrl } from "@/lib/api";
 import {
   PublicTransparencyOverviewResponse,
-  CategoryResponse,
 } from "@/lib/types";
 import { translations, Language } from "@/lib/i18n";
 
@@ -14,15 +13,10 @@ export default function TransparencyDashboardPage() {
   const t = translations[lang];
 
   const [data, setData] = useState<PublicTransparencyOverviewResponse | null>(null);
-  const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Filters
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedYear] = useState<number>(new Date().getFullYear());
   const [monthlyViewMode, setMonthlyViewMode] = useState<"CHART" | "TABLE">("CHART");
-  const [yearlyViewMode, setYearlyViewMode] = useState<"CHART" | "TABLE">("CHART");
 
   const loadData = () => {
     setLoading(true);
@@ -39,9 +33,6 @@ export default function TransparencyDashboardPage() {
 
   useEffect(() => {
     loadData();
-    apiFetch<CategoryResponse[]>("/categories")
-      .then((cats) => setCategories(cats))
-      .catch(() => {});
   }, []);
 
   const handleExport = (format: "csv" | "json") => {
@@ -315,6 +306,37 @@ export default function TransparencyDashboardPage() {
               </table>
             </div>
           )}
+        </section>
+      )}
+
+      {/* 4.5. Year-over-Year Trend Comparison */}
+      {yearly && yearly.yearly_data.length > 0 && (
+        <section className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 sm:p-8 shadow-sm space-y-4">
+          <div>
+            <h2 className="text-lg font-extrabold text-zinc-900 dark:text-zinc-100">
+              {lang === "bn" ? "বার্ষিক রিপোর্ট প্রবণতা ও তুলনা" : "Year-over-Year Report Trends"}
+            </h2>
+            <p className="text-xs text-zinc-500">
+              {lang === "bn" ? "পূর্ববর্তী বছরের সাথে যাচাইকৃত রিপোর্টের তুলনামূলক পরিসংখ্যান" : "Platform-reviewed civic submissions compared across operational years"}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+            {yearly.yearly_data.map((y) => (
+              <div key={y.year} className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/40 p-4 space-y-1">
+                <span className="text-xs font-extrabold text-zinc-500 uppercase tracking-wider">{y.year}</span>
+                <div className="text-2xl font-black text-zinc-900 dark:text-zinc-100">{y.count}</div>
+                <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
+                  {y.percentage_change !== null && y.percentage_change !== undefined ? (
+                    <span>{y.percentage_change > 0 ? `+${y.percentage_change}%` : `${y.percentage_change}%`}</span>
+                  ) : (
+                    <span className="text-zinc-400">Baseline</span>
+                  )}
+                  <span className="text-zinc-400 font-normal">({lang === "bn" ? y.trend_label_bn : y.trend_label})</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </section>
       )}
 

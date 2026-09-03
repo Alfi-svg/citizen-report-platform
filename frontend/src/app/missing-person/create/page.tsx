@@ -17,11 +17,8 @@ export default function CreateMissingPersonPage() {
   const [gender, setGender] = useState("MALE");
   const [height, setHeight] = useState("");
   const [clothing, setClothing] = useState("");
-  const [clothingBn, setClothingBn] = useState("");
   const [identifyingFeatures, setIdentifyingFeatures] = useState("");
-  const [identifyingFeaturesBn, setIdentifyingFeaturesBn] = useState("");
   const [lastSeenLocation, setLastSeenLocation] = useState("");
-  const [lastSeenLocationBn, setLastSeenLocationBn] = useState("");
   const [lastSeenTime, setLastSeenTime] = useState("");
   const [contactInformation, setContactInformation] = useState("");
   const [reportingAuthority, setReportingAuthority] = useState("");
@@ -103,11 +100,8 @@ export default function CreateMissingPersonPage() {
         gender: gender || undefined,
         height: height.trim() || undefined,
         clothing: clothing.trim() || undefined,
-        clothing_bn: clothingBn.trim() || undefined,
         identifying_features: identifyingFeatures.trim() || undefined,
-        identifying_features_bn: identifyingFeaturesBn.trim() || undefined,
         last_seen_location: lastSeenLocation.trim(),
-        last_seen_location_bn: lastSeenLocationBn.trim() || undefined,
         last_seen_latitude: latitude !== null ? latitude : undefined,
         last_seen_longitude: longitude !== null ? longitude : undefined,
         last_seen_time: lastSeenTime ? new Date(lastSeenTime).toISOString() : undefined,
