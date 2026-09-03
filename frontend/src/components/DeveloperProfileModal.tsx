@@ -128,7 +128,7 @@ export default function DeveloperProfileModal({
           <div className="grid grid-cols-3 gap-2">
             {/* LinkedIn */}
             <a
-              href={DEVELOPER_CONFIG.linkedin || "#"}
+              href={DEVELOPER_CONFIG.linkedin || "https://www.linkedin.com/in/alfi-shahrin-talukder-a68450370/"}
               target="_blank"
               rel="noopener noreferrer"
               className="flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/60 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:text-blue-600 dark:hover:text-blue-400 transition text-xs font-semibold group shadow-2xs"
@@ -142,7 +142,7 @@ export default function DeveloperProfileModal({
 
             {/* GitHub */}
             <a
-              href={DEVELOPER_CONFIG.github || "#"}
+              href={DEVELOPER_CONFIG.github || "https://github.com/Alfi-svg"}
               target="_blank"
               rel="noopener noreferrer"
               className="flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/60 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:text-zinc-950 dark:hover:text-white transition text-xs font-semibold group shadow-2xs"
@@ -156,7 +156,7 @@ export default function DeveloperProfileModal({
 
             {/* Facebook */}
             <a
-              href={DEVELOPER_CONFIG.facebook || "#"}
+              href={DEVELOPER_CONFIG.facebook || "https://www.facebook.com/alfi.shahrin.talukder"}
               target="_blank"
               rel="noopener noreferrer"
               className="flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/60 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:text-blue-500 transition text-xs font-semibold group shadow-2xs"
