@@ -22,6 +22,18 @@ from app.models.incident_cluster import (
     IncidentCluster,
     IncidentClusterMember,
 )
+from app.models.blood import (
+    BloodGroup,
+    BloodUrgency,
+    BloodRequestStatus,
+    DonorAvailability,
+    ResponseStatus,
+    BloodFlagStatus,
+    BloodRequest,
+    BloodDonorProfile,
+    BloodRequestResponse,
+    BloodRequestFlag,
+)
 
 __all__ = [
     "Base",
@@ -58,4 +70,14 @@ __all__ = [
     "SightingStatus",
     "IncidentCluster",
     "IncidentClusterMember",
+    "BloodGroup",
+    "BloodUrgency",
+    "BloodRequestStatus",
+    "DonorAvailability",
+    "ResponseStatus",
+    "BloodFlagStatus",
+    "BloodRequest",
+    "BloodDonorProfile",
+    "BloodRequestResponse",
+    "BloodRequestFlag",
 ]

@@ -29,6 +29,14 @@ from app.models.missing_person import (
     SightingStatus,
 )
 from app.models.user import User, UserRole
+from app.models.blood import (
+    BloodRequest,
+    BloodRequestFlag,
+    BloodRequestStatus,
+    BloodFlagStatus,
+    BloodUrgency,
+    BloodGroup,
+)
 from app.schemas.moderation import (
     AdminDashboardStats,
     ModerationActionRequest,
@@ -2625,6 +2633,185 @@ async def get_admin_suggested_related_reports(
         min_score=min_score,
         limit=limit,
     )
+
+
+# =========================================================================
+# BLOOD HELP ADMIN MODERATION
+# =========================================================================
+
+@router.get("/blood/requests", status_code=status.HTTP_200_OK)
+async def list_admin_blood_requests(
+    status_filter: Optional[str] = Query(None, alias="status"),
+    district: Optional[str] = Query(None),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    List all blood requests for administrative monitoring and moderation.
+    """
+    conditions = []
+    if status_filter:
+        conditions.append(BloodRequest.status == status_filter)
+    if district:
+        conditions.append(BloodRequest.district.ilike(f"%{district.strip()}%"))
+
+    where_clause = and_(*conditions) if conditions else True
+
+    count_stmt = select(func.count(BloodRequest.id)).where(where_clause)
+    total = (await db.execute(count_stmt)).scalar() or 0
+
+    stmt = (
+        select(BloodRequest)
+        .where(where_clause)
+        .order_by(BloodRequest.created_at.desc())
+        .limit(limit)
+        .offset(offset)
+    )
+    requests = (await db.execute(stmt)).scalars().all()
+
+    items = []
+    for r in requests:
+        items.append({
+            "id": str(r.id),
+            "user_id": str(r.user_id),
+            "requester_name": (r.user.full_name or r.user.username) if r.user else "Citizen",
+            "blood_group": r.blood_group.value,
+            "units_required": r.units_required,
+            "hospital_name": r.hospital_name,
+            "hospital_area": r.hospital_area,
+            "district": r.district,
+            "urgency": r.urgency.value,
+            "status": r.status.value,
+            "is_active": r.is_active,
+            "contact_name": r.contact_name,
+            "contact_phone": r.contact_phone,
+            "contact_method": r.contact_method,
+            "additional_information": r.additional_information,
+            "flag_count": len(r.flags) if r.flags else 0,
+            "response_count": len(r.responses) if r.responses else 0,
+            "required_date": r.required_date.isoformat(),
+            "created_at": r.created_at.isoformat(),
+        })
+
+    return {
+        "items": items,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
+
+
+@router.patch("/blood/requests/{request_id}", status_code=status.HTTP_200_OK)
+async def moderate_blood_request(
+    request_id: uuid.UUID,
+    payload: dict,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Admin action to deactivate, reactivate, or change status of a blood request.
+    """
+    stmt = select(BloodRequest).where(BloodRequest.id == request_id)
+    req = (await db.execute(stmt)).scalar_one_or_none()
+    if not req:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Blood request not found")
+
+    if "is_active" in payload:
+        req.is_active = bool(payload["is_active"])
+    if "status" in payload:
+        req.status = BloodRequestStatus(payload["status"])
+
+    await db.commit()
+    await db.refresh(req)
+    return {
+        "id": str(req.id),
+        "status": req.status.value,
+        "is_active": req.is_active,
+        "message": "Blood request updated successfully",
+    }
+
+
+@router.get("/blood/flags", status_code=status.HTTP_200_OK)
+async def list_blood_request_flags(
+    flag_status: Optional[str] = Query("PENDING", alias="status"),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    List user flags on blood requests for administrative moderation.
+    """
+    conditions = []
+    if flag_status:
+        conditions.append(BloodRequestFlag.status == flag_status)
+
+    where_clause = and_(*conditions) if conditions else True
+
+    count_stmt = select(func.count(BloodRequestFlag.id)).where(where_clause)
+    total = (await db.execute(count_stmt)).scalar() or 0
+
+    stmt = (
+        select(BloodRequestFlag)
+        .where(where_clause)
+        .order_by(BloodRequestFlag.created_at.desc())
+        .limit(limit)
+        .offset(offset)
+    )
+    flags = (await db.execute(stmt)).scalars().all()
+
+    items = []
+    for f in flags:
+        items.append({
+            "id": str(f.id),
+            "request_id": str(f.request_id),
+            "hospital_name": f.request.hospital_name if f.request else "Unknown",
+            "blood_group": f.request.blood_group.value if f.request else "Unknown",
+            "reason": f.reason,
+            "details": f.details,
+            "status": f.status.value,
+            "reporter_name": (f.reporter.full_name or f.reporter.username) if f.reporter else "Citizen",
+            "created_at": f.created_at.isoformat(),
+        })
+
+    return {
+        "items": items,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
+
+
+@router.post("/blood/flags/{flag_id}/resolve", status_code=status.HTTP_200_OK)
+async def resolve_blood_flag(
+    flag_id: uuid.UUID,
+    payload: dict,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Resolve or dismiss a blood request flag, optionally deactivating the request.
+    """
+    stmt = select(BloodRequestFlag).where(BloodRequestFlag.id == flag_id)
+    flag = (await db.execute(stmt)).scalar_one_or_none()
+    if not flag:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Flag not found")
+
+    action = payload.get("action", "RESOLVE")  # RESOLVE or DISMISS
+    if action == "DISMISS":
+        flag.status = BloodFlagStatus.DISMISSED
+    else:
+        flag.status = BloodFlagStatus.REVIEWED
+        if payload.get("deactivate_request"):
+            if flag.request:
+                flag.request.is_active = False
+                flag.request.status = BloodRequestStatus.CANCELLED
+
+    await db.commit()
+    return {"status": "ok", "message": f"Flag marked as {flag.status.value}"}
+
 
 
 

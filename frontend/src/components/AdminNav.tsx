@@ -32,6 +32,12 @@ export default function AdminNav({ pendingReports, pendingFlags }: AdminNavProps
     },
     { href: "/admin/comments", label: "Comments", bn: "মন্তব্য", icon: "💬" },
     {
+      href: "/admin/blood-help",
+      label: "Blood Help",
+      bn: "রক্ত সহায়তা",
+      icon: "🩸",
+    },
+    {
       href: "/admin/emergency-services",
       label: "Safety Directory",
       bn: "জরুরি সেবা",

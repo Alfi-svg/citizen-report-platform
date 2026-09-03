@@ -950,6 +950,84 @@ export interface AdminOperationsAnalyticsResponse {
   last_updated_at: string;
 }
 
+// =========================================================================
+// BLOOD HELP COMMUNITY SERVICE TYPES
+// =========================================================================
+
+export type BloodGroup = "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-";
+export type BloodUrgency = "NORMAL" | "URGENT" | "EMERGENCY";
+export type BloodRequestStatus = "OPEN" | "RESPONDED" | "FULFILLED" | "EXPIRED" | "CANCELLED";
+export type DonorAvailability = "AVAILABLE" | "NOT_AVAILABLE";
+export type BloodResponseStatus = "PENDING" | "ACCEPTED" | "DECLINED" | "COMPLETED";
+
+export interface PublicBloodRequest {
+  id: string;
+  user_id: string;
+  blood_group: BloodGroup;
+  units_required: number;
+  hospital_name: string;
+  hospital_area: string;
+  district: string;
+  required_date: string;
+  required_time?: string | null;
+  urgency: BloodUrgency;
+  status: BloodRequestStatus;
+  additional_information?: string | null;
+  created_at: string;
+  updated_at: string;
+  is_own_request: boolean;
+  contact_name?: string | null;
+  contact_phone?: string | null;
+  contact_method?: string | null;
+  response_count: number;
+}
+
+export interface BloodRequestPagination {
+  items: PublicBloodRequest[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface BloodDonorProfile {
+  id: string;
+  user_id: string;
+  blood_group: BloodGroup;
+  district: string;
+  area: string;
+  availability_status: DonorAvailability;
+  last_donation_date?: string | null;
+  preferred_contact_method: string;
+  contact_phone?: string | null;
+  additional_notes?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BloodResponseItem {
+  id: string;
+  request_id: string;
+  donor_user_id: string;
+  donor_display_name: string;
+  message?: string | null;
+  contact_phone?: string | null;
+  status: BloodResponseStatus;
+  created_at: string;
+}
+
+export interface BloodFlagItem {
+  id: string;
+  request_id: string;
+  hospital_name?: string;
+  blood_group?: string;
+  reason: string;
+  details?: string | null;
+  status: string;
+  reporter_name?: string;
+  created_at: string;
+}
+
+
 
 
 

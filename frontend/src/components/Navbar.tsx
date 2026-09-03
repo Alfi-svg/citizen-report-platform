@@ -112,6 +112,12 @@ export default function Navbar() {
       isHelp: true,
     },
     {
+      href: "/blood-help",
+      label: "Blood Help",
+      bn: "রক্ত সহায়তা",
+      isBlood: true,
+    },
+    {
       href: "/missing-person",
       label: "Missing Persons",
       bn: "নিখোঁজ ব্যক্তি",
@@ -203,6 +209,7 @@ export default function Navbar() {
                   }`}
                 >
                   {item.isHelp && <span className="text-emerald-600 dark:text-emerald-400">🛡️</span>}
+                  {item.isBlood && <span className="text-rose-600 dark:text-rose-400">🩸</span>}
                   <span>{lang === "bn" ? item.bn : item.label}</span>
                 </Link>
               );
@@ -500,6 +507,18 @@ export default function Navbar() {
                   <p className="text-[10px] font-bold tracking-wider text-zinc-400 uppercase px-2">
                     {lang === "bn" ? "নিরাপত্তা ও রিপোর্ট" : "Safety & Reports"}
                   </p>
+                  <Link
+                    href="/blood-help"
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg font-semibold transition ${
+                      pathname.startsWith("/blood-help")
+                        ? "bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 font-bold"
+                        : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                    }`}
+                  >
+                    <span>🩸</span>
+                    <span>{lang === "bn" ? "রক্ত সহায়তা" : "Blood Help"}</span>
+                  </Link>
+
                   <Link
                     href="/missing-person"
                     className={`flex items-center gap-3 px-3 py-2 rounded-lg font-semibold transition ${
