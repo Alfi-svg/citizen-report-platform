@@ -27,8 +27,7 @@ export const DEVELOPER_CONFIG: DeveloperProfileConfig = {
   tagline_bn: "জনকল্যাণমুখী প্রযুক্তি বিনির্মাণে নিবেদিত।",
   // [PHOTO PLACEHOLDER]: Place actual photo in public directory (e.g., public/brand/developer.jpg) and set '/brand/developer.jpg'
   photoUrl: "",
-  // [SOCIAL PROFILE URLS]: Update with direct links when available
-  linkedin: "https://www.linkedin.com",
+  linkedin: "https://www.linkedin.com/in/alfi-shahrin-talukder-a68450370/",
   github: "https://github.com/Alfi-svg",
-  facebook: "https://www.facebook.com",
+  facebook: "https://www.facebook.com/alfi.shahrin.talukder",
 };
