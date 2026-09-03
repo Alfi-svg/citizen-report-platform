@@ -10,6 +10,21 @@ import { translations, Language } from "@/lib/i18n";
 
 export default function TransparencyDashboardPage() {
   const [lang, setLang] = useState<Language>("en");
+
+  // Sync language with global storage & event
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = (localStorage.getItem("app_lang") as Language) || "en";
+      setLang(saved);
+      const handleLangChange = () => {
+        const next = (localStorage.getItem("app_lang") as Language) || "en";
+        setLang(next);
+      };
+      window.addEventListener("languagechange", handleLangChange);
+      return () => window.removeEventListener("languagechange", handleLangChange);
+    }
+  }, []);
+
   const t = translations[lang];
 
   const [data, setData] = useState<PublicTransparencyOverviewResponse | null>(null);
@@ -81,41 +96,23 @@ export default function TransparencyDashboardPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           {/* Export Dropdown / Buttons */}
           <button
+            type="button"
             onClick={() => handleExport("csv")}
-            className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-1.5 text-xs font-bold text-zinc-700 dark:text-zinc-300 shadow-xs hover:bg-zinc-50 transition flex items-center gap-1.5"
+            className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300 shadow-2xs hover:bg-zinc-50 transition flex items-center gap-1.5 cursor-pointer"
           >
             <span>📥</span>
             <span>{t.export_csv}</span>
           </button>
           <button
+            type="button"
             onClick={() => handleExport("json")}
-            className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-1.5 text-xs font-bold text-zinc-700 dark:text-zinc-300 shadow-xs hover:bg-zinc-50 transition"
+            className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300 shadow-2xs hover:bg-zinc-50 transition cursor-pointer"
           >
             JSON
           </button>
-
-          {/* Bilingual Switcher */}
-          <div className="inline-flex rounded-xl bg-zinc-100 dark:bg-zinc-800 p-1 border border-zinc-200 dark:border-zinc-700">
-            <button
-              onClick={() => setLang("en")}
-              className={`px-3 py-1 text-xs font-bold rounded-lg transition ${
-                lang === "en" ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-xs" : "text-zinc-500 hover:text-zinc-800"
-              }`}
-            >
-              English
-            </button>
-            <button
-              onClick={() => setLang("bn")}
-              className={`px-3 py-1 text-xs font-bold rounded-lg transition ${
-                lang === "bn" ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-xs" : "text-zinc-500 hover:text-zinc-800"
-              }`}
-            >
-              বাংলা
-            </button>
-          </div>
         </div>
       </div>
 
