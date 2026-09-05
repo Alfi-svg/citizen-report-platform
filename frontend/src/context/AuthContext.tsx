@@ -1,8 +1,13 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { User, AuthResponse } from "@/lib/types";
 import { apiFetch } from "@/lib/api";
+import {
+  initializePushNotifications,
+  deactivatePushTokenOnBackend,
+} from "@/lib/pushNotifications";
 
 interface AuthContextType {
   user: User | null;
@@ -19,9 +24,26 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Sync push notifications if user is authenticated and native push is available/granted
+  useEffect(() => {
+    if (user && token) {
+      let cleanupFn: (() => void) | undefined;
+      initializePushNotifications((url: string) => {
+        router.push(url);
+      }).then((cleanup) => {
+        cleanupFn = cleanup;
+      });
+
+      return () => {
+        if (cleanupFn) cleanupFn();
+      };
+    }
+  }, [user, token, router]);
 
   useEffect(() => {
     let isMounted = true;
@@ -121,6 +143,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = () => {
+    // 1. Deactivate push notification token on backend to prevent notification bleeding
+    deactivatePushTokenOnBackend().catch(() => {});
+
     const currentToken = localStorage.getItem("token");
     if (currentToken) {
       apiFetch("/auth/logout", {

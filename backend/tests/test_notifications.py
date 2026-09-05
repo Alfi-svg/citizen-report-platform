@@ -338,3 +338,200 @@ async def test_comment_and_flag_moderation_notifications(
     types = [n["type"] for n in res_notifs.json()["items"]]
     assert "COMMENT_MODERATED" in types
     assert "FLAG_REVIEWED" in types
+
+
+@pytest.mark.asyncio
+async def test_unauthenticated_device_endpoints_rejected(
+    async_client: AsyncClient,
+):
+    # Registration requires auth
+    res_reg = await async_client.post(
+        "/api/v1/notifications/devices",
+        json={"token": "test-device-token-12345", "platform": "ANDROID"},
+    )
+    assert res_reg.status_code == 401
+
+    # Deactivation requires auth
+    res_del = await async_client.delete("/api/v1/notifications/devices/test-device-token-12345")
+    assert res_del.status_code == 401
+
+    # Listing requires auth
+    res_list = await async_client.get("/api/v1/notifications/devices")
+    assert res_list.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_device_registration_and_multi_device_support(
+    async_client: AsyncClient,
+    citizen_alice: User,
+):
+    token_alice = create_access_token(subject=str(citizen_alice.id))
+
+    # 1. Register first device (Android Phone)
+    res_dev1 = await async_client.post(
+        "/api/v1/notifications/devices",
+        headers={"Authorization": f"Bearer {token_alice}"},
+        json={
+            "token": "fcm_token_alice_phone_1234567890",
+            "platform": "ANDROID",
+            "device_name": "Pixel 7 Pro",
+        },
+    )
+    assert res_dev1.status_code == 200
+    data_dev1 = res_dev1.json()
+    assert data_dev1["token"] == "fcm_token_alice_phone_1234567890"
+    assert data_dev1["platform"] == "ANDROID"
+    assert data_dev1["device_name"] == "Pixel 7 Pro"
+    assert data_dev1["is_active"] is True
+
+    # 2. Register second device (Android Tablet)
+    res_dev2 = await async_client.post(
+        "/api/v1/notifications/devices",
+        headers={"Authorization": f"Bearer {token_alice}"},
+        json={
+            "token": "fcm_token_alice_tablet_9876543210",
+            "platform": "ANDROID",
+            "device_name": "Galaxy Tab S9",
+        },
+    )
+    assert res_dev2.status_code == 200
+
+    # 3. List active devices -> both devices present
+    res_list = await async_client.get(
+        "/api/v1/notifications/devices",
+        headers={"Authorization": f"Bearer {token_alice}"},
+    )
+    assert res_list.status_code == 200
+    devices = res_list.json()
+    assert len(devices) == 2
+    tokens = [d["token"] for d in devices]
+    assert "fcm_token_alice_phone_1234567890" in tokens
+    assert "fcm_token_alice_tablet_9876543210" in tokens
+
+
+@pytest.mark.asyncio
+async def test_device_token_reassignment_on_account_switch(
+    async_client: AsyncClient,
+    citizen_alice: User,
+    citizen_bob: User,
+):
+    token_alice = create_access_token(subject=str(citizen_alice.id))
+    token_bob = create_access_token(subject=str(citizen_bob.id))
+    shared_device_token = "fcm_shared_handset_token_abcdef123456"
+
+    # Alice logs in and registers device
+    res_a = await async_client.post(
+        "/api/v1/notifications/devices",
+        headers={"Authorization": f"Bearer {token_alice}"},
+        json={"token": shared_device_token, "platform": "ANDROID", "device_name": "Shared Phone"},
+    )
+    assert res_a.status_code == 200
+    assert res_a.json()["user_id"] == str(citizen_alice.id)
+
+    # Bob logs in on the SAME handset -> registers same token
+    res_b = await async_client.post(
+        "/api/v1/notifications/devices",
+        headers={"Authorization": f"Bearer {token_bob}"},
+        json={"token": shared_device_token, "platform": "ANDROID", "device_name": "Shared Phone"},
+    )
+    assert res_b.status_code == 200
+    assert res_b.json()["user_id"] == str(citizen_bob.id)
+
+    # Alice's active devices list no longer contains this token
+    res_list_a = await async_client.get(
+        "/api/v1/notifications/devices",
+        headers={"Authorization": f"Bearer {token_alice}"},
+    )
+    assert res_list_a.status_code == 200
+    assert not any(d["token"] == shared_device_token for d in res_list_a.json())
+
+    # Bob's active devices list contains this token
+    res_list_b = await async_client.get(
+        "/api/v1/notifications/devices",
+        headers={"Authorization": f"Bearer {token_bob}"},
+    )
+    assert res_list_b.status_code == 200
+    assert any(d["token"] == shared_device_token for d in res_list_b.json())
+
+
+@pytest.mark.asyncio
+async def test_device_token_deactivation_on_logout(
+    async_client: AsyncClient,
+    citizen_alice: User,
+):
+    token_alice = create_access_token(subject=str(citizen_alice.id))
+    dev_token = "fcm_token_deactivate_test_123456789"
+
+    # 1. Register device
+    res_reg = await async_client.post(
+        "/api/v1/notifications/devices",
+        headers={"Authorization": f"Bearer {token_alice}"},
+        json={"token": dev_token, "platform": "ANDROID"},
+    )
+    assert res_reg.status_code == 200
+
+    # 2. Deactivate device on logout
+    res_del = await async_client.delete(
+        f"/api/v1/notifications/devices/{dev_token}",
+        headers={"Authorization": f"Bearer {token_alice}"},
+    )
+    assert res_del.status_code == 200
+    assert res_del.json()["message"] == "Device token deactivated successfully."
+
+    # 3. Active devices list is now empty
+    res_list = await async_client.get(
+        "/api/v1/notifications/devices",
+        headers={"Authorization": f"Bearer {token_alice}"},
+    )
+    assert res_list.status_code == 200
+    assert len(res_list.json()) == 0
+
+    # 4. Deactivating again returns 404
+    res_del_again = await async_client.delete(
+        f"/api/v1/notifications/devices/{dev_token}",
+        headers={"Authorization": f"Bearer {token_alice}"},
+    )
+    assert res_del_again.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_push_dispatch_trigger_on_report_creation(
+    async_client: AsyncClient,
+    citizen_alice: User,
+    notif_category: Category,
+    db_session: AsyncSession,
+):
+    token_alice = create_access_token(subject=str(citizen_alice.id))
+
+    # Register device for Alice
+    await async_client.post(
+        "/api/v1/notifications/devices",
+        headers={"Authorization": f"Bearer {token_alice}"},
+        json={"token": "fcm_dispatch_check_token_1122334455", "platform": "ANDROID"},
+    )
+
+    # Alice creates a report -> generates REPORT_SUBMITTED notification & push dispatch
+    res_create = await async_client.post(
+        "/api/v1/reports",
+        headers={"Authorization": f"Bearer {token_alice}"},
+        json={
+            "title": "Road Hazard Alert",
+            "description": "Deep pothole near junction.",
+            "category_id": str(notif_category.id),
+            "location_text": "Farmgate, Dhaka",
+            "is_anonymous": False,
+            "status": "SUBMITTED",
+        },
+    )
+    assert res_create.status_code == 201
+
+    # Verify device was used
+    res_devs = await async_client.get(
+        "/api/v1/notifications/devices",
+        headers={"Authorization": f"Bearer {token_alice}"},
+    )
+    assert res_devs.status_code == 200
+    devices = res_devs.json()
+    assert len(devices) == 1
+    assert devices[0]["last_used_at"] is not None
+

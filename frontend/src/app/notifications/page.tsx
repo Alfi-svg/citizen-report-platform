@@ -6,6 +6,13 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
 import { Notification, NotificationPagination, NotificationType } from "@/lib/types";
+import {
+  checkPushPermissionStatus,
+  requestPushPermission,
+  isPushPromptDismissed,
+  dismissPushPrompt,
+  PushStatus,
+} from "@/lib/pushNotifications";
 
 const NOTIF_ICONS: Record<
   NotificationType,
@@ -75,6 +82,12 @@ export default function NotificationsPage() {
   const [page, setPage] = useState(1);
   const limit = 20;
 
+  // Push notification opt-in states
+  const [pushStatus, setPushStatus] = useState<PushStatus | null>(null);
+  const [showPushBanner, setShowPushBanner] = useState(false);
+  const [enablingPush, setEnablingPush] = useState(false);
+  const [pushSuccessMsg, setPushSuccessMsg] = useState<string | null>(null);
+
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push("/login");
@@ -107,6 +120,58 @@ export default function NotificationsPage() {
       isMounted = false;
     };
   }, [isAuthenticated, page, unreadOnly]);
+
+  // Check push notification availability on mount (never prompts)
+  useEffect(() => {
+    checkPushPermissionStatus().then((status) => {
+      setPushStatus(status);
+      if (status.isSupported && !status.isGranted && !isPushPromptDismissed()) {
+        setShowPushBanner(true);
+      }
+    });
+  }, []);
+
+  // Listen for real-time foreground push notification event
+  useEffect(() => {
+    const handleForegroundNotification = () => {
+      const offset = (page - 1) * limit;
+      const url = `/notifications?limit=${limit}&offset=${offset}${
+        unreadOnly ? "&unread_only=true" : ""
+      }`;
+      apiFetch<NotificationPagination>(url)
+        .then((data) => {
+          setNotifications(data.items);
+          setTotal(data.total);
+        })
+        .catch(() => {});
+    };
+
+    window.addEventListener("notification:received", handleForegroundNotification);
+    return () => {
+      window.removeEventListener("notification:received", handleForegroundNotification);
+    };
+  }, [page, unreadOnly]);
+
+  const handleEnablePush = async () => {
+    setEnablingPush(true);
+    try {
+      const granted = await requestPushPermission();
+      if (granted) {
+        setPushSuccessMsg("Push notifications enabled! / পুশ বিজ্ঞপ্তি সক্রিয় করা হয়েছে!");
+        setShowPushBanner(false);
+        const status = await checkPushPermissionStatus();
+        setPushStatus(status);
+        setTimeout(() => setPushSuccessMsg(null), 5000);
+      }
+    } finally {
+      setEnablingPush(false);
+    }
+  };
+
+  const handleDismissPush = () => {
+    dismissPushPrompt();
+    setShowPushBanner(false);
+  };
 
   const handleMarkAsRead = async (notifId: string) => {
     try {
@@ -166,6 +231,72 @@ export default function NotificationsPage() {
           ✓ Mark All as Read / সব পড়া হয়েছে
         </button>
       </div>
+
+      {/* Push Success message */}
+      {pushSuccessMsg && (
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 dark:border-emerald-900/60 dark:bg-emerald-950/30 p-3.5 text-xs text-emerald-800 dark:text-emerald-300 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span>✅</span>
+            <span>{pushSuccessMsg}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setPushSuccessMsg(null)}
+            className="text-emerald-700 dark:text-emerald-400 hover:text-emerald-900 font-bold px-2 py-1"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* Non-intrusive Android Push Notification Opt-in Card */}
+      {showPushBanner && (
+        <div className="rounded-2xl border border-teal-200 dark:border-teal-800/60 bg-teal-50/60 dark:bg-teal-950/20 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl shrink-0">📲</span>
+            <div>
+              <h2 className="text-sm font-bold text-teal-950 dark:text-teal-200">
+                Enable Instant Alerts / তাত্ক্ষণিক বিজ্ঞপ্তি চালু করুন
+              </h2>
+              <p className="text-xs text-teal-700 dark:text-teal-300/90 mt-0.5 leading-relaxed">
+                Receive notifications when your reports are verified, comments are reviewed, or urgent blood requests happen in your area.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+            <button
+              type="button"
+              onClick={handleDismissPush}
+              className="flex-1 sm:flex-initial px-3.5 py-2 text-xs font-semibold text-teal-700 dark:text-teal-300 hover:text-teal-900 dark:hover:text-teal-100 rounded-xl transition cursor-pointer"
+            >
+              Later / পরে
+            </button>
+            <button
+              type="button"
+              onClick={handleEnablePush}
+              disabled={enablingPush}
+              className="flex-1 sm:flex-initial px-4 py-2 text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 active:bg-teal-800 rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+            >
+              {enablingPush ? (
+                <>
+                  <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  <span>Enabling...</span>
+                </>
+              ) : (
+                <span>Enable Alerts / চালু করুন</span>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Push Status Pill if already granted on native Android */}
+      {pushStatus?.isGranted && (
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100/70 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 text-[11px] font-medium border border-emerald-200 dark:border-emerald-800/40">
+          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span>Android Push Notifications Active / পুশ বিজ্ঞপ্তি সক্রিয়</span>
+        </div>
+      )}
 
       {/* Filter Tabs */}
       <div className="flex items-center gap-3 border-b border-zinc-200 dark:border-zinc-800 pb-3 text-xs">

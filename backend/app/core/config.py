@@ -59,6 +59,12 @@ class Settings(BaseSettings):
     # Safety Directory Verification Freshness Policy (in days)
     SAFETY_DIRECTORY_FRESHNESS_DAYS: int = 90
 
+    # Firebase Cloud Messaging (Push Notifications)
+    FIREBASE_PROJECT_ID: Optional[str] = None
+    FIREBASE_SERVICE_ACCOUNT_JSON: Optional[str] = None
+    FIREBASE_CREDENTIALS_PATH: Optional[str] = None
+    FCM_MOCK_DISPATCH: bool = False
+
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
     def assemble_database_url(cls, v: str) -> str:

@@ -29,6 +29,24 @@ async def create_notification(
         comment_id=comment_id,
     )
     db.add(notification)
+
+    # Safe asynchronous push notification dispatch
+    try:
+        from app.services.push_notification import dispatch_push_for_notification
+        await dispatch_push_for_notification(
+            db=db,
+            user_id=user_id,
+            notification_id=notification.id,
+            notification_type=notification_type,
+            title=title,
+            message=message,
+            report_id=report_id,
+            comment_id=comment_id,
+        )
+    except Exception:
+        # Never break notification transaction due to push delivery issues
+        pass
+
     return notification
 
 

@@ -8,6 +8,7 @@ from app.models.comment import Comment, CommentStatus
 from app.models.reaction import Reaction, ReactionType
 from app.models.flag import ContentFlag, FlagTargetType, FlagStatus, ReportFlagReason, CommentFlagReason
 from app.models.notification import Notification, NotificationType
+from app.models.device import UserDevice, DevicePlatform
 from app.models.emergency_service import EmergencyService, ServiceType, VerificationStatus
 from app.models.missing_person import (
     MissingPersonProfile,
@@ -80,4 +81,6 @@ __all__ = [
     "BloodDonorProfile",
     "BloodRequestResponse",
     "BloodRequestFlag",
+    "UserDevice",
+    "DevicePlatform",
 ]

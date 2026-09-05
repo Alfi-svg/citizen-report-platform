@@ -35,6 +35,17 @@ export default function NotificationBell() {
     };
   }, [isAuthenticated, isOpen]);
 
+  // Real-time foreground push notification updates
+  useEffect(() => {
+    const handlePushReceived = () => {
+      setUnreadCount((c) => c + 1);
+    };
+    window.addEventListener("notification:received", handlePushReceived);
+    return () => {
+      window.removeEventListener("notification:received", handlePushReceived);
+    };
+  }, []);
+
   // Close dropdown on outside click or Escape key
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

@@ -7,11 +7,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_current_user
 from app.db.session import get_db
 from app.models.notification import Notification
+from app.models.device import UserDevice
 from app.models.user import User
 from app.schemas.notification import (
     NotificationResponse,
     NotificationUnreadCountResponse,
     NotificationPagination,
+)
+from app.schemas.device import DeviceRegisterRequest, DeviceResponse
+from app.services.push_notification import (
+    register_or_update_device,
+    deactivate_device_token,
 )
 
 router = APIRouter()
@@ -130,3 +136,67 @@ async def mark_all_notifications_as_read(
     await db.commit()
 
     return {"message": "All notifications marked as read."}
+
+
+@router.post(
+    "/devices",
+    response_model=DeviceResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Register or update device push notification token",
+)
+async def register_device(
+    payload: DeviceRegisterRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    device = await register_or_update_device(
+        db=db,
+        user_id=current_user.id,
+        token=payload.token,
+        platform=payload.platform.value if hasattr(payload.platform, "value") else str(payload.platform),
+        device_name=payload.device_name,
+    )
+    return DeviceResponse.model_validate(device)
+
+
+@router.delete(
+    "/devices/{token}",
+    status_code=status.HTTP_200_OK,
+    summary="Deactivate device push notification token on logout",
+)
+async def unregister_device(
+    token: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    success = await deactivate_device_token(
+        db=db,
+        token=token,
+        user_id=current_user.id,
+    )
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Device token not found or already inactive.",
+        )
+    return {"message": "Device token deactivated successfully."}
+
+
+@router.get(
+    "/devices",
+    response_model=list[DeviceResponse],
+    status_code=status.HTTP_200_OK,
+    summary="List active registered devices for current user",
+)
+async def list_user_devices(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    stmt = select(UserDevice).where(
+        UserDevice.user_id == current_user.id,
+        UserDevice.is_active.is_(True),
+    ).order_by(UserDevice.created_at.desc())
+    result = await db.execute(stmt)
+    devices = result.scalars().all()
+    return [DeviceResponse.model_validate(d) for d in devices]
+

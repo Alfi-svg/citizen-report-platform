@@ -332,6 +332,26 @@ export default function SafetyCenterPage() {
             </p>
           </div>
         </Link>
+
+        <Link
+          href="/notifications"
+          className="col-span-2 sm:col-span-4 p-3.5 sm:p-4 rounded-2xl border border-teal-200 dark:border-teal-800/60 bg-teal-50/40 dark:bg-teal-950/20 hover:border-teal-500 transition shadow-2xs flex items-center justify-between"
+        >
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-xl bg-teal-100 dark:bg-teal-900/60 text-teal-800 dark:text-teal-300 flex items-center justify-center text-lg">
+              🔔
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                {lang === "bn" ? "বিজ্ঞপ্তি ও পুশ নোটিফিকেশন" : "Notifications & Push Alerts"}
+              </h4>
+              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+                {lang === "bn" ? "জরুরি রক্ত অনুরোধ ও রিপোর্টের তাত্ক্ষণিক আপডেট পান" : "Get instant status alerts for your reports and urgent blood requests"}
+              </p>
+            </div>
+          </div>
+          <span className="text-teal-600 dark:text-teal-400 font-bold text-sm">→</span>
+        </Link>
       </section>
 
       {/* 4. FIND HELP NEAR ME (SAFETY NAVIGATOR) */}

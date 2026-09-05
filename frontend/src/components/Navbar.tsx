@@ -651,23 +651,31 @@ export default function Navbar() {
 
                   <div className="grid grid-cols-2 gap-2 pt-1">
                     <Link
+                      href="/notifications"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center justify-center min-h-[40px] py-2 px-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition"
+                    >
+                      <span>🔔</span>
+                      <span className="ml-1.5">{lang === "bn" ? "বিজ্ঞপ্তি" : "Alerts"}</span>
+                    </Link>
+                    <Link
                       href="/dashboard"
                       onClick={() => setMobileMenuOpen(false)}
                       className="flex items-center justify-center min-h-[40px] py-2 px-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition"
                     >
                       Dashboard
                     </Link>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMobileMenuOpen(false);
-                        logout();
-                      }}
-                      className="flex items-center justify-center min-h-[40px] py-2 px-2 rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-950/30 font-semibold text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 transition"
-                    >
-                      Sign Out
-                    </button>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      logout();
+                    }}
+                    className="w-full flex items-center justify-center min-h-[40px] py-2 px-2 rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-950/30 font-semibold text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 transition"
+                  >
+                    Sign Out
+                  </button>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-2">
