@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Bangladesh Citizen Report</string>
+    <string name="title_activity_main">Bangladesh Citizen Report</string>
+    <string name="package_name">com.bangladeshcitizenreport.app</string>
+    <string name="custom_url_scheme">com.bangladeshcitizenreport.app</string>
+</resources>
