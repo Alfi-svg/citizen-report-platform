@@ -166,7 +166,7 @@ export default function BloodRequestDetailPage() {
       )}
 
       {/* Main Request Container */}
-      <div className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 sm:p-10 shadow-2xs space-y-6">
+      <div className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 sm:p-10 shadow-2xs space-y-6">
         {/* Header Strip: Blood Badge, Status, Date */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100 dark:border-zinc-800 pb-5">
           <div className="flex items-center gap-3">
@@ -367,8 +367,8 @@ export default function BloodRequestDetailPage() {
 
       {/* Response Modal */}
       {isResponseModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
-          <div className="w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 shadow-2xl space-y-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in overflow-y-auto">
+          <div className="w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-5 sm:p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="text-base font-black text-zinc-900 dark:text-zinc-100">
@@ -418,14 +418,14 @@ export default function BloodRequestDetailPage() {
                 <button
                   type="button"
                   onClick={() => setIsResponseModalOpen(false)}
-                  className="rounded-xl px-4 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-400"
+                  className="rounded-xl px-4 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-400 min-h-[40px] flex items-center justify-center cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingResponse}
-                  className="rounded-xl bg-rose-600 hover:bg-rose-700 px-5 py-2 text-xs font-bold text-white shadow-2xs transition disabled:opacity-50"
+                  className="rounded-xl bg-rose-600 hover:bg-rose-700 px-5 py-2 text-xs font-bold text-white shadow-2xs transition disabled:opacity-50 min-h-[40px] flex items-center justify-center cursor-pointer"
                 >
                   {submittingResponse ? "Sending..." : "Send Response"}
                 </button>
@@ -437,8 +437,8 @@ export default function BloodRequestDetailPage() {
 
       {/* Flag / Report Modal */}
       {isFlagModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
-          <div className="w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 shadow-2xl space-y-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in overflow-y-auto">
+          <div className="w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-5 sm:p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="text-base font-black text-zinc-900 dark:text-zinc-100">
@@ -492,14 +492,14 @@ export default function BloodRequestDetailPage() {
                 <button
                   type="button"
                   onClick={() => setIsFlagModalOpen(false)}
-                  className="rounded-xl px-4 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-400"
+                  className="rounded-xl px-4 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-400 min-h-[40px] flex items-center justify-center cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingFlag}
-                  className="rounded-xl bg-red-600 hover:bg-red-700 px-5 py-2 text-xs font-bold text-white shadow-2xs transition disabled:opacity-50"
+                  className="rounded-xl bg-red-600 hover:bg-red-700 px-5 py-2 text-xs font-bold text-white shadow-2xs transition disabled:opacity-50 min-h-[40px] flex items-center justify-center cursor-pointer"
                 >
                   {submittingFlag ? "Submitting..." : "Submit Report"}
                 </button>

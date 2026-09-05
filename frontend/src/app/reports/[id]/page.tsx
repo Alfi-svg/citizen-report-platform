@@ -365,7 +365,7 @@ export default function ReportDetailPage() {
         </div>
 
         {/* Main Report Container */}
-        <div className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 sm:p-10 shadow-2xs space-y-6">
+        <div className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 sm:p-10 shadow-2xs space-y-6">
           {/* Owner / Admin Context Notice */}
           {report && (report.user_id === user?.id || user?.role === "ADMIN") && (
             <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/60 dark:border-emerald-900/60 dark:bg-emerald-950/20 p-3.5 flex flex-wrap items-center justify-between gap-2 text-xs text-emerald-800 dark:text-emerald-300">
@@ -463,7 +463,7 @@ export default function ReportDetailPage() {
               <button
                 type="button"
                 onClick={() => handleShare(displayReport.title)}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-750 transition shadow-2xs"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-750 transition shadow-2xs min-h-[40px] cursor-pointer"
               >
                 <span>↗</span>
                 <span>{copied ? "Link Copied!" : "Share Report"}</span>
@@ -472,7 +472,7 @@ export default function ReportDetailPage() {
               <button
                 type="button"
                 onClick={() => setIsFlagModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-zinc-500 hover:text-red-600 dark:text-zinc-400 dark:hover:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-zinc-500 hover:text-red-600 dark:text-zinc-400 dark:hover:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition min-h-[40px] cursor-pointer"
               >
                 <span>🚩</span>
                 <span>Flag</span>
@@ -562,11 +562,11 @@ export default function ReportDetailPage() {
             Incident Submission Details
           </h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {canEdit && !isEditing && (
             <button
               onClick={() => setIsEditing(true)}
-              className="rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3.5 py-2 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 transition shadow-2xs"
+              className="rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3.5 py-2 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 transition shadow-2xs min-h-[40px] flex items-center justify-center cursor-pointer"
             >
               ✏️ Edit Draft
             </button>
@@ -575,7 +575,7 @@ export default function ReportDetailPage() {
             <button
               onClick={handleSubmitDraft}
               disabled={saving}
-              className="rounded-xl bg-emerald-700 hover:bg-emerald-800 px-4 py-2 text-xs font-bold text-white shadow-2xs transition"
+              className="rounded-xl bg-emerald-700 hover:bg-emerald-800 px-4 py-2 text-xs font-bold text-white shadow-2xs transition min-h-[40px] flex items-center justify-center cursor-pointer disabled:opacity-50"
             >
               Submit for Review
             </button>
@@ -591,7 +591,7 @@ export default function ReportDetailPage() {
 
       {isEditing ? (
         /* Edit Form */
-        <div className="space-y-6 bg-white dark:bg-zinc-900 p-6 sm:p-8 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-2xs">
+        <div className="space-y-6 bg-white dark:bg-zinc-900 p-4 sm:p-8 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-2xs">
           <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100">Edit Draft Submission</h2>
 
           <div>

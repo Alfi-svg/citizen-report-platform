@@ -138,7 +138,7 @@ export default function EvidenceUploader({
   return (
     <div className="space-y-4">
       {/* File Drop & Select Button */}
-      <div className="rounded-xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50/60 dark:bg-zinc-800/40 p-5 text-center">
+      <div className="rounded-2xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50/60 dark:bg-zinc-800/40 p-4 sm:p-5 text-center">
         <input
           ref={fileInputRef}
           type="file"
@@ -151,7 +151,7 @@ export default function EvidenceUploader({
         />
         <label
           htmlFor="evidence-file-input"
-          className="cursor-pointer inline-flex flex-col items-center justify-center gap-1 text-xs"
+          className="cursor-pointer inline-flex flex-col items-center justify-center gap-1 text-xs w-full py-2"
         >
           <span className="text-2xl">📎</span>
           <span className="font-semibold text-zinc-900 dark:text-zinc-100 hover:text-emerald-600 dark:hover:text-emerald-400">
@@ -203,7 +203,7 @@ export default function EvidenceUploader({
                   type="button"
                   onClick={() => handleRemoveItem(idx)}
                   disabled={uploading}
-                  className="self-end sm:self-center text-xs font-semibold text-red-600 hover:text-red-700 disabled:opacity-40"
+                  className="self-end sm:self-center text-xs font-semibold text-red-600 hover:text-red-700 disabled:opacity-40 min-h-[36px] px-2.5 py-1 flex items-center justify-center rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 transition cursor-pointer"
                 >
                   Remove
                 </button>
@@ -221,7 +221,7 @@ export default function EvidenceUploader({
                 type="button"
                 onClick={handleUploadAllToReport}
                 disabled={uploading || selectedItems.length === 0}
-                className="rounded-lg bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500 shadow-sm transition disabled:opacity-50"
+                className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-500 shadow-sm transition disabled:opacity-50 min-h-[38px] flex items-center justify-center cursor-pointer"
               >
                 {uploading ? "Uploading..." : "Upload Evidence"}
               </button>

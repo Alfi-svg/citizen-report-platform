@@ -126,7 +126,7 @@ export default function CreateBloodRequestPage() {
       </Link>
 
       {/* Main Form Container */}
-      <div className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 sm:p-10 shadow-2xs space-y-6">
+      <div className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 sm:p-10 shadow-2xs space-y-6">
         <div className="space-y-1">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200/60 dark:border-rose-900/60">
             <span>🚨</span>
@@ -344,17 +344,17 @@ export default function CreateBloodRequestPage() {
           </div>
 
           {/* Submit CTA */}
-          <div className="flex items-center justify-end gap-3 pt-2">
+          <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 pt-2">
             <Link
               href="/blood-help"
-              className="rounded-xl px-5 py-2.5 text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+              className="w-full sm:w-auto rounded-xl px-5 py-2.5 text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition min-h-[44px] flex items-center justify-center text-center"
             >
               Cancel
             </Link>
             <button
               type="submit"
               disabled={submitting}
-              className="rounded-2xl bg-rose-600 hover:bg-rose-700 px-6 py-3 text-xs font-bold text-white shadow-2xs transition disabled:opacity-50 cursor-pointer"
+              className="w-full sm:w-auto rounded-2xl bg-rose-600 hover:bg-rose-700 px-6 py-3 text-xs font-bold text-white shadow-2xs transition disabled:opacity-50 min-h-[44px] flex items-center justify-center cursor-pointer"
             >
               {submitting ? "Publishing..." : "Publish Blood Request"}
             </button>

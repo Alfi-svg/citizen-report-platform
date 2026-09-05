@@ -267,7 +267,7 @@ export default function Navbar() {
             <button
               type="button"
               onClick={toggleLanguage}
-              className="px-2 py-1 text-xs font-bold rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
+              className="min-h-[36px] min-w-[36px] px-2.5 py-1 text-xs font-bold rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 inline-flex items-center justify-center cursor-pointer"
               title="Switch Language / ভাষা পরিবর্তন"
             >
               {lang === "en" ? "বাং" : "EN"}
@@ -448,7 +448,7 @@ export default function Navbar() {
                 <button
                   type="button"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                  className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
                   aria-label="Close menu"
                 >
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -466,7 +466,8 @@ export default function Navbar() {
                   </p>
                   <Link
                     href="/"
-                    className={`flex items-center gap-3 px-3 py-2 rounded-lg font-semibold transition ${
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2.5 min-h-[40px] rounded-lg font-semibold transition ${
                       pathname === "/"
                         ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold"
                         : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
@@ -478,7 +479,8 @@ export default function Navbar() {
 
                   <Link
                     href="/safety-map"
-                    className={`flex items-center gap-3 px-3 py-2 rounded-lg font-semibold transition ${
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2.5 min-h-[40px] rounded-lg font-semibold transition ${
                       pathname === "/safety-map"
                         ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold"
                         : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
@@ -490,7 +492,8 @@ export default function Navbar() {
 
                   <Link
                     href="/safety"
-                    className={`flex items-center gap-3 px-3 py-2 rounded-lg font-bold transition text-emerald-700 dark:text-emerald-400 ${
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2.5 min-h-[40px] rounded-lg font-bold transition text-emerald-700 dark:text-emerald-400 ${
                       pathname === "/safety"
                         ? "bg-emerald-50 dark:bg-emerald-950/60"
                         : "hover:bg-zinc-100 dark:hover:bg-zinc-800"
@@ -508,7 +511,8 @@ export default function Navbar() {
                   </p>
                   <Link
                     href="/blood-help"
-                    className={`flex items-center gap-3 px-3 py-2 rounded-lg font-semibold transition ${
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2.5 min-h-[40px] rounded-lg font-semibold transition ${
                       pathname.startsWith("/blood-help")
                         ? "bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 font-bold"
                         : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
@@ -520,7 +524,8 @@ export default function Navbar() {
 
                   <Link
                     href="/missing-person"
-                    className={`flex items-center gap-3 px-3 py-2 rounded-lg font-semibold transition ${
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2.5 min-h-[40px] rounded-lg font-semibold transition ${
                       pathname.startsWith("/missing-person")
                         ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold"
                         : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
@@ -532,7 +537,8 @@ export default function Navbar() {
 
                   <Link
                     href="/reports/create"
-                    className="flex items-center gap-3 px-3 py-2 rounded-lg font-semibold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30 transition"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-3 px-3 py-2.5 min-h-[40px] rounded-lg font-semibold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30 transition"
                   >
                     <span>➕</span>
                     <span>{lang === "bn" ? "ঘটনা রিপোর্ট করুন" : "Report an Incident"}</span>
@@ -540,7 +546,8 @@ export default function Navbar() {
 
                   <Link
                     href="/missing-person/create"
-                    className="flex items-center gap-3 px-3 py-2 rounded-lg font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-3 px-3 py-2.5 min-h-[40px] rounded-lg font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
                   >
                     <span>📢</span>
                     <span>{lang === "bn" ? "নিখোঁজ ব্যক্তির তথ্য দিন" : "Submit Missing Alert"}</span>
@@ -554,7 +561,8 @@ export default function Navbar() {
                   </p>
                   <Link
                     href="/transparency"
-                    className={`flex items-center gap-3 px-3 py-2 rounded-lg font-semibold transition ${
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2.5 min-h-[40px] rounded-lg font-semibold transition ${
                       pathname === "/transparency"
                         ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold"
                         : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
@@ -573,7 +581,8 @@ export default function Navbar() {
                     </p>
                     <Link
                       href="/admin"
-                      className="flex items-center gap-3 px-3 py-2 rounded-lg font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 hover:bg-amber-100 transition"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-3 px-3 py-2.5 min-h-[40px] rounded-lg font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 hover:bg-amber-100 transition"
                     >
                       <span>🛡️</span>
                       <span>Admin Management Console</span>
@@ -604,14 +613,18 @@ export default function Navbar() {
                   <div className="grid grid-cols-2 gap-2 pt-1">
                     <Link
                       href="/dashboard"
-                      className="text-center py-1.5 px-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 font-semibold text-zinc-700 dark:text-zinc-300"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center justify-center min-h-[40px] py-2 px-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition"
                     >
                       Dashboard
                     </Link>
                     <button
                       type="button"
-                      onClick={logout}
-                      className="py-1.5 px-2 rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-950/30 font-semibold text-red-600 dark:text-red-400"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        logout();
+                      }}
+                      className="flex items-center justify-center min-h-[40px] py-2 px-2 rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-950/30 font-semibold text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 transition"
                     >
                       Sign Out
                     </button>
@@ -621,13 +634,15 @@ export default function Navbar() {
                 <div className="grid grid-cols-2 gap-2">
                   <Link
                     href="/login"
-                    className="text-center py-2 px-3 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 font-bold text-zinc-800 dark:text-zinc-200"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-center min-h-[42px] py-2.5 px-3 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 font-bold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition"
                   >
                     Sign In
                   </Link>
                   <Link
                     href="/register"
-                    className="text-center py-2 px-3 rounded-lg bg-emerald-700 text-white font-bold"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-center min-h-[42px] py-2.5 px-3 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold transition shadow-2xs"
                   >
                     Register
                   </Link>
@@ -639,7 +654,7 @@ export default function Navbar() {
                 <button
                   type="button"
                   onClick={toggleLanguage}
-                  className="px-2.5 py-1 text-xs font-bold rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900"
+                  className="px-3 py-1.5 min-h-[36px] text-xs font-bold rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition"
                 >
                   {lang === "en" ? "বাংলা করুন" : "English"}
                 </button>
@@ -656,7 +671,7 @@ export default function Navbar() {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-16 sm:pt-24"
+          className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-16 sm:pt-24 overflow-y-auto"
         >
           {/* Backdrop */}
           <div
@@ -665,7 +680,7 @@ export default function Navbar() {
           />
 
           {/* Search Card */}
-          <div className="relative w-full max-w-lg rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-2xl p-4 sm:p-5 z-10 animate-in fade-in zoom-in-95 duration-150 space-y-4">
+          <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-2xl p-4 sm:p-5 z-10 animate-in fade-in zoom-in-95 duration-150 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                 <span>🔍</span>
@@ -674,7 +689,7 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={() => setSearchModalOpen(false)}
-                className="p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 rounded-lg"
+                className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 rounded-lg"
               >
                 ✕
               </button>
@@ -692,7 +707,7 @@ export default function Navbar() {
                       ? "ঘটনা, এলাকা বা সমস্যা লিখে খুঁজুন (যেমন: মিরপুর, বিদ্যুৎ বিভ্রাট)..."
                       : "Search by title, location or keyword (e.g., Mirpur, road hazard)..."
                   }
-                  className="w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/80 px-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-700"
+                  className="w-full min-h-[44px] rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/80 px-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-700"
                 />
               </div>
 
@@ -708,7 +723,7 @@ export default function Navbar() {
                       router.push(`/?q=${encodeURIComponent(tag)}`);
                       setSearchModalOpen(false);
                     }}
-                    className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 hover:text-emerald-700 text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 transition"
+                    className="px-2.5 py-1 min-h-[32px] rounded-md bg-zinc-100 dark:bg-zinc-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 hover:text-emerald-700 text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 transition"
                   >
                     {tag}
                   </button>
@@ -719,13 +734,13 @@ export default function Navbar() {
                 <button
                   type="button"
                   onClick={() => setSearchModalOpen(false)}
-                  className="px-3 py-1.5 text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition"
+                  className="px-4 py-2 min-h-[40px] text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 text-xs font-bold rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white shadow-2xs transition"
+                  className="px-5 py-2 min-h-[40px] text-xs font-bold rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white shadow-2xs transition"
                 >
                   {lang === "bn" ? "খুঁজুন" : "Search"}
                 </button>

@@ -359,7 +359,7 @@ export default function CreateReportPage() {
           <div className="flex items-center justify-end gap-3 pt-2">
             <button
               type="submit"
-              className="w-full sm:w-auto rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white px-6 py-2.5 text-xs font-bold shadow-md transition active:scale-98"
+              className="w-full sm:w-auto rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white px-6 py-2.5 text-xs font-bold shadow-md transition active:scale-98 min-h-[44px] flex items-center justify-center cursor-pointer"
             >
               Continue to Review →
             </button>
@@ -448,7 +448,7 @@ export default function CreateReportPage() {
               type="button"
               disabled={submitting}
               onClick={() => setIsReviewMode(false)}
-              className="w-full sm:w-auto rounded-xl border border-zinc-200 dark:border-zinc-700 px-5 py-2.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition"
+              className="w-full sm:w-auto rounded-xl border border-zinc-200 dark:border-zinc-700 px-5 py-2.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition min-h-[44px] flex items-center justify-center cursor-pointer"
             >
               ← Edit Details
             </button>
@@ -457,7 +457,7 @@ export default function CreateReportPage() {
               type="button"
               disabled={submitting}
               onClick={handleFinalSubmit}
-              className="w-full sm:w-auto rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white px-7 py-2.5 text-xs font-bold shadow-md shadow-emerald-800/20 disabled:opacity-50 transition active:scale-98"
+              className="w-full sm:w-auto rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white px-7 py-2.5 text-xs font-bold shadow-md shadow-emerald-800/20 disabled:opacity-50 transition active:scale-98 min-h-[44px] flex items-center justify-center cursor-pointer"
             >
               {submitting ? "Submitting..." : "Submit Incident Report ✓"}
             </button>

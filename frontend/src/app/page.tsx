@@ -394,7 +394,7 @@ export default function HomePage() {
                     ? "কীওয়ার্ড দিয়ে রিপোর্ট খুঁজুন (যেমন: আগুন, সড়ক, পানি)..."
                     : "Search incident keywords (e.g. fire, road, water)..."
                 }
-                className="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/80 px-3.5 py-2.5 text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-700"
+                className="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/80 px-3.5 py-2.5 text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-700 min-h-[44px]"
               />
             </div>
 
@@ -408,14 +408,14 @@ export default function HomePage() {
                     ? "জেলা বা এলাকা (যেমন: ঢাকা, মিরপুর)..."
                     : "District or Area (e.g. Dhaka, Mirpur)..."
                 }
-                className="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/80 px-3.5 py-2.5 text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-700"
+                className="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/80 px-3.5 py-2.5 text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-700 min-h-[44px]"
               />
             </div>
 
             <div className="sm:col-span-2">
               <button
                 type="submit"
-                className="w-full rounded-xl bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white py-2.5 text-xs font-bold transition shadow-xs"
+                className="w-full rounded-xl bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white py-2.5 text-xs font-bold transition shadow-xs min-h-[44px] flex items-center justify-center cursor-pointer"
               >
                 {lang === "bn" ? "অনুসন্ধান" : "Search"}
               </button>
@@ -562,13 +562,13 @@ export default function HomePage() {
               </p>
               <button
                 onClick={() => setPage(0)}
-                className="px-4 py-2 rounded-xl bg-red-600 text-white text-xs font-bold hover:bg-red-500 transition"
+                className="px-4 py-2 rounded-xl bg-red-600 text-white text-xs font-bold hover:bg-red-500 transition min-h-[40px] inline-flex items-center justify-center cursor-pointer"
               >
                 {lang === "bn" ? "পুনরায় চেষ্টা করুন" : "Retry Loading Feed"}
               </button>
             </div>
           ) : !data || data.items.length === 0 ? (
-            <div className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-12 text-center space-y-3">
+            <div className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-8 sm:p-12 text-center space-y-3">
               <div className="text-4xl">📋</div>
               <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
                 {lang === "bn" ? "কোনো রিপোর্ট পাওয়া যায়নি" : "No Verified Reports Found"}
@@ -578,17 +578,17 @@ export default function HomePage() {
                   ? "আপনার অনুসন্ধান বা ফিল্টারের সাথে সামঞ্জস্যপূর্ণ কোনো রিপোর্ট নেই।"
                   : "There are currently no approved community reports matching your search or filter criteria."}
               </p>
-              <div className="flex items-center justify-center gap-2 pt-1">
+              <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
                 <button
                   type="button"
                   onClick={clearAllFilters}
-                  className="rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2 text-xs font-bold hover:bg-zinc-50 transition"
+                  className="rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2 text-xs font-bold hover:bg-zinc-50 transition min-h-[40px] flex items-center justify-center cursor-pointer"
                 >
                   Clear Filters
                 </button>
                 <Link
                   href="/reports/create"
-                  className="rounded-xl bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-emerald-600 transition"
+                  className="rounded-xl bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-emerald-600 transition min-h-[40px] flex items-center justify-center"
                 >
                   Submit Incident
                 </Link>
@@ -604,23 +604,23 @@ export default function HomePage() {
 
           {/* Pagination */}
           {data && totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 pt-4">
+            <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
               <button
                 type="button"
                 disabled={page === 0}
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
-                className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-semibold disabled:opacity-40 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition"
+                className="px-3.5 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-semibold disabled:opacity-40 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition min-h-[40px] flex items-center justify-center cursor-pointer disabled:cursor-not-allowed"
               >
                 ← Previous
               </button>
-              <span className="text-xs text-zinc-500 px-2 font-medium">
+              <span className="text-xs text-zinc-500 px-2 font-medium whitespace-nowrap">
                 Page {page + 1} of {totalPages}
               </span>
               <button
                 type="button"
                 disabled={page >= totalPages - 1}
                 onClick={() => setPage((p) => p + 1)}
-                className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-semibold disabled:opacity-40 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition"
+                className="px-3.5 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-semibold disabled:opacity-40 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition min-h-[40px] flex items-center justify-center cursor-pointer disabled:cursor-not-allowed"
               >
                 Next →
               </button>
@@ -778,7 +778,7 @@ export default function HomePage() {
               <div className="pt-2">
                 <Link
                   href="/missing-person/create"
-                  className="inline-block px-3.5 py-2 rounded-xl bg-amber-600 text-white text-xs font-bold hover:bg-amber-500 transition"
+                  className="px-3.5 py-2 rounded-xl bg-amber-600 text-white text-xs font-bold hover:bg-amber-500 transition min-h-[40px] inline-flex items-center justify-center cursor-pointer"
                 >
                   {lang === "bn" ? "নিখোঁজ ব্যক্তির তথ্য দিন" : "Submit Missing Alert"}
                 </Link>
@@ -837,7 +837,7 @@ export default function HomePage() {
         {/* =================================================================== */}
         {/* 6. HOW CITIZEN REPORTS ARE VERIFIED (Pipeline)                      */}
         {/* =================================================================== */}
-        <section className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-8 sm:p-10 shadow-2xs space-y-6">
+        <section className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 sm:p-10 shadow-2xs space-y-6">
           <div className="text-center max-w-xl mx-auto space-y-1">
             <h2 className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">
               {lang === "bn" ? "কীভাবে নাগরিক রিপোর্ট যাচাই করা হয়" : "How Citizen Reports Are Verified"}
@@ -859,31 +859,31 @@ export default function HomePage() {
               </h3>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
                 {lang === "bn"
-                  ? "নাগরিকরা যাচাইযোগ্য ছবি বা তথ্য দিয়ে রিপোর্ট করেন। বেনামী রিপোর্টিংয়ের মাধ্যমে পরিচয় নিরাপদ থাকে।"
-                  : "Citizens submit reports with verifiable photographic or document evidence. Anonymous reporting protects reporter identity."}
+                  ? "নাগরিকরা ছবি, ভিডিও বা নথি সহযোগে ঘটনার স্থান ও সময়ের সুনির্দিষ্ট বিবরণ দেন।"
+                  : "Citizens submit factual incident details accompanied by photos, videos, or documents."}
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 p-5 space-y-2 border border-zinc-100 dark:border-zinc-800">
+              <div className="h-8 w-8 rounded-lg bg-amber-600 text-white flex items-center justify-center font-bold text-sm">
+                2
+              </div>
+              <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
+                {lang === "bn" ? "মডারেশন নিরীক্ষা" : "Moderation Review"}
+              </h3>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                {lang === "bn"
+                  ? "মডারেটর দল বিভ্রান্তিকর বা ক্ষতিকারক তথ্য প্রতিহত করতে প্রমাণ যাচাই করেন।"
+                  : "Authorized moderators audit the report for authenticity and community guideline compliance."}
               </p>
             </div>
 
             <div className="rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 p-5 space-y-2 border border-zinc-100 dark:border-zinc-800">
               <div className="h-8 w-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-sm">
-                2
-              </div>
-              <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
-                {lang === "bn" ? "মডারেটর নিরীক্ষা" : "Moderator Review"}
-              </h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                {lang === "bn"
-                  ? "অনুমোদিত মডারেটররা প্রমাণের সত্যতা ও স্থানাঙ্ক নিরীক্ষা করে ভূয়া তথ্য প্রতিহত করেন।"
-                  : "Authorized moderators review media authenticity, verify location data, and inspect reports against hoax and duplicate signals."}
-              </p>
-            </div>
-
-            <div className="rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 p-5 space-y-2 border border-zinc-100 dark:border-zinc-800">
-              <div className="h-8 w-8 rounded-lg bg-purple-600 text-white flex items-center justify-center font-bold text-sm">
                 3
               </div>
               <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">
-                {lang === "bn" ? "জনসুরক্ষা ও পদক্ষেপ" : "Public Action & Safety"}
+                {lang === "bn" ? "সুরক্ষিত প্রকাশ" : "Safe Publication"}
               </h3>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
                 {lang === "bn"
@@ -897,7 +897,7 @@ export default function HomePage() {
         {/* =================================================================== */}
         {/* 7. EMERGENCY 999 SECTION                                           */}
         {/* =================================================================== */}
-        <section className="rounded-3xl border border-red-200 dark:border-red-950/80 bg-red-50/60 dark:bg-red-950/20 p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-2xs">
+        <section className="rounded-3xl border border-red-200 dark:border-red-950/80 bg-red-50/60 dark:bg-red-950/20 p-5 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-2xs">
           <div className="flex items-center gap-4 text-center sm:text-left">
             <div className="h-12 w-12 rounded-2xl bg-red-600 text-white flex items-center justify-center text-2xl shrink-0 shadow-2xs mx-auto sm:mx-0">
               🚨
@@ -917,14 +917,14 @@ export default function HomePage() {
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto shrink-0">
             <a
               href="tel:999"
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-xs font-bold shadow-2xs transition w-full sm:w-auto"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-xs font-bold shadow-2xs transition w-full sm:w-auto min-h-[44px]"
             >
               <span>📞</span>
               <span>{lang === "bn" ? "কল ৯৯৯" : "Call 999"}</span>
             </a>
             <Link
               href="/safety"
-              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-red-300 dark:border-red-900 bg-white dark:bg-zinc-900 text-red-700 dark:text-red-300 text-xs font-bold hover:bg-red-50 dark:hover:bg-red-950/40 transition w-full sm:w-auto"
+              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-red-300 dark:border-red-900 bg-white dark:bg-zinc-900 text-red-700 dark:text-red-300 text-xs font-bold hover:bg-red-50 dark:hover:bg-red-950/40 transition w-full sm:w-auto min-h-[44px]"
             >
               <span>{lang === "bn" ? "কাছাকাছি সেবা খুঁজুন" : "Find Units Near Me"}</span>
               <span>→</span>

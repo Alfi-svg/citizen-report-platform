@@ -161,7 +161,7 @@ export default function NotificationsPage() {
         <button
           type="button"
           onClick={handleMarkAllAsRead}
-          className="rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 shadow-sm transition"
+          className="w-full sm:w-auto rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 shadow-sm transition min-h-[40px] flex items-center justify-center cursor-pointer shrink-0"
         >
           ✓ Mark All as Read / সব পড়া হয়েছে
         </button>
@@ -222,7 +222,7 @@ export default function NotificationsPage() {
             return (
               <div
                 key={n.id}
-                className={`rounded-2xl border p-5 shadow-sm transition space-y-3 text-xs ${
+                className={`rounded-2xl border p-3.5 sm:p-5 shadow-sm transition space-y-3 text-xs ${
                   isUnread
                     ? "border-emerald-200 bg-emerald-50/30 dark:border-emerald-900/60 dark:bg-emerald-950/20"
                     : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
@@ -253,7 +253,7 @@ export default function NotificationsPage() {
                       <button
                         type="button"
                         onClick={() => handleMarkAsRead(n.id)}
-                        className="rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 text-[10px] font-bold hover:bg-emerald-200 transition"
+                        className="rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 px-2.5 py-1 text-[10px] font-bold hover:bg-emerald-200 transition min-h-[30px] flex items-center justify-center cursor-pointer"
                       >
                         Mark Read
                       </button>

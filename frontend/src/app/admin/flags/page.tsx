@@ -332,8 +332,8 @@ export default function AdminFlagsPage() {
 
       {/* Review Modal */}
       {selectedFlag && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-zinc-900 p-6 shadow-xl border border-zinc-200 dark:border-zinc-800 space-y-4 text-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
+          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-zinc-900 p-5 sm:p-6 shadow-xl border border-zinc-200 dark:border-zinc-800 space-y-4 text-xs max-h-[90vh] overflow-y-auto">
             <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
               Review Safety Flag ({selectedFlag.target_type})
             </h3>
@@ -367,18 +367,18 @@ export default function AdminFlagsPage() {
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-2">
+              <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5 pt-2">
                 <button
                   type="button"
                   onClick={() => setSelectedFlag(null)}
-                  className="rounded-xl border border-zinc-300 dark:border-zinc-700 px-3.5 py-2 font-semibold text-zinc-700 dark:text-zinc-300"
+                  className="w-full sm:w-auto rounded-xl border border-zinc-300 dark:border-zinc-700 px-3.5 py-2 font-semibold text-zinc-700 dark:text-zinc-300 min-h-[40px] flex items-center justify-center cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={modalLoading}
-                  className="rounded-xl bg-amber-600 px-4 py-2 font-semibold text-white hover:bg-amber-500 transition"
+                  className="w-full sm:w-auto rounded-xl bg-amber-600 px-4 py-2 font-semibold text-white hover:bg-amber-500 transition min-h-[40px] flex items-center justify-center cursor-pointer disabled:opacity-50"
                 >
                   {modalLoading ? "Saving..." : "Save Review Decision"}
                 </button>

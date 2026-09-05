@@ -581,8 +581,8 @@ export default function AdminReportDetailPage() {
 
       {/* Action Dialog Modal */}
       {activeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white dark:bg-zinc-900 p-6 shadow-xl border border-zinc-200 dark:border-zinc-800">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="w-full max-w-lg rounded-2xl bg-white dark:bg-zinc-900 p-5 sm:p-6 shadow-xl border border-zinc-200 dark:border-zinc-800 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mb-2">
               {activeModal === "APPROVE" && "Approve & Verify Incident Report"}
               {activeModal === "REJECT" && "Reject Incident Report"}
@@ -625,12 +625,12 @@ export default function AdminReportDetailPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+            <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5 mt-6 pt-4 border-t border-zinc-200 dark:border-zinc-800">
               <button
                 type="button"
                 onClick={() => setActiveModal(null)}
                 disabled={processing}
-                className="rounded-lg border border-zinc-300 dark:border-zinc-700 px-4 py-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50"
+                className="w-full sm:w-auto rounded-xl border border-zinc-300 dark:border-zinc-700 px-4 py-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 min-h-[40px] flex items-center justify-center cursor-pointer"
               >
                 Cancel
               </button>
@@ -638,7 +638,7 @@ export default function AdminReportDetailPage() {
                 type="button"
                 onClick={handleExecuteModalAction}
                 disabled={processing || (activeModal === "REQUEST_INFO" && !userMessage.trim())}
-                className="rounded-lg bg-amber-600 px-5 py-2 text-xs font-semibold text-white hover:bg-amber-500 transition disabled:opacity-50"
+                className="w-full sm:w-auto rounded-xl bg-amber-600 px-5 py-2 text-xs font-semibold text-white hover:bg-amber-500 transition disabled:opacity-50 min-h-[40px] flex items-center justify-center cursor-pointer"
               >
                 {processing ? "Processing..." : "Confirm Moderation Decision"}
               </button>

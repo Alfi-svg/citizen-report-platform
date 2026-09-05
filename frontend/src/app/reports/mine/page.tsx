@@ -113,10 +113,10 @@ export default function MyReportsPage() {
             Track the status of your draft submissions and verified citizen reports.
           </p>
         </div>
-        <div>
+        <div className="w-full sm:w-auto">
           <Link
             href="/reports/create"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-500 transition"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-500 transition min-h-[40px]"
           >
             + Create New Report
           </Link>
@@ -130,14 +130,14 @@ export default function MyReportsPage() {
       )}
 
       {/* Filter Tabs */}
-      <div className="mb-6 flex flex-wrap gap-2">
+      <div className="mb-6 flex flex-wrap gap-1.5 sm:gap-2">
         {["ALL", "DRAFT", "SUBMITTED", "UNDER_REVIEW", "APPROVED", "NEEDS_MORE_INFORMATION"].map((f) => (
           <button
             key={f}
             onClick={() => setActiveFilter(f)}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+            className={`rounded-xl px-3 py-2 text-xs font-medium transition min-h-[38px] flex items-center justify-center cursor-pointer ${
               activeFilter === f
-                ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-bold"
                 : "bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50"
             }`}
           >
@@ -179,7 +179,7 @@ export default function MyReportsPage() {
             return (
               <div
                 key={report.id}
-                className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 p-5 shadow-sm hover:border-zinc-300 dark:hover:border-zinc-700 transition"
+                className="rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 p-4 sm:p-5 shadow-sm hover:border-zinc-300 dark:hover:border-zinc-700 transition"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
                   <div className="flex flex-wrap items-center gap-2">

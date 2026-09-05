@@ -148,8 +148,8 @@ export default function FlagModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="w-full max-w-lg rounded-3xl bg-white dark:bg-zinc-900 p-6 sm:p-8 shadow-2xl border border-zinc-200 dark:border-zinc-800 space-y-5 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+      <div className="w-full max-w-lg rounded-3xl bg-white dark:bg-zinc-900 p-4 sm:p-8 shadow-2xl border border-zinc-200 dark:border-zinc-800 space-y-5 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
           <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
             <span>🚩</span>
@@ -272,19 +272,19 @@ export default function FlagModal({
               </p>
             )}
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+            <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5 pt-3 border-t border-zinc-100 dark:border-zinc-800">
               <button
                 type="button"
                 onClick={handleClose}
                 disabled={submitting}
-                className="rounded-xl border border-zinc-300 dark:border-zinc-700 px-4 py-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50"
+                className="w-full sm:w-auto rounded-xl border border-zinc-300 dark:border-zinc-700 px-4 py-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 min-h-[40px] flex items-center justify-center cursor-pointer"
               >
                 Cancel / বাতিল
               </button>
               <button
                 type="submit"
                 disabled={submitting}
-                className="rounded-xl bg-red-600 px-5 py-2 text-xs font-bold text-white hover:bg-red-500 transition shadow-sm disabled:opacity-50"
+                className="w-full sm:w-auto rounded-xl bg-red-600 px-5 py-2 text-xs font-bold text-white hover:bg-red-500 transition shadow-sm disabled:opacity-50 min-h-[40px] flex items-center justify-center cursor-pointer"
               >
                 {submitting ? "Submitting Flag..." : "Submit Flag / ফ্ল্যাগ জমা দিন"}
               </button>

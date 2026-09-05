@@ -172,7 +172,7 @@ export default function CommentsSection({ reportId }: CommentsSectionProps) {
             <button
               type="submit"
               disabled={submitting || !body.trim()}
-              className="rounded-xl bg-emerald-700 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-800 transition disabled:opacity-40 shadow-2xs cursor-pointer"
+              className="rounded-xl bg-emerald-700 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-800 transition disabled:opacity-40 shadow-2xs min-h-[40px] flex items-center justify-center cursor-pointer"
             >
               {submitting ? "Posting..." : "Post Comment"}
             </button>
@@ -183,16 +183,16 @@ export default function CommentsSection({ reportId }: CommentsSectionProps) {
           <p className="text-xs text-zinc-600 dark:text-zinc-400 max-w-md mx-auto">
             Sign in to participate in the verified civic discussion, provide on-the-ground updates, or confirm incident details.
           </p>
-          <div className="flex items-center justify-center gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-3">
             <Link
               href={`/login?redirect=/reports/${reportId}#comments`}
-              className="rounded-xl bg-emerald-700 hover:bg-emerald-800 px-4 py-2 text-xs font-bold text-white shadow-2xs transition"
+              className="rounded-xl bg-emerald-700 hover:bg-emerald-800 px-4 py-2 text-xs font-bold text-white shadow-2xs transition min-h-[40px] flex items-center justify-center"
             >
               Sign In to Comment
             </Link>
             <Link
               href="/register"
-              className="rounded-xl border border-zinc-300 dark:border-zinc-700 px-4 py-2 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+              className="rounded-xl border border-zinc-300 dark:border-zinc-700 px-4 py-2 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition min-h-[40px] flex items-center justify-center"
             >
               Register
             </Link>

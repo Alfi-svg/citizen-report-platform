@@ -153,7 +153,7 @@ function PublicReportsContent() {
 
           <Link
             href="/reports/create"
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-800 text-white text-xs font-bold shadow-sm transition self-start sm:self-auto shrink-0"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-800 text-white text-xs font-bold shadow-sm transition shrink-0 min-h-[42px]"
           >
             <span>+</span>
             <span>{lang === "bn" ? "নতুন রিপোর্ট জমা দিন" : "Submit a Report"}</span>
@@ -177,7 +177,7 @@ function PublicReportsContent() {
                   ? "রিপোর্ট, স্থান বা ঘটনার কীওয়ার্ড লিখুন..."
                   : "Search reports, places, incidents..."
               }
-              className="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/80 px-3.5 py-2.5 text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-700"
+              className="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/80 px-3.5 py-2.5 text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-700 min-h-[44px]"
             />
           </div>
 
@@ -191,14 +191,14 @@ function PublicReportsContent() {
                   ? "জেলা বা এলাকা (যেমন: ঢাকা, সিলেট, মিরপুর)..."
                   : "District or Area (e.g. Dhaka, Sylhet, Mirpur)..."
               }
-              className="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/80 px-3.5 py-2.5 text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-700"
+              className="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/80 px-3.5 py-2.5 text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-700 min-h-[44px]"
             />
           </div>
 
           <div className="sm:col-span-2 flex gap-2">
             <button
               type="submit"
-              className="w-full rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white py-2.5 text-xs font-bold transition shadow-2xs"
+              className="w-full rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white py-2.5 text-xs font-bold transition shadow-2xs min-h-[44px] flex items-center justify-center cursor-pointer"
             >
               {lang === "bn" ? "অনুসন্ধান" : "Search"}
             </button>
@@ -207,13 +207,108 @@ function PublicReportsContent() {
             <button
               type="button"
               onClick={() => setMobileFilterOpen(!mobileFilterOpen)}
-              className="sm:hidden px-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-xs font-bold"
+              className="sm:hidden px-3.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-xs font-bold min-h-[44px] flex items-center justify-center cursor-pointer shrink-0"
               title="Filters"
             >
               ⚙️ {activeFilterCount > 0 && `(${activeFilterCount})`}
             </button>
           </div>
         </form>
+
+        {/* Collapsible Mobile Filter Panel */}
+        {mobileFilterOpen && (
+          <div className="sm:hidden rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 space-y-3 animate-in fade-in duration-150">
+            <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-2">
+              <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                {lang === "bn" ? "ক্যাটাগরি ও সর্টিং ফিল্টার" : "Category & Sort Filters"}
+              </span>
+              <button
+                type="button"
+                onClick={() => setMobileFilterOpen(false)}
+                className="text-xs text-zinc-400 hover:text-zinc-600 font-bold p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <span className="text-[11px] font-semibold text-zinc-500 block">
+                {lang === "bn" ? "সর্ট অর্ডার" : "Sort Order"}
+              </span>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSortOrder("latest");
+                    setPage(0);
+                  }}
+                  className={`py-2 text-xs font-bold rounded-xl border transition ${
+                    sortOrder === "latest"
+                      ? "bg-emerald-700 text-white border-emerald-700"
+                      : "bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700"
+                  }`}
+                >
+                  {lang === "bn" ? "সর্বশেষ" : "Latest"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSortOrder("trending");
+                    setPage(0);
+                  }}
+                  className={`py-2 text-xs font-bold rounded-xl border transition ${
+                    sortOrder === "trending"
+                      ? "bg-emerald-700 text-white border-emerald-700"
+                      : "bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700"
+                  }`}
+                >
+                  {lang === "bn" ? "জনপ্রিয়" : "Trending"}
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+              <span className="text-[11px] font-semibold text-zinc-500 block">
+                {lang === "bn" ? "ক্যাটাগরি সমূহ" : "Categories"}
+              </span>
+              <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCategory("");
+                    setPage(0);
+                    setMobileFilterOpen(false);
+                  }}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition ${
+                    selectedCategory === ""
+                      ? "bg-emerald-700 text-white font-bold"
+                      : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
+                  }`}
+                >
+                  {lang === "bn" ? "সকল ক্যাটাগরি" : "All Incidents"}
+                </button>
+                {categories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedCategory(cat.id);
+                      setPage(0);
+                      setMobileFilterOpen(false);
+                    }}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold transition ${
+                      selectedCategory === cat.id
+                        ? "bg-emerald-700 text-white font-bold"
+                        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
+                    }`}
+                  >
+                    {cat.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Desktop Filter Row: Sort Switcher + Categories Bar */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -429,8 +524,8 @@ function PublicReportsContent() {
 
       {/* 5. Pagination */}
       {data && totalPages > 1 && (
-        <div className="flex items-center justify-between border-t border-zinc-200 dark:border-zinc-800 pt-6">
-          <p className="text-xs text-zinc-500">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-zinc-200 dark:border-zinc-800 pt-6">
+          <p className="text-xs text-zinc-500 text-center sm:text-left">
             Showing <span className="font-semibold">{data.items.length}</span> of{" "}
             <span className="font-semibold">{data.total}</span> reports
           </p>
@@ -440,18 +535,18 @@ function PublicReportsContent() {
               type="button"
               disabled={page === 0}
               onClick={() => setPage((p) => Math.max(0, p - 1))}
-              className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-semibold disabled:opacity-40 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition"
+              className="px-3.5 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-semibold disabled:opacity-40 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition min-h-[40px] flex items-center justify-center cursor-pointer disabled:cursor-not-allowed"
             >
               ← Previous
             </button>
-            <span className="text-xs text-zinc-500 px-2 font-medium">
+            <span className="text-xs text-zinc-500 px-2 font-medium whitespace-nowrap">
               Page {page + 1} of {totalPages}
             </span>
             <button
               type="button"
               disabled={page >= totalPages - 1}
               onClick={() => setPage((p) => p + 1)}
-              className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-semibold disabled:opacity-40 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition"
+              className="px-3.5 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-semibold disabled:opacity-40 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition min-h-[40px] flex items-center justify-center cursor-pointer disabled:cursor-not-allowed"
             >
               Next →
             </button>
