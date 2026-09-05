@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { apiFetch, getApiBaseUrl } from "@/lib/api";
 import { MissingPersonSubmissionResponse } from "@/lib/types";
+import { captureCurrentLocation } from "@/lib/location";
 
 export default function CreateMissingPersonPage() {
   const { isAuthenticated, isLoading, isAdmin } = useAuth();
@@ -36,29 +37,31 @@ export default function CreateMissingPersonPage() {
   const [error, setError] = useState<string | null>(null);
   const [successResponse, setSuccessResponse] = useState<MissingPersonSubmissionResponse | null>(null);
 
-  const handleDetectLocation = () => {
-    if (typeof window === "undefined" || !navigator.geolocation) {
-      setError("Geolocation is not supported by your device/browser.");
+  const handleDetectLocation = async () => {
+    setDetectingLocation(true);
+    setError(null);
+    const { coordinates, error: locError } = await captureCurrentLocation({
+      timeoutMs: 10000,
+      enableHighAccuracy: true,
+    });
+    setDetectingLocation(false);
+
+    if (locError || !coordinates) {
+      setError(
+        locError?.message ||
+          "Could not retrieve GPS location. You can still type the location name manually."
+      );
       return;
     }
-    setDetectingLocation(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const lat = parseFloat(pos.coords.latitude.toFixed(6));
-        const lng = parseFloat(pos.coords.longitude.toFixed(6));
-        setLatitude(lat);
-        setLongitude(lng);
-        if (!lastSeenLocation.trim()) {
-          setLastSeenLocation(`GPS Location (${lat}, ${lng})`);
-        }
-        setDetectingLocation(false);
-      },
-      (err) => {
-        setError(`Could not retrieve GPS: ${err.message}. You can still type the location name.`);
-        setDetectingLocation(false);
-      },
-      { timeout: 10000, enableHighAccuracy: true }
-    );
+
+    setLatitude(coordinates.latitude);
+    setLongitude(coordinates.longitude);
+    if (!lastSeenLocation.trim()) {
+      setLastSeenLocation(
+        coordinates.suggestedAreaName ||
+          `Near ~${coordinates.approximateLatitude.toFixed(3)}, ~${coordinates.approximateLongitude.toFixed(3)}`
+      );
+    }
   };
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {

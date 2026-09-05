@@ -7,6 +7,7 @@ import { apiFetch } from "@/lib/api";
 import { PublicMissingPersonAlertResponse, PublicMissingPersonSightingResponse } from "@/lib/types";
 import { translations, Language } from "@/lib/i18n";
 import { useBackClose } from "@/lib/useBackClose";
+import { captureCurrentLocation } from "@/lib/location";
 
 export default function MissingPersonDetailPage() {
   const router = useRouter();
@@ -65,28 +66,28 @@ export default function MissingPersonDetailPage() {
     loadAlert();
   }, [alertId]);
 
-  // One-time browser geolocation handler (zero continuous tracking)
-  const handleGetOneTimeLocation = () => {
-    if (typeof window !== "undefined" && !navigator.geolocation) {
-      window.alert("Geolocation is not supported by your browser.");
+  // One-time privacy-aware location handler (zero continuous tracking)
+  const handleGetOneTimeLocation = async () => {
+    setIsLocating(true);
+    const { coordinates, error: locError } = await captureCurrentLocation({
+      timeoutMs: 10000,
+      enableHighAccuracy: true,
+    });
+    setIsLocating(false);
+
+    if (locError || !coordinates) {
+      console.warn("Location error:", locError?.message);
       return;
     }
-    setIsLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setSightingLat(pos.coords.latitude);
-        setSightingLng(pos.coords.longitude);
-        if (!sightingLocation) {
-          setSightingLocation(`GPS Coordinates (~${pos.coords.latitude.toFixed(3)}, ~${pos.coords.longitude.toFixed(3)})`);
-        }
-        setIsLocating(false);
-      },
-      (err) => {
-        console.warn("Location error:", err.message);
-        setIsLocating(false);
-      },
-      { timeout: 10000, enableHighAccuracy: false }
-    );
+
+    setSightingLat(coordinates.latitude);
+    setSightingLng(coordinates.longitude);
+    if (!sightingLocation) {
+      setSightingLocation(
+        coordinates.suggestedAreaName ||
+          `GPS Coordinates (~${coordinates.approximateLatitude.toFixed(3)}, ~${coordinates.approximateLongitude.toFixed(3)})`
+      );
+    }
   };
 
   const handleSightingSubmit = async (e: React.FormEvent) => {

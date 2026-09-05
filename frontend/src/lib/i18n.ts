@@ -97,6 +97,9 @@ export const translations = {
     list_view_toggle: "Switch to List View",
     map_view_toggle: "Switch to Map View",
     locate_me: "Locate Me",
+    tap_to_adjust_location: "Tap map to adjust pin location",
+    map_preview_label: "Report Location Preview",
+    location_privacy_tip: "Approximate location (~110m privacy protection)",
 
     // Transparency & Crime Analysis Dashboard
     transparency_title: "Transparency & Crime Analysis",
@@ -293,6 +296,9 @@ export const translations = {
     list_view_toggle: "তালিকা ভিউতে যান",
     map_view_toggle: "ম্যাপ ভিউতে যান",
     locate_me: "আমার অবস্থান",
+    tap_to_adjust_location: "পিন সরাতে মানচিত্রে ট্যাপ করুন",
+    map_preview_label: "ঘটনার অবস্থান প্রিভিউ",
+    location_privacy_tip: "আনুমানিক অবস্থান (~১১০ মিটার গোপনীয়তা সুরক্ষা)",
 
     // Transparency & Crime Analysis Dashboard
     transparency_title: "স্বচ্ছতা ও অপরাধ বিশ্লেষণ",

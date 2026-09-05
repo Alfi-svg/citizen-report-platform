@@ -11,6 +11,7 @@ import EvidenceUploader from "@/components/EvidenceUploader";
 import ReactionControls from "@/components/ReactionControls";
 import CommentsSection from "@/components/CommentsSection";
 import FlagModal from "@/components/FlagModal";
+import ReportLocationMap from "@/components/ReportLocationMap";
 
 const STATUS_BADGES: Record<
   ReportStatus,
@@ -432,10 +433,27 @@ export default function ReportDetailPage() {
             </div>
           </div>
 
+          {/* Map Preview & Interactive Safety Map Link */}
+          {displayReport.latitude !== null && displayReport.longitude !== null && (
+            <div className="space-y-2 pt-1">
+              <ReportLocationMap
+                latitude={displayReport.latitude}
+                longitude={displayReport.longitude}
+                interactive={false}
+                height="160px"
+                caption="Incident Location (~110m privacy buffer)"
+              />
+            </div>
+          )}
+
           {/* Map Link Action */}
           <div className="flex items-center justify-between text-xs pt-1">
             <Link
-              href="/safety-map"
+              href={
+                displayReport.latitude !== null && displayReport.longitude !== null
+                  ? `/safety-map?lat=${displayReport.latitude}&lng=${displayReport.longitude}&report_id=${displayReport.id}`
+                  : "/safety-map"
+              }
               className="text-emerald-700 dark:text-emerald-400 font-bold hover:underline inline-flex items-center gap-1"
             >
               <span>🗺️</span>

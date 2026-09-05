@@ -7,7 +7,8 @@ import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
 import { Category, Report } from "@/lib/types";
 import EvidenceUploader, { SelectedFileItem } from "@/components/EvidenceUploader";
-import { captureCurrentLocation } from "@/lib/location";
+import { captureCurrentLocation, approximateCoordinates, suggestNearestArea } from "@/lib/location";
+import ReportLocationMap from "@/components/ReportLocationMap";
 
 export default function CreateReportPage() {
   const router = useRouter();
@@ -111,6 +112,44 @@ export default function CreateReportPage() {
       locationAccuracy: null,
     }));
     setLocationNotice(null);
+  };
+
+  const handlePickOnMap = () => {
+    if (formData.latitude === null || formData.longitude === null) {
+      // Default to Dhaka center (~23.810, 90.412)
+      const defaultLat = 23.81;
+      const defaultLng = 90.412;
+      const suggested = suggestNearestArea(defaultLat, defaultLng);
+      setFormData((prev) => ({
+        ...prev,
+        latitude: defaultLat,
+        longitude: defaultLng,
+        locationText: prev.locationText.trim()
+          ? prev.locationText
+          : (suggested || "Dhaka, Bangladesh"),
+      }));
+      setLocationNotice({
+        type: "info",
+        message: "Map pin placed. Drag the pin or tap anywhere on the map to adjust location.",
+      });
+    }
+  };
+
+  const handleMapLocationChange = (newLat: number, newLng: number) => {
+    const approx = approximateCoordinates(newLat, newLng);
+    const suggested = suggestNearestArea(approx.lat, approx.lng);
+    setFormData((prev) => ({
+      ...prev,
+      latitude: approx.lat,
+      longitude: approx.lng,
+      locationText: prev.locationText.trim()
+        ? prev.locationText
+        : (suggested || `Near ${approx.lat.toFixed(3)}, ${approx.lng.toFixed(3)}`),
+    }));
+    setLocationNotice({
+      type: "info",
+      message: `Pin updated to ~${approx.lat.toFixed(3)}, ${approx.lng.toFixed(3)} (~110m privacy buffer applied).`,
+    });
   };
 
   const handleChange = (
@@ -357,22 +396,33 @@ export default function CreateReportPage() {
                 <label className="block text-xs font-bold text-zinc-900 dark:text-zinc-100">
                   Location / Landmark <span className="text-red-500">*</span>
                 </label>
-                <button
-                  type="button"
-                  onClick={handleUseCurrentLocation}
-                  disabled={isLocating}
-                  className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 disabled:opacity-50 transition"
-                  title="Detect current device location"
-                >
-                  {isLocating ? (
-                    <>
-                      <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
-                      <span>Locating...</span>
-                    </>
-                  ) : (
-                    <span>📍 Use My Location</span>
-                  )}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handlePickOnMap}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition"
+                    title="Select pin location on map"
+                  >
+                    <span>🗺️ Pin on Map</span>
+                  </button>
+                  <span className="text-zinc-300 dark:text-zinc-600 text-xs">•</span>
+                  <button
+                    type="button"
+                    onClick={handleUseCurrentLocation}
+                    disabled={isLocating}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 disabled:opacity-50 transition"
+                    title="Detect current device location"
+                  >
+                    {isLocating ? (
+                      <>
+                        <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
+                        <span>Locating...</span>
+                      </>
+                    ) : (
+                      <span>📍 Use My Location</span>
+                    )}
+                  </button>
+                </div>
               </div>
 
               <input
@@ -387,25 +437,37 @@ export default function CreateReportPage() {
 
               {/* GPS Coordinates Badge */}
               {formData.latitude !== null && formData.longitude !== null && (
-                <div className="flex items-center justify-between gap-2 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 px-3 py-1.5 text-[11px]">
-                  <div className="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300">
-                    <span>🛡️</span>
-                    <span className="font-semibold">GPS:</span>
-                    <span>
-                      ~{formData.latitude.toFixed(3)}, {formData.longitude.toFixed(3)}
-                    </span>
-                    <span className="text-emerald-600 dark:text-emerald-400 text-[10px] bg-emerald-100 dark:bg-emerald-900/60 px-1.5 py-0.5 rounded font-medium">
-                      Fuzzed ~110m
-                    </span>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-2 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 px-3 py-1.5 text-[11px]">
+                    <div className="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300">
+                      <span>🛡️</span>
+                      <span className="font-semibold">GPS:</span>
+                      <span>
+                        ~{formData.latitude.toFixed(3)}, {formData.longitude.toFixed(3)}
+                      </span>
+                      <span className="text-emerald-600 dark:text-emerald-400 text-[10px] bg-emerald-100 dark:bg-emerald-900/60 px-1.5 py-0.5 rounded font-medium">
+                        Fuzzed ~110m
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleClearLocationCoordinates}
+                      className="text-zinc-500 hover:text-red-500 font-bold transition text-xs"
+                      title="Remove attached GPS coordinates"
+                    >
+                      ✕ Remove
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleClearLocationCoordinates}
-                    className="text-zinc-500 hover:text-red-500 font-bold transition text-xs"
-                    title="Remove attached GPS coordinates"
-                  >
-                    ✕ Remove
-                  </button>
+
+                  {/* Interactive Map Preview with Privacy Circle */}
+                  <ReportLocationMap
+                    latitude={formData.latitude}
+                    longitude={formData.longitude}
+                    interactive={true}
+                    height="180px"
+                    onLocationChange={handleMapLocationChange}
+                    caption="Tap map or drag pin to adjust location"
+                  />
                 </div>
               )}
 
@@ -513,9 +575,18 @@ export default function CreateReportPage() {
                 📍 {formData.locationText}
               </span>
               {formData.latitude !== null && formData.longitude !== null ? (
-                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 block mt-0.5">
-                  🛡️ GPS Attached: ~{formData.latitude.toFixed(3)}, {formData.longitude.toFixed(3)} (Fuzzed ~110m)
-                </span>
+                <div className="mt-1 space-y-1.5">
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 block">
+                    🛡️ GPS Attached: ~{formData.latitude.toFixed(3)}, {formData.longitude.toFixed(3)} (Fuzzed ~110m)
+                  </span>
+                  <ReportLocationMap
+                    latitude={formData.latitude}
+                    longitude={formData.longitude}
+                    interactive={false}
+                    height="120px"
+                    caption="Verified location (~110m privacy buffer)"
+                  />
+                </div>
               ) : (
                 <span className="text-[10px] text-zinc-400 block mt-0.5">
                   📝 Manual landmark only

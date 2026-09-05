@@ -183,7 +183,12 @@ export default function SafetyMapPage() {
         `;
 
         marker.bindPopup(popupContent);
-        marker.on("click", () => setSelectedPoint(cluster));
+        marker.on("click", () => {
+          setSelectedPoint(cluster);
+          if (mapInstanceRef.current) {
+            mapInstanceRef.current.panTo([cluster.approximate_latitude, cluster.approximate_longitude]);
+          }
+        });
         markersLayerRef.current.addLayer(marker);
       });
     }
@@ -199,11 +204,14 @@ export default function SafetyMapPage() {
         const isMissing = inc.is_missing_person;
         const color = isMissing ? "#dc2626" : inc.cluster_id ? "#f59e0b" : "#059669";
 
+        // Mobile-accessible touch target: 36x36px container with centered 16px dot
         const pointIcon = L.divIcon({
           className: "custom-point-icon",
-          html: `<div style="background: ${color}; width: 14px; height: 14px; border-radius: 50%; border: 2.5px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
-          iconSize: [14, 14],
-          iconAnchor: [7, 7],
+          html: `<div style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+            <div style="background: ${color}; width: 16px; height: 16px; border-radius: 50%; border: 2.5px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.35);"></div>
+          </div>`,
+          iconSize: [36, 36],
+          iconAnchor: [18, 18],
         });
 
         const marker = L.marker([inc.approximate_latitude, inc.approximate_longitude], {
@@ -240,7 +248,12 @@ export default function SafetyMapPage() {
         `;
 
         marker.bindPopup(popupContent);
-        marker.on("click", () => setSelectedPoint(inc));
+        marker.on("click", () => {
+          setSelectedPoint(inc);
+          if (mapInstanceRef.current) {
+            mapInstanceRef.current.panTo([inc.approximate_latitude, inc.approximate_longitude]);
+          }
+        });
         markersLayerRef.current.addLayer(marker);
       });
     }
@@ -249,6 +262,30 @@ export default function SafetyMapPage() {
   useEffect(() => {
     renderMarkers();
   }, [data, viewMode, lang]);
+
+  // Center on query parameters if present (e.g. from report details)
+  useEffect(() => {
+    if (typeof window === "undefined" || !data || !mapInstanceRef.current) return;
+    const params = new URLSearchParams(window.location.search);
+    const qLat = params.get("lat");
+    const qLng = params.get("lng");
+    const qReportId = params.get("report_id");
+
+    if (qLat && qLng) {
+      const lat = parseFloat(qLat);
+      const lng = parseFloat(qLng);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        mapInstanceRef.current.setView([lat, lng], 15);
+      }
+    }
+
+    if (qReportId) {
+      const matched = data.incidents.find((i) => i.id === qReportId);
+      if (matched) {
+        setSelectedPoint(matched);
+      }
+    }
+  }, [data]);
 
   // Handle Privacy-Aware "Locate Me"
   const handleLocateMe = async () => {
@@ -581,9 +618,9 @@ export default function SafetyMapPage() {
             </div>
           )}
 
-          {/* Selected Point Compact Floating Panel */}
+          {/* Selected Point Responsive Panel: Docked at bottom on mobile, top-right on desktop */}
           {selectedPoint && (
-            <div className="absolute top-4 left-4 sm:left-auto right-4 z-20 max-w-sm w-[calc(100%-2rem)] sm:w-80 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl p-4 border border-zinc-200 dark:border-zinc-800 shadow-xl space-y-2">
+            <div className="absolute bottom-16 sm:bottom-auto sm:top-4 left-3 right-3 sm:left-auto sm:right-4 z-30 sm:max-w-sm sm:w-80 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl p-4 border border-zinc-200 dark:border-zinc-800 shadow-2xl space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
                   {"report_count" in selectedPoint
@@ -596,8 +633,8 @@ export default function SafetyMapPage() {
                 </span>
                 <button
                   onClick={() => setSelectedPoint(null)}
-                  className="text-zinc-400 hover:text-zinc-600 text-xs font-bold p-1 cursor-pointer"
-                  aria-label="Close"
+                  className="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs font-bold min-h-[36px] min-w-[36px] flex items-center justify-center cursor-pointer rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                  aria-label="Close details"
                 >
                   ✕
                 </button>
@@ -612,16 +649,17 @@ export default function SafetyMapPage() {
               </p>
 
               {"id" in selectedPoint && (
-                <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
                   <Link
                     href={
                       "is_missing_person" in selectedPoint && selectedPoint.is_missing_person && selectedPoint.missing_person_alert_id
                         ? `/missing-person/${selectedPoint.missing_person_alert_id}`
                         : `/reports/${selectedPoint.id}`
                     }
-                    className="text-xs font-bold text-emerald-600 hover:underline"
+                    className="text-xs font-bold text-emerald-600 hover:underline inline-flex items-center gap-1"
                   >
-                    {t.view_incident_detail} →
+                    <span>{t.view_incident_detail}</span>
+                    <span>→</span>
                   </Link>
                 </div>
               )}

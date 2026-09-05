@@ -130,9 +130,13 @@ async def get_public_safety_map(
         mp_id = None
         mp_status = None
         if r.missing_person_alert:
-            is_mp = True
-            mp_id = r.missing_person_alert.id
-            mp_status = r.missing_person_alert.status.value
+            if r.missing_person_alert.status == AlertStatus.ALERT_ACTIVE:
+                is_mp = True
+                mp_id = r.missing_person_alert.id
+                mp_status = r.missing_person_alert.status.value
+
+        if not include_missing_persons and is_mp:
+            continue
 
         incident_points.append(
             PublicMapIncidentPoint(
