@@ -61,6 +61,17 @@ export default function AdminNav({ pendingReports, pendingFlags }: AdminNavProps
     { href: "/admin/categories", label: "Categories", bn: "ক্যাটাগরি", icon: "🏷️" },
   ];
 
+  const isLinkActive = (href: string) => {
+    if (href === "/admin") return pathname === "/admin";
+    if (href === "/admin/missing-person") {
+      return (
+        (pathname === "/admin/missing-person" || pathname.startsWith("/admin/missing-person/")) &&
+        !pathname.startsWith("/admin/missing-person/sightings")
+      );
+    }
+    return pathname === href || pathname.startsWith(href + "/");
+  };
+
   return (
     <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 sticky top-14 sm:top-16 z-40 shadow-2xs">
       {/* Top Admin Status Strip */}
@@ -101,11 +112,12 @@ export default function AdminNav({ pendingReports, pendingFlags }: AdminNavProps
           aria-label="Admin Navigation"
         >
           {links.map((link) => {
-            const isActive = pathname === link.href;
+            const isActive = isLinkActive(link.href);
             return (
               <Link
                 key={link.href}
                 href={link.href}
+                aria-current={isActive ? "page" : undefined}
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition whitespace-nowrap select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${
                   isActive
                     ? "bg-amber-100/80 text-amber-950 dark:bg-amber-950/80 dark:text-amber-200 font-bold"

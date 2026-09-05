@@ -6,6 +6,7 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import NotificationBell from "@/components/NotificationBell";
+import { useBackClose } from "@/lib/useBackClose";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -41,6 +42,11 @@ export default function Navbar() {
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Android back-button & popstate compatibility
+  useBackClose(mobileMenuOpen, () => setMobileMenuOpen(false), "navbarMobileMenu");
+  useBackClose(searchModalOpen, () => setSearchModalOpen(false), "navbarSearchModal");
+  useBackClose(profileOpen, () => setProfileOpen(false), "navbarProfileOpen");
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -96,6 +102,26 @@ export default function Navbar() {
     }
   };
 
+  const isItemActive = (href: string) => {
+    if (href === "/") return pathname === "/";
+    if (href === "/reports") {
+      return (
+        pathname === "/reports" ||
+        (pathname.startsWith("/reports/") &&
+          !pathname.startsWith("/reports/create") &&
+          !pathname.startsWith("/reports/mine"))
+      );
+    }
+    if (href === "/safety-map") return pathname.startsWith("/safety-map");
+    if (href === "/safety") {
+      return (
+        (pathname === "/safety" || pathname.startsWith("/safety/")) &&
+        !pathname.startsWith("/safety-map")
+      );
+    }
+    return pathname.startsWith(href);
+  };
+
   // Primary Citizen Navigation Links
   const navLinks = [
     { href: "/", label: "Home", bn: "হোম" },
@@ -143,7 +169,6 @@ export default function Navbar() {
             >
               <svg
                 className="h-5 w-5"
-                xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth={1.75}
@@ -191,15 +216,13 @@ export default function Navbar() {
             aria-label="Main Navigation"
           >
             {navLinks.map((item) => {
-              const isActive =
-                item.href === "/"
-                  ? pathname === "/"
-                  : pathname.startsWith(item.href);
+              const isActive = isItemActive(item.href);
 
               return (
                 <Link
                   key={item.label}
                   href={item.href}
+                  aria-current={isActive ? "page" : undefined}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors duration-150 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 ${
                     isActive
                       ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold"
@@ -467,8 +490,9 @@ export default function Navbar() {
                   <Link
                     href="/"
                     onClick={() => setMobileMenuOpen(false)}
+                    aria-current={isItemActive("/") ? "page" : undefined}
                     className={`flex items-center gap-3 px-3 py-2.5 min-h-[40px] rounded-lg font-semibold transition ${
-                      pathname === "/"
+                      isItemActive("/")
                         ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold"
                         : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                     }`}
@@ -480,8 +504,9 @@ export default function Navbar() {
                   <Link
                     href="/safety-map"
                     onClick={() => setMobileMenuOpen(false)}
+                    aria-current={isItemActive("/safety-map") ? "page" : undefined}
                     className={`flex items-center gap-3 px-3 py-2.5 min-h-[40px] rounded-lg font-semibold transition ${
-                      pathname === "/safety-map"
+                      isItemActive("/safety-map")
                         ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold"
                         : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                     }`}
@@ -493,8 +518,9 @@ export default function Navbar() {
                   <Link
                     href="/safety"
                     onClick={() => setMobileMenuOpen(false)}
+                    aria-current={isItemActive("/safety") ? "page" : undefined}
                     className={`flex items-center gap-3 px-3 py-2.5 min-h-[40px] rounded-lg font-bold transition text-emerald-700 dark:text-emerald-400 ${
-                      pathname === "/safety"
+                      isItemActive("/safety")
                         ? "bg-emerald-50 dark:bg-emerald-950/60"
                         : "hover:bg-zinc-100 dark:hover:bg-zinc-800"
                     }`}
@@ -512,8 +538,9 @@ export default function Navbar() {
                   <Link
                     href="/blood-help"
                     onClick={() => setMobileMenuOpen(false)}
+                    aria-current={isItemActive("/blood-help") ? "page" : undefined}
                     className={`flex items-center gap-3 px-3 py-2.5 min-h-[40px] rounded-lg font-semibold transition ${
-                      pathname.startsWith("/blood-help")
+                      isItemActive("/blood-help")
                         ? "bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 font-bold"
                         : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                     }`}
@@ -525,8 +552,9 @@ export default function Navbar() {
                   <Link
                     href="/missing-person"
                     onClick={() => setMobileMenuOpen(false)}
+                    aria-current={isItemActive("/missing-person") ? "page" : undefined}
                     className={`flex items-center gap-3 px-3 py-2.5 min-h-[40px] rounded-lg font-semibold transition ${
-                      pathname.startsWith("/missing-person")
+                      isItemActive("/missing-person")
                         ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold"
                         : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                     }`}
@@ -538,7 +566,12 @@ export default function Navbar() {
                   <Link
                     href="/reports/create"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-3 px-3 py-2.5 min-h-[40px] rounded-lg font-semibold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30 transition"
+                    aria-current={pathname.startsWith("/reports/create") ? "page" : undefined}
+                    className={`flex items-center gap-3 px-3 py-2.5 min-h-[40px] rounded-lg font-semibold transition ${
+                      pathname.startsWith("/reports/create")
+                        ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold"
+                        : "text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30"
+                    }`}
                   >
                     <span>➕</span>
                     <span>{lang === "bn" ? "ঘটনা রিপোর্ট করুন" : "Report an Incident"}</span>
@@ -547,7 +580,12 @@ export default function Navbar() {
                   <Link
                     href="/missing-person/create"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-3 px-3 py-2.5 min-h-[40px] rounded-lg font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                    aria-current={pathname.startsWith("/missing-person/create") ? "page" : undefined}
+                    className={`flex items-center gap-3 px-3 py-2.5 min-h-[40px] rounded-lg font-semibold transition ${
+                      pathname.startsWith("/missing-person/create")
+                        ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold"
+                        : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                    }`}
                   >
                     <span>📢</span>
                     <span>{lang === "bn" ? "নিখোঁজ ব্যক্তির তথ্য দিন" : "Submit Missing Alert"}</span>
@@ -562,8 +600,9 @@ export default function Navbar() {
                   <Link
                     href="/transparency"
                     onClick={() => setMobileMenuOpen(false)}
+                    aria-current={isItemActive("/transparency") ? "page" : undefined}
                     className={`flex items-center gap-3 px-3 py-2.5 min-h-[40px] rounded-lg font-semibold transition ${
-                      pathname === "/transparency"
+                      isItemActive("/transparency")
                         ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold"
                         : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                     }`}

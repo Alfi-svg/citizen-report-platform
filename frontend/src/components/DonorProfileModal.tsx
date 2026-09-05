@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
 import { BloodDonorProfile, BloodGroup, DonorAvailability } from "@/lib/types";
 import { useAuth } from "@/context/AuthContext";
+import { useBackClose } from "@/lib/useBackClose";
 import Link from "next/link";
 
 interface DonorProfileModalProps {
@@ -26,6 +27,18 @@ export default function DonorProfileModal({
   onUpdated,
 }: DonorProfileModalProps) {
   const { isAuthenticated } = useAuth();
+
+  // Android back-button compatibility
+  useBackClose(isOpen, onClose, "donorProfileModal");
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
   const [profile, setProfile] = useState<BloodDonorProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

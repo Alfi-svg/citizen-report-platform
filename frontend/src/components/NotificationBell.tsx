@@ -2,17 +2,23 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
 import { Notification, NotificationPagination, NotificationUnreadCount } from "@/lib/types";
+import { useBackClose } from "@/lib/useBackClose";
 
 export default function NotificationBell() {
+  const router = useRouter();
   const { isAuthenticated } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [recentNotifications, setRecentNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Android back-button compatibility
+  useBackClose(isOpen, () => setIsOpen(false), "notificationBell");
 
   // Fetch unread count on mount and when authentication changes
   useEffect(() => {
@@ -128,7 +134,7 @@ export default function NotificationBell() {
 
       {/* Clean Notification Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-xl bg-white dark:bg-zinc-900 shadow-lg border border-zinc-200 dark:border-zinc-800 py-2.5 z-50 text-xs animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute right-0 mt-2 w-[calc(100vw-24px)] max-w-sm sm:w-96 rounded-xl bg-white dark:bg-zinc-900 shadow-lg border border-zinc-200 dark:border-zinc-800 py-2.5 z-50 text-xs animate-in fade-in zoom-in-95 duration-150">
           <div className="flex items-center justify-between px-3.5 pb-2 border-b border-zinc-100 dark:border-zinc-800">
             <span className="font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
               <span>Notifications</span>
@@ -160,19 +166,25 @@ export default function NotificationBell() {
                 return (
                   <div
                     key={n.id}
-                    className={`p-3 transition ${
+                    onClick={() => {
+                      if (n.report_id) {
+                        setIsOpen(false);
+                        router.push(`/reports/${n.report_id}`);
+                      }
+                    }}
+                    className={`p-3 transition ${n.report_id ? "cursor-pointer" : ""} ${
                       isUnread
                         ? "bg-emerald-50/40 dark:bg-emerald-950/20"
                         : "hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <div className="space-y-0.5">
+                      <div className="space-y-0.5 min-w-0">
                         <div className="flex items-center gap-1.5">
                           {isUnread && (
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 shrink-0" />
                           )}
-                          <span className="font-bold text-zinc-900 dark:text-zinc-100">
+                          <span className="font-bold text-zinc-900 dark:text-zinc-100 truncate">
                             {n.title}
                           </span>
                         </div>
@@ -186,6 +198,12 @@ export default function NotificationBell() {
                           })}{" "}
                           • {new Date(n.created_at).toLocaleDateString()}
                         </span>
+                        {n.report_id && (
+                          <span className="inline-flex items-center gap-1 pt-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">
+                            <span>View report details</span>
+                            <span>→</span>
+                          </span>
+                        )}
                       </div>
 
                       {isUnread && (

@@ -4,6 +4,7 @@ import React, { useEffect, useRef } from "react";
 import Image from "next/image";
 import { DEVELOPER_CONFIG } from "@/lib/developerConfig";
 import { Language } from "@/lib/i18n";
+import { useBackClose } from "@/lib/useBackClose";
 
 interface DeveloperProfileModalProps {
   isOpen: boolean;
@@ -18,6 +19,9 @@ export default function DeveloperProfileModal({
 }: DeveloperProfileModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Android back-button compatibility
+  useBackClose(isOpen, onClose, "devProfileModal");
 
   // Keyboard accessibility: Escape key closes modal & trap initial focus
   useEffect(() => {

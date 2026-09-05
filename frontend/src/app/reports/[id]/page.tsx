@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
@@ -61,6 +61,7 @@ const STATUS_BADGES: Record<
 };
 
 export default function ReportDetailPage() {
+  const router = useRouter();
   const params = useParams();
   const reportId = params?.id as string;
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
@@ -355,13 +356,20 @@ export default function ReportDetailPage() {
       <article className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8 space-y-6">
         {/* Breadcrumb / Back */}
         <div className="flex items-center justify-between">
-          <Link
-            href="/reports"
-            className="text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:text-emerald-700 dark:hover:text-emerald-400 inline-flex items-center gap-1.5 transition"
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof window !== "undefined" && window.history.length > 1) {
+                router.back();
+              } else {
+                router.push("/reports");
+              }
+            }}
+            className="text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:text-emerald-700 dark:hover:text-emerald-400 inline-flex items-center gap-1.5 transition min-h-[36px] cursor-pointer"
           >
             <span>←</span>
             <span>Back to Community Reports</span>
-          </Link>
+          </button>
         </div>
 
         {/* Main Report Container */}
@@ -551,13 +559,20 @@ export default function ReportDetailPage() {
       {/* Header with Back Link and Action Buttons */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <Link
-            href="/reports/mine"
-            className="text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:text-emerald-700 dark:hover:text-emerald-400 inline-flex items-center gap-1.5 transition mb-2"
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof window !== "undefined" && window.history.length > 1) {
+                router.back();
+              } else {
+                router.push("/reports/mine");
+              }
+            }}
+            className="text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:text-emerald-700 dark:hover:text-emerald-400 inline-flex items-center gap-1.5 transition mb-2 min-h-[36px] cursor-pointer"
           >
             <span>←</span>
             <span>Back to My Reports</span>
-          </Link>
+          </button>
           <h1 className="text-2xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">
             Incident Submission Details
           </h1>

@@ -1,13 +1,15 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import { PublicMissingPersonAlertResponse, PublicMissingPersonSightingResponse } from "@/lib/types";
 import { translations, Language } from "@/lib/i18n";
+import { useBackClose } from "@/lib/useBackClose";
 
 export default function MissingPersonDetailPage() {
+  const router = useRouter();
   const params = useParams();
   const alertId = params.id as string;
 
@@ -20,6 +22,18 @@ export default function MissingPersonDetailPage() {
 
   // "I Saw This Person" Modal State
   const [isSightingModalOpen, setIsSightingModalOpen] = useState(false);
+
+  // Android back-button compatibility for sighting modal
+  useBackClose(isSightingModalOpen, () => setIsSightingModalOpen(false), "sightingModal");
+
+  useEffect(() => {
+    if (!isSightingModalOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsSightingModalOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isSightingModalOpen]);
   const [sightingLocation, setSightingLocation] = useState("");
   const [sightingDate, setSightingDate] = useState(new Date().toISOString().split("T")[0]);
   const [sightingTime, setSightingTime] = useState("");
@@ -149,12 +163,20 @@ export default function MissingPersonDetailPage() {
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
       {/* Navigation Breadcrumb & Language Switcher */}
       <div className="flex items-center justify-between">
-        <Link
-          href="/missing-person"
-          className="text-xs font-bold text-zinc-500 hover:text-red-600 transition"
+        <button
+          type="button"
+          onClick={() => {
+            if (typeof window !== "undefined" && window.history.length > 1) {
+              router.back();
+            } else {
+              router.push("/missing-person");
+            }
+          }}
+          className="text-xs font-bold text-zinc-500 hover:text-red-600 transition inline-flex items-center gap-1.5 min-h-[36px] cursor-pointer"
         >
-          ← {lang === "bn" ? "নিখোঁজ ব্যক্তি তালিকায় ফিরে যান" : "Back to All Alerts"}
-        </Link>
+          <span>←</span>
+          <span>{lang === "bn" ? "নিখোঁজ ব্যক্তি তালিকায় ফিরে যান" : "Back to All Alerts"}</span>
+        </button>
 
         {/* Bilingual Language Switcher */}
         <div className="inline-flex rounded-xl bg-zinc-100 dark:bg-zinc-800 p-1 border border-zinc-200 dark:border-zinc-700">

@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
 import { AdminFlag, AdminFlagPagination, FlagStatus } from "@/lib/types";
 import AdminNav from "@/components/AdminNav";
+import { useBackClose } from "@/lib/useBackClose";
 
 const STATUS_BADGES: Record<
   FlagStatus,
@@ -54,11 +55,22 @@ export default function AdminFlagsPage() {
   const [page, setPage] = useState(1);
   const limit = 20;
 
-  // Review Modal State
   const [selectedFlag, setSelectedFlag] = useState<AdminFlag | null>(null);
   const [reviewStatus, setReviewStatus] = useState<FlagStatus>("ACTION_TAKEN");
   const [adminNotes, setAdminNotes] = useState("");
   const [modalLoading, setModalLoading] = useState(false);
+
+  // Android back-button compatibility for review modal
+  useBackClose(selectedFlag !== null, () => setSelectedFlag(null), "adminFlagReviewModal");
+
+  useEffect(() => {
+    if (!selectedFlag) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSelectedFlag(null);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedFlag]);
 
   useEffect(() => {
     if (!authLoading && (!isAuthenticated || !isAdmin)) {

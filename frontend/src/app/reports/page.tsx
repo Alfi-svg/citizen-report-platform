@@ -7,6 +7,7 @@ import { apiFetch } from "@/lib/api";
 import { PublicCategory, PublicReportPagination } from "@/lib/types";
 import { Language } from "@/lib/i18n";
 import PublicReportCard from "@/components/PublicReportCard";
+import { useBackClose } from "@/lib/useBackClose";
 
 function PublicReportsContent() {
   const router = useRouter();
@@ -48,6 +49,18 @@ function PublicReportsContent() {
   const [page, setPage] = useState<number>(0);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [, startTransition] = useTransition();
+
+  // Android back-button compatibility for mobile filter drawer
+  useBackClose(mobileFilterOpen, () => setMobileFilterOpen(false), "reportsFilterOpen");
+
+  useEffect(() => {
+    if (!mobileFilterOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileFilterOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [mobileFilterOpen]);
 
   const PAGE_SIZE = 9;
 

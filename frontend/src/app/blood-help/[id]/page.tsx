@@ -2,12 +2,14 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 import { PublicBloodRequest, BloodResponseItem } from "@/lib/types";
 import { useAuth } from "@/context/AuthContext";
+import { useBackClose } from "@/lib/useBackClose";
 
 export default function BloodRequestDetailPage() {
+  const router = useRouter();
   const params = useParams();
   const requestId = params?.id as string;
   const { isAuthenticated, user } = useAuth();
@@ -30,6 +32,22 @@ export default function BloodRequestDetailPage() {
   const [flagReason, setFlagReason] = useState("Commercial selling / Spam");
   const [flagDetails, setFlagDetails] = useState("");
   const [submittingFlag, setSubmittingFlag] = useState(false);
+
+  // Android back-button compatibility for modals
+  useBackClose(isResponseModalOpen, () => setIsResponseModalOpen(false), "bloodResponseModal");
+  useBackClose(isFlagModalOpen, () => setIsFlagModalOpen(false), "bloodFlagModal");
+
+  useEffect(() => {
+    if (!isResponseModalOpen && !isFlagModalOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsResponseModalOpen(false);
+        setIsFlagModalOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isResponseModalOpen, isFlagModalOpen]);
 
   // Status updating
   const [updatingStatus, setUpdatingStatus] = useState(false);
@@ -150,13 +168,20 @@ export default function BloodRequestDetailPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8 space-y-6">
       {/* Breadcrumb / Back Link */}
-      <Link
-        href="/blood-help"
-        className="text-xs font-bold text-zinc-500 hover:text-rose-600 inline-flex items-center gap-1.5 transition"
+      <button
+        type="button"
+        onClick={() => {
+          if (typeof window !== "undefined" && window.history.length > 1) {
+            router.back();
+          } else {
+            router.push("/blood-help");
+          }
+        }}
+        className="text-xs font-bold text-zinc-500 hover:text-rose-600 inline-flex items-center gap-1.5 transition min-h-[36px] cursor-pointer"
       >
         <span>←</span>
         <span>Back to Active Blood Requests</span>
-      </Link>
+      </button>
 
       {/* Notifications */}
       {success && (

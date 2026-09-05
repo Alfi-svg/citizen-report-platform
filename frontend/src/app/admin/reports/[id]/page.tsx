@@ -8,6 +8,7 @@ import { apiFetch } from "@/lib/api";
 import { Report, ReportStatus, AdminComment, CommentStatus } from "@/lib/types";
 import EvidenceGallery from "@/components/EvidenceGallery";
 import AdminNav from "@/components/AdminNav";
+import { useBackClose } from "@/lib/useBackClose";
 
 const STATUS_BADGES: Record<
   ReportStatus,
@@ -75,6 +76,18 @@ export default function AdminReportDetailPage() {
   const [activeModal, setActiveModal] = useState<"APPROVE" | "REJECT" | "REQUEST_INFO" | "ARCHIVE" | null>(null);
   const [userMessage, setUserMessage] = useState("");
   const [internalNotes, setInternalNotes] = useState("");
+
+  // Android back-button compatibility for moderation action modal
+  useBackClose(activeModal !== null, () => setActiveModal(null), "adminReportActionModal");
+
+  useEffect(() => {
+    if (!activeModal) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setActiveModal(null);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeModal]);
 
   useEffect(() => {
     if (!authLoading && (!isAuthenticated || !isAdmin)) {

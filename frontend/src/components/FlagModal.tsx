@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
 import { FlagResponse, FlagTargetType, ReportFlagReason, CommentFlagReason } from "@/lib/types";
+import { useBackClose } from "@/lib/useBackClose";
 
 interface FlagModalProps {
   isOpen: boolean;
@@ -107,6 +108,24 @@ export default function FlagModal({
   const [error, setError] = useState<string | null>(null);
   const [confirmationMessage, setConfirmationMessage] = useState<string | null>(null);
 
+  const handleClose = React.useCallback(() => {
+    setConfirmationMessage(null);
+    setError(null);
+    setDetails("");
+    onClose();
+  }, [onClose]);
+
+  useBackClose(isOpen, handleClose, "flagModal");
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") handleClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, handleClose]);
+
   if (!isOpen) return null;
 
   const reasons = targetType === "REPORT" ? REPORT_REASONS : COMMENT_REASONS;
@@ -138,13 +157,6 @@ export default function FlagModal({
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const handleClose = () => {
-    setConfirmationMessage(null);
-    setError(null);
-    setDetails("");
-    onClose();
   };
 
   return (
