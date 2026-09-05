@@ -15,6 +15,7 @@ import {
 import { translations, Language } from "@/lib/i18n";
 import PublicReportCard from "@/components/PublicReportCard";
 import { StatusBadge } from "@/components/ui";
+import EmergencyCallModal from "@/components/EmergencyCallModal";
 
 export default function HomePage() {
   const { isAuthenticated, user } = useAuth();
@@ -35,6 +36,9 @@ export default function HomePage() {
   }, []);
 
   const t = translations[lang];
+
+  // Emergency Call Dialog State
+  const [emergencyModalOpen, setEmergencyModalOpen] = useState(false);
 
   // 1. Categories
   const [categories, setCategories] = useState<PublicCategory[]>([]);
@@ -915,16 +919,17 @@ export default function HomePage() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto shrink-0">
-            <a
-              href="tel:999"
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-xs font-bold shadow-2xs transition w-full sm:w-auto min-h-[44px]"
+            <button
+              type="button"
+              onClick={() => setEmergencyModalOpen(true)}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-xs font-bold shadow-2xs transition w-full sm:w-auto min-h-[48px] cursor-pointer"
             >
               <span>📞</span>
               <span>{lang === "bn" ? "কল ৯৯৯" : "Call 999"}</span>
-            </a>
+            </button>
             <Link
               href="/safety"
-              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-red-300 dark:border-red-900 bg-white dark:bg-zinc-900 text-red-700 dark:text-red-300 text-xs font-bold hover:bg-red-50 dark:hover:bg-red-950/40 transition w-full sm:w-auto min-h-[44px]"
+              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-red-300 dark:border-red-900 bg-white dark:bg-zinc-900 text-red-700 dark:text-red-300 text-xs font-bold hover:bg-red-50 dark:hover:bg-red-950/40 transition w-full sm:w-auto min-h-[48px]"
             >
               <span>{lang === "bn" ? "কাছাকাছি সেবা খুঁজুন" : "Find Units Near Me"}</span>
               <span>→</span>
@@ -932,6 +937,14 @@ export default function HomePage() {
           </div>
         </section>
       </div>
+
+      {/* Emergency Call Confirmation Modal */}
+      <EmergencyCallModal
+        isOpen={emergencyModalOpen}
+        onClose={() => setEmergencyModalOpen(false)}
+        targetNumber="999"
+        lang={lang}
+      />
     </div>
   );
 }

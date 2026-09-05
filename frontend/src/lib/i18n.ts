@@ -8,6 +8,13 @@ export const translations = {
     emergency_call_999: "CALL 999",
     national_emergency_title: "National Emergency Service",
     national_emergency_desc: "24/7 Toll-Free National Hotline for Police, Fire, and Ambulance",
+    emergency_modal_badge: "Emergency Call",
+    emergency_modal_heading: "Call National Emergency Service — 999?",
+    emergency_modal_body: "You are about to call Bangladesh National Emergency Service — 999 for Police, Fire Service, or Ambulance. 999 is strictly for genuine emergencies.",
+    emergency_modal_disclaimer: "Bangladesh Citizen Report facilitates connecting to official emergency hotlines but does not directly dispatch emergency responders.",
+    emergency_modal_call_btn: "Call 999",
+    emergency_modal_cancel_btn: "Cancel",
+    emergency_unsupported_notice: "Device dialer is unavailable. Please dial 999 directly from your phone.",
     
     // Actions & Buttons
     find_near_me: "Find Help Near Me",
@@ -217,6 +224,13 @@ export const translations = {
     emergency_call_999: "৯৯৯ কল করুন",
     national_emergency_title: "জাতীয় জরুরি সেবা",
     national_emergency_desc: "পুলিশ, ফায়ার সার্ভিস ও অ্যাম্বুলেন্সের জন্য ২৪/৭ সার্বক্ষণিক ফ্রি জাতীয় হটলাইন",
+    emergency_modal_badge: "জরুরি কল",
+    emergency_modal_heading: "জাতীয় জরুরি সেবা — ৯৯৯ নম্বরে কল করবেন?",
+    emergency_modal_body: "আপনি পুলিশ, ফায়ার সার্ভিস বা অ্যাম্বুলেন্স সেবার জন্য বাংলাদেশ জাতীয় জরুরি সেবা — ৯৯৯ নম্বরে কল করতে যাচ্ছেন। ৯৯৯ শুধুমাত্র প্রকৃত জরুরি প্রয়োজনে ব্যবহারযোগ্য।",
+    emergency_modal_disclaimer: "বাংলাদেশ সিটিজেন রিপোর্ট সরাসরি সরকারি ৯৯৯ হটলাইনে সংযোগ করে দেয়। প্ল্যাটফর্মটি নিজে থেকে কোনো উদ্ধারকারী দল পাঠায় না।",
+    emergency_modal_call_btn: "৯৯৯ কল করুন",
+    emergency_modal_cancel_btn: "বাতিল",
+    emergency_unsupported_notice: "এই ডিভাইসে সরাসরি ডায়ালার খোলার সুবিধা নেই। দয়া করে যেকোনো সচল ফোন থেকে সরাসরি ৯৯৯ ডায়াল করুন।",
     
     // Actions & Buttons
     find_near_me: "আমার নিকটস্থ সাহায্য খুঁজুন",

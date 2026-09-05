@@ -6,6 +6,7 @@ import { apiFetch } from "@/lib/api";
 import { AreaReference, NearbyEmergencyServicesResult, NearbyServiceResponse } from "@/lib/types";
 import { translations, Language } from "@/lib/i18n";
 import { captureCurrentLocation } from "@/lib/location";
+import EmergencyCallModal from "@/components/EmergencyCallModal";
 
 export default function SafetyCenterPage() {
   const [lang, setLang] = useState<Language>("en");
@@ -35,6 +36,17 @@ export default function SafetyCenterPage() {
   const [permissionDenied, setPermissionDenied] = useState<boolean>(false);
   const [activeLocationName, setActiveLocationName] = useState<string>("");
   const [selectedServiceFilter, setSelectedServiceFilter] = useState<string>("ALL");
+
+  // Emergency Call Confirmation Dialog State
+  const [emergencyModalOpen, setEmergencyModalOpen] = useState<boolean>(false);
+  const [emergencyModalTarget, setEmergencyModalTarget] = useState<string>("999");
+  const [emergencyModalTitle, setEmergencyModalTitle] = useState<string>("");
+
+  const handleInitiateEmergencyCall = (number: string = "999", title?: string) => {
+    setEmergencyModalTarget(number);
+    setEmergencyModalTitle(title || "");
+    setEmergencyModalOpen(true);
+  };
 
   // Fetch preconfigured manual areas on mount
   useEffect(() => {
@@ -182,21 +194,23 @@ export default function SafetyCenterPage() {
               </p>
             </div>
 
-            <a
-              href="tel:999"
-              className="inline-flex items-center justify-center gap-2.5 rounded-2xl bg-white px-8 py-4 text-base font-black text-red-600 shadow-md hover:bg-red-50 active:scale-95 transition text-center w-full sm:w-auto shrink-0"
+            <button
+              type="button"
+              onClick={() => handleInitiateEmergencyCall("999", lang === "bn" ? "জাতীয় জরুরি সেবা — ৯৯৯" : "National Emergency Service — 999")}
+              className="inline-flex items-center justify-center gap-2.5 rounded-2xl bg-white px-8 py-4 text-base font-black text-red-600 shadow-md hover:bg-red-50 active:scale-95 transition text-center w-full sm:w-auto shrink-0 min-h-[48px] cursor-pointer"
             >
               <span className="text-xl">📞</span>
               <span>{t.emergency_call_999}</span>
-            </a>
+            </button>
           </div>
         </div>
 
         {/* Secondary Civic Hotlines */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <a
-            href="tel:109"
-            className="flex items-center justify-between p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-red-400 dark:hover:border-red-800 transition shadow-2xs group"
+          <button
+            type="button"
+            onClick={() => handleInitiateEmergencyCall("109", lang === "bn" ? "জাতীয় নারী ও শিশু নির্যাতন প্রতিরোধ হটলাইন (১০৯)" : "National Women & Children Helpline (109)")}
+            className="flex items-center justify-between p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-red-400 dark:hover:border-red-800 transition shadow-2xs group text-left min-h-[48px] cursor-pointer"
           >
             <div>
               <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">
@@ -209,11 +223,12 @@ export default function SafetyCenterPage() {
             <span className="h-8 w-8 rounded-xl bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 flex items-center justify-center font-bold text-sm">
               📞
             </span>
-          </a>
+          </button>
 
-          <a
-            href="tel:333"
-            className="flex items-center justify-between p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-blue-400 dark:hover:border-blue-800 transition shadow-2xs group"
+          <button
+            type="button"
+            onClick={() => handleInitiateEmergencyCall("333", lang === "bn" ? "জাতীয় তথ্য ও দুর্যোগ সেবা হটলাইন (৩৩৩)" : "National Citizen Info & Disaster Helpline (333)")}
+            className="flex items-center justify-between p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-blue-400 dark:hover:border-blue-800 transition shadow-2xs group text-left min-h-[48px] cursor-pointer"
           >
             <div>
               <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">
@@ -226,11 +241,12 @@ export default function SafetyCenterPage() {
             <span className="h-8 w-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-sm">
               📞
             </span>
-          </a>
+          </button>
 
-          <a
-            href="tel:106"
-            className="flex items-center justify-between p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-emerald-400 dark:hover:border-emerald-800 transition shadow-2xs group"
+          <button
+            type="button"
+            onClick={() => handleInitiateEmergencyCall("106", lang === "bn" ? "দুর্নীতি দমন কমিশন (দুদক) হটলাইন (১০৬)" : "Anti-Corruption Commission Helpline (106)")}
+            className="flex items-center justify-between p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-emerald-400 dark:hover:border-emerald-800 transition shadow-2xs group text-left min-h-[48px] cursor-pointer"
           >
             <div>
               <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">
@@ -243,7 +259,7 @@ export default function SafetyCenterPage() {
             <span className="h-8 w-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-sm">
               📞
             </span>
-          </a>
+          </button>
         </div>
       </section>
 
@@ -757,6 +773,15 @@ export default function SafetyCenterPage() {
           </div>
         </div>
       </section>
+
+      {/* Emergency Call Confirmation Modal */}
+      <EmergencyCallModal
+        isOpen={emergencyModalOpen}
+        onClose={() => setEmergencyModalOpen(false)}
+        targetNumber={emergencyModalTarget}
+        serviceTitle={emergencyModalTitle}
+        lang={lang}
+      />
     </div>
   );
 }
