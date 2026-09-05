@@ -398,3 +398,140 @@ async def test_security_idor_and_moderation(
     # Verify request is now inactive / cancelled
     get_res = await async_client.get(f"/api/v1/blood/requests/{request_id}")
     assert get_res.status_code == 404  # Inactive requests return 404
+
+
+@pytest.mark.asyncio
+async def test_blood_help_map_endpoint_and_privacy(
+    async_client: AsyncClient,
+    requester_user: User,
+    donor_user: User,
+    db_session: AsyncSession,
+):
+    token = create_access_token(subject=str(requester_user.id))
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # 1. Create emergency request with known hospital in Dhanmondi
+    req_payload = {
+        "blood_group": "B+",
+        "units_required": 1,
+        "hospital_name": "Ibn Sina Hospital Dhanmondi",
+        "hospital_area": "Dhanmondi",
+        "district": "Dhaka",
+        "required_date": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat(),
+        "urgency": "EMERGENCY",
+        "contact_name": "Private Hassan",
+        "contact_phone": "01711223344",
+        "contact_method": "PHONE",
+    }
+    create_res = await async_client.post("/api/v1/blood/requests", json=req_payload, headers=headers)
+    assert create_res.status_code == 201
+    req_id = create_res.json()["id"]
+
+    # 2. Public / Unauthenticated user calls GET /api/v1/blood/map
+    map_res = await async_client.get("/api/v1/blood/map")
+    assert map_res.status_code == 200
+    map_data = map_res.json()
+    assert "requests" in map_data
+    assert "total" in map_data
+
+    # Find created request on map
+    found = [r for r in map_data["requests"] if r["id"] == req_id]
+    assert len(found) == 1
+    point = found[0]
+
+    # Verify approximate coordinates exist and are fuzzed (~3 decimals)
+    assert "approximate_latitude" in point
+    assert "approximate_longitude" in point
+    assert isinstance(point["approximate_latitude"], float)
+    assert isinstance(point["approximate_longitude"], float)
+    # Latitude for Dhanmondi, Dhaka is ~23.746
+    assert 23.6 < point["approximate_latitude"] < 23.9
+    assert 90.2 < point["approximate_longitude"] < 90.6
+
+    # Verify Privacy: Contact details MUST be redacted for unauthenticated viewer
+    assert point["contact_name"] is None
+    assert point["contact_phone"] is None
+
+    # Verify Blood Request fields
+    assert point["blood_group"] == "B+"
+    assert point["urgency"] == "EMERGENCY"
+    assert point["status"] == "OPEN"
+    assert point["hospital_name"] == "Ibn Sina Hospital Dhanmondi"
+
+    # 3. Authenticated owner views map: can see own contact info
+    owner_map_res = await async_client.get("/api/v1/blood/map", headers=headers)
+    assert owner_map_res.status_code == 200
+    owner_point = [r for r in owner_map_res.json()["requests"] if r["id"] == req_id][0]
+    assert owner_point["is_own_request"] is True
+    assert owner_point["contact_name"] == "Private Hassan"
+    assert owner_point["contact_phone"] == "01711223344"
+
+    # 4. Filter by blood group
+    b_pos_res = await async_client.get("/api/v1/blood/map?blood_group=B%2B")
+    assert b_pos_res.status_code == 200
+    assert all(r["blood_group"] == "B+" for r in b_pos_res.json()["requests"])
+
+    # Filter for non-matching group
+    ab_neg_res = await async_client.get("/api/v1/blood/map?blood_group=AB-")
+    assert ab_neg_res.status_code == 200
+    assert not any(r["id"] == req_id for r in ab_neg_res.json()["requests"])
+
+
+@pytest.mark.asyncio
+async def test_blood_map_filtering_and_moderation(
+    async_client: AsyncClient,
+    requester_user: User,
+    admin_user: User,
+    db_session: AsyncSession,
+):
+    req_token = create_access_token(subject=str(requester_user.id))
+    req_headers = {"Authorization": f"Bearer {req_token}"}
+    admin_token = create_access_token(subject=str(admin_user.id))
+    admin_headers = {"Authorization": f"Bearer {admin_token}"}
+
+    # Create request
+    req_payload = {
+        "blood_group": "AB+",
+        "units_required": 1,
+        "hospital_name": "Sylhet MAG Osmani",
+        "hospital_area": "Zindabazar",
+        "district": "Sylhet",
+        "required_date": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat(),
+        "urgency": "NORMAL",
+    }
+    res = await async_client.post("/api/v1/blood/requests", json=req_payload, headers=req_headers)
+    assert res.status_code == 201
+    req_id = res.json()["id"]
+
+    # Verify present on map
+    m1 = await async_client.get("/api/v1/blood/map?district=Sylhet")
+    assert any(r["id"] == req_id for r in m1.json()["requests"])
+
+    # Mark as FULFILLED -> Must disappear from map
+    fulfill_res = await async_client.patch(
+        f"/api/v1/blood/requests/{req_id}",
+        headers=req_headers,
+        json={"status": "FULFILLED"},
+    )
+    assert fulfill_res.status_code == 200
+
+    m2 = await async_client.get("/api/v1/blood/map?district=Sylhet")
+    assert not any(r["id"] == req_id for r in m2.json()["requests"])
+
+    # Create another request and deactivate via Admin -> Must disappear from map
+    res2 = await async_client.post("/api/v1/blood/requests", json=req_payload, headers=req_headers)
+    req_id2 = res2.json()["id"]
+
+    m3 = await async_client.get("/api/v1/blood/map?district=Sylhet")
+    assert any(r["id"] == req_id2 for r in m3.json()["requests"])
+
+    # Admin deactivates request
+    deact_res = await async_client.patch(
+        f"/api/v1/admin/blood/requests/{req_id2}",
+        headers=admin_headers,
+        json={"is_active": False},
+    )
+    assert deact_res.status_code == 200
+
+    m4 = await async_client.get("/api/v1/blood/map?district=Sylhet")
+    assert not any(r["id"] == req_id2 for r in m4.json()["requests"])

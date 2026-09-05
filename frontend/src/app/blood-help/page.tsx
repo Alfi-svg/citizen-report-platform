@@ -137,6 +137,14 @@ export default function BloodHelpPage() {
               <span>{lang === "bn" ? "রক্ত প্রয়োজন (আবেদন)" : "Need Blood"}</span>
             </Link>
 
+            <Link
+              href="/blood-help/map"
+              className="inline-flex items-center gap-2 rounded-2xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 px-5 py-3 text-xs sm:text-sm font-bold text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/50 transition cursor-pointer shadow-2xs"
+            >
+              <span>🗺️</span>
+              <span>{lang === "bn" ? "মানচিত্র ভিউ" : "Map View"}</span>
+            </Link>
+
             <button
               type="button"
               onClick={() => setIsDonorModalOpen(true)}
@@ -283,9 +291,15 @@ export default function BloodHelpPage() {
               {total}
             </span>
           </h2>
-          <span className="text-xs text-zinc-400">
-            Updated in real-time
-          </span>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/blood-help/map"
+              className="inline-flex items-center gap-1 text-xs font-bold text-rose-600 dark:text-rose-400 hover:underline"
+            >
+              <span>🗺️</span>
+              <span>{lang === "bn" ? "মানচিত্রে দেখুন" : "View on Map"} →</span>
+            </Link>
+          </div>
         </div>
 
         {error && (

@@ -989,6 +989,34 @@ export interface BloodRequestPagination {
   offset: number;
 }
 
+export interface PublicBloodMapPoint {
+  id: string;
+  user_id: string;
+  blood_group: BloodGroup;
+  units_required: number;
+  hospital_name: string;
+  hospital_area: string;
+  district: string;
+  approximate_latitude: number;
+  approximate_longitude: number;
+  required_date: string;
+  required_time?: string | null;
+  urgency: BloodUrgency;
+  status: BloodRequestStatus;
+  created_at: string;
+  is_own_request: boolean;
+  contact_name?: string | null;
+  contact_phone?: string | null;
+  contact_method?: string | null;
+  response_count: number;
+  distance_km?: number | null;
+}
+
+export interface PublicBloodMapResponse {
+  requests: PublicBloodMapPoint[];
+  total: number;
+}
+
 export interface BloodDonorProfile {
   id: string;
   user_id: string;

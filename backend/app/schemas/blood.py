@@ -73,6 +73,36 @@ class BloodRequestPagination(BaseModel):
     offset: int
 
 
+class PublicBloodMapPoint(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    user_id: uuid.UUID
+    blood_group: BloodGroup
+    units_required: int
+    hospital_name: str
+    hospital_area: str
+    district: str
+    approximate_latitude: float
+    approximate_longitude: float
+    required_date: datetime
+    required_time: Optional[str] = None
+    urgency: BloodUrgency
+    status: BloodRequestStatus
+    created_at: datetime
+    is_own_request: bool = False
+    contact_name: Optional[str] = None
+    contact_phone: Optional[str] = None
+    contact_method: Optional[str] = "PHONE"
+    response_count: int = 0
+    distance_km: Optional[float] = None
+
+
+class PublicBloodMapResponse(BaseModel):
+    requests: List[PublicBloodMapPoint]
+    total: int
+
+
 class DonorProfileCreate(BaseModel):
     blood_group: BloodGroup
     district: str = Field(..., min_length=2, max_length=100)

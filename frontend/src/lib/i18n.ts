@@ -100,6 +100,16 @@ export const translations = {
     tap_to_adjust_location: "Tap map to adjust pin location",
     map_preview_label: "Report Location Preview",
     location_privacy_tip: "Approximate location (~110m privacy protection)",
+    blood_map_title: "Blood Request Map",
+    blood_map_subtitle: "Discover emergency and active blood requests near you or by district",
+    blood_map_privacy_notice: "All locations are approximate (~110m privacy protection). Exact private addresses are never displayed.",
+    view_blood_details: "View Full Details",
+    needed_by: "Needed by",
+    units: "Unit(s)",
+    near_me: "Near Me",
+    no_blood_requests_found: "No active blood requests found on the map.",
+    blood_group_label: "Blood Group",
+    urgency_label: "Urgency Level",
 
     // Transparency & Crime Analysis Dashboard
     transparency_title: "Transparency & Crime Analysis",
@@ -299,6 +309,16 @@ export const translations = {
     tap_to_adjust_location: "পিন সরাতে মানচিত্রে ট্যাপ করুন",
     map_preview_label: "ঘটনার অবস্থান প্রিভিউ",
     location_privacy_tip: "আনুমানিক অবস্থান (~১১০ মিটার গোপনীয়তা সুরক্ষা)",
+    blood_map_title: "রক্ত সহায়তা মানচিত্র",
+    blood_map_subtitle: "আপনার কাছে বা নির্দিষ্ট জেলায় সক্রিয় জরুরি রক্তের আবেদনসমূহ খুঁজুন",
+    blood_map_privacy_notice: "সকল অবস্থান আনুমানিক (~১১০ মিটার গোপনীয়তা সুরক্ষা)। ব্যক্তিগত ঠিকানা কখনই দেখানো হয় না।",
+    view_blood_details: "আবেদনের বিস্তারিত দেখুন",
+    needed_by: "প্রয়োজনের তারিখ",
+    units: "ব্যাগ",
+    near_me: "আমার কাছে",
+    no_blood_requests_found: "মানচিত্রে কোনো সক্রিয় রক্তের আবেদন পাওয়া যায়নি।",
+    blood_group_label: "রক্তের গ্রুপ",
+    urgency_label: "জরুরিতা",
 
     // Transparency & Crime Analysis Dashboard
     transparency_title: "স্বচ্ছতা ও অপরাধ বিশ্লেষণ",

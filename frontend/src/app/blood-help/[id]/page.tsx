@@ -263,6 +263,21 @@ export default function BloodRequestDetailPage() {
           </div>
         </div>
 
+        {/* View on Map Link */}
+        <div className="flex items-center justify-between p-3.5 rounded-2xl bg-rose-50/50 dark:bg-rose-950/20 border border-rose-200/60 dark:border-rose-900/40 text-xs">
+          <span className="text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5 text-[11px]">
+            <span>🛡️</span>
+            <span>Approximate Location (~110m privacy buffer)</span>
+          </span>
+          <Link
+            href={`/blood-help/map?id=${request.id}`}
+            className="font-bold text-rose-600 dark:text-rose-400 hover:underline flex items-center gap-1 text-xs"
+          >
+            <span>View On Blood Help Map</span>
+            <span>→</span>
+          </Link>
+        </div>
+
         {/* Additional Medical / Case Details */}
         {request.additional_information && (
           <div className="space-y-2">
