@@ -6,6 +6,11 @@ export function getApiBaseUrl(): string {
 
   // 2. Client-side runtime checks
   if (typeof window !== "undefined") {
+    // Android emulator local development environment
+    if (window.location.hostname === "10.0.2.2") {
+      return "http://10.0.2.2:8000/api/v1";
+    }
+
     // Check if running inside Capacitor native mobile app
     const isCapacitor =
       typeof (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor !== "undefined" &&

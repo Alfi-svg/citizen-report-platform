@@ -421,13 +421,32 @@ export default function CreateReportPage() {
               <span className="text-xs text-zinc-400 block font-medium mb-2">
                 Attached Evidence ({selectedFiles.length} file{selectedFiles.length > 1 ? "s" : ""})
               </span>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {selectedFiles.map((f, i) => (
                   <div
-                    key={i}
-                    className="p-2 rounded-xl bg-zinc-50 dark:bg-zinc-800 text-[11px] truncate border border-zinc-200 dark:border-zinc-700"
+                    key={f.id || i}
+                    className="p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/80 text-[11px] border border-zinc-200 dark:border-zinc-700 flex items-center gap-2.5 shadow-2xs"
                   >
-                    📎 {f.file.name}
+                    {f.previewUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={f.previewUrl}
+                        alt={f.file.name}
+                        className="w-10 h-10 rounded-lg object-cover border border-zinc-200 dark:border-zinc-700 shrink-0"
+                      />
+                    ) : (
+                      <span className="text-xl shrink-0">📎</span>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-zinc-800 dark:text-zinc-200 truncate">
+                        {f.file.name}
+                      </p>
+                      {f.caption && (
+                        <p className="text-[10px] text-zinc-500 truncate italic">
+                          &ldquo;{f.caption}&rdquo;
+                        </p>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

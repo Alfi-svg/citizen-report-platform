@@ -6,7 +6,7 @@ const config: CapacitorConfig = {
   webDir: 'public',
   server: {
     url: process.env.CAPACITOR_SERVER_URL || 'https://frontend-ten-delta-a5irgspmf7.vercel.app',
-    cleartext: false,
+    cleartext: true,
     androidScheme: 'https',
   },
 };
