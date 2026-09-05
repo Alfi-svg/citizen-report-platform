@@ -56,8 +56,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initializeAuth();
 
+    const handleUnauthorized = () => {
+      if (isMounted) {
+        localStorage.removeItem("token");
+        setToken(null);
+        setUser(null);
+      }
+    };
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "token") {
+        if (!e.newValue) {
+          if (isMounted) {
+            setToken(null);
+            setUser(null);
+          }
+        } else {
+          initializeAuth();
+        }
+      }
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("auth:unauthorized", handleUnauthorized);
+      window.addEventListener("storage", handleStorage);
+    }
+
     return () => {
       isMounted = false;
+      if (typeof window !== "undefined") {
+        window.removeEventListener("auth:unauthorized", handleUnauthorized);
+        window.removeEventListener("storage", handleStorage);
+      }
     };
   }, []);
 

@@ -127,6 +127,18 @@ export async function apiFetch<T>(endpoint: string, options: ApiFetchOptions = {
     } else if (response.status >= 500) {
       errorMessage = "Server error. Please try again later.";
     }
+
+    // On 401 (unauthorized / session expired) on any authenticated endpoint, clear client token and notify listeners
+    if (
+      response.status === 401 &&
+      typeof window !== "undefined" &&
+      !endpoint.includes("/auth/login") &&
+      !endpoint.includes("/auth/register")
+    ) {
+      localStorage.removeItem("token");
+      window.dispatchEvent(new CustomEvent("auth:unauthorized"));
+    }
+
     throw new Error(errorMessage);
   }
 
