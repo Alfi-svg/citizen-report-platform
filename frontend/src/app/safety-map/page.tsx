@@ -10,6 +10,7 @@ import {
   CategoryResponse,
 } from "@/lib/types";
 import { translations, Language } from "@/lib/i18n";
+import { captureCurrentLocation } from "@/lib/location";
 
 export default function SafetyMapPage() {
   const [lang, setLang] = useState<Language>("en");
@@ -28,9 +29,14 @@ export default function SafetyMapPage() {
   const [isListView, setIsListView] = useState<boolean>(false);
   const [selectedPoint, setSelectedPoint] = useState<PublicMapIncidentPoint | PublicMapClusterPoint | null>(null);
 
+  // Locate Me state
+  const [locating, setLocating] = useState<boolean>(false);
+  const [locationNotice, setLocationNotice] = useState<string | null>(null);
+
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersLayerRef = useRef<any>(null);
+  const userLocationLayerRef = useRef<any>(null);
 
   // Fetch categories
   useEffect(() => {
@@ -244,6 +250,94 @@ export default function SafetyMapPage() {
     renderMarkers();
   }, [data, viewMode, lang]);
 
+  // Handle Privacy-Aware "Locate Me"
+  const handleLocateMe = async () => {
+    setLocating(true);
+    setLocationNotice(null);
+    const { coordinates, error: locError } = await captureCurrentLocation({
+      timeoutMs: 12000,
+      enableHighAccuracy: true,
+    });
+    setLocating(false);
+
+    if (locError || !coordinates) {
+      if (locError?.code === "PERMISSION_DENIED") {
+        setLocationNotice(
+          locError.isPermanent
+            ? (lang === "bn" ? "অবস্থান অনুমতি প্রত্যাখ্যাত। অনুগ্রহ করে অ্যাপ সেটিংসে অনুমতি সক্রিয় করুন।" : "Location permission denied. Please allow location access in your device settings.")
+            : (lang === "bn" ? "অবস্থান অনুমতি প্রত্যাখ্যাত।" : "Location permission was denied.")
+        );
+      } else if (locError?.code === "SERVICES_DISABLED") {
+        setLocationNotice(
+          lang === "bn" ? "অনুগ্রহ করে ডিভাইসের লোকেশন / GPS সেবা চালু করুন।" : "Please enable location/GPS services on your device."
+        );
+      } else {
+        setLocationNotice(locError?.message || (lang === "bn" ? "অবস্থান সনাক্ত করা সম্ভব হয়নি।" : "Could not determine location."));
+      }
+      setTimeout(() => setLocationNotice(null), 6000);
+      return;
+    }
+
+    const { approximateLatitude, approximateLongitude, suggestedAreaName } = coordinates;
+    const L = (window as any).L;
+    const map = mapInstanceRef.current;
+    if (!L || !map) return;
+
+    if (userLocationLayerRef.current) {
+      map.removeLayer(userLocationLayerRef.current);
+    }
+
+    const userGroup = L.layerGroup();
+
+    // 120m radius privacy circle (~110m 3-decimal grid buffer)
+    const circle = L.circle([approximateLatitude, approximateLongitude], {
+      radius: 120,
+      color: "#059669",
+      fillColor: "#10b981",
+      fillOpacity: 0.18,
+      weight: 2,
+      dashArray: "4, 4",
+    });
+
+    const userIcon = L.divIcon({
+      className: "custom-user-location-marker",
+      html: `<div style="position: relative; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;">
+        <span style="position: absolute; width: 100%; height: 100%; border-radius: 9999px; background-color: #10b981; opacity: 0.75; animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></span>
+        <span style="position: relative; width: 14px; height: 14px; border-radius: 9999px; background-color: #059669; border: 2.5px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></span>
+      </div>`,
+      iconSize: [26, 26],
+      iconAnchor: [13, 13],
+    });
+
+    const marker = L.marker([approximateLatitude, approximateLongitude], { icon: userIcon });
+    const popupHtml = `
+      <div style="font-family: inherit; font-size: 12px; padding: 4px; min-width: 160px;">
+        <div style="font-weight: 800; color: #059669; font-size: 13px;">
+          🎯 ${lang === "bn" ? "আপনার আনুমানিক অবস্থান" : "Your Approximate Location"}
+        </div>
+        <div style="font-size: 11px; color: #4b5563; margin-top: 4px; line-height: 1.4;">
+          ${suggestedAreaName ? `📍 <strong>${suggestedAreaName}</strong><br/>` : ""}
+          <span style="font-size: 10px; color: #6b7280;">🔒 ~110m privacy buffer applied</span>
+        </div>
+      </div>
+    `;
+    marker.bindPopup(popupHtml);
+
+    userGroup.addLayer(circle);
+    userGroup.addLayer(marker);
+    userGroup.addTo(map);
+    userLocationLayerRef.current = userGroup;
+
+    map.flyTo([approximateLatitude, approximateLongitude], 14, {
+      animate: true,
+      duration: 1.2,
+    });
+
+    setTimeout(() => {
+      marker.openPopup();
+    }, 1300);
+  };
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 space-y-6">
       {/* Top Header & Bilingual Switcher */}
@@ -279,6 +373,28 @@ export default function SafetyMapPage() {
           >
             {isListView ? `🗺️ ${t.map_view_toggle}` : `📋 ${t.list_view_toggle}`}
           </button>
+
+          {/* Locate Me Action Button */}
+          {!isListView && (
+            <button
+              onClick={handleLocateMe}
+              disabled={locating}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-300 dark:border-emerald-700 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white px-3.5 py-1.5 text-xs font-bold shadow-xs transition disabled:opacity-50"
+              title="Locate Me on Map (~110m privacy protection)"
+            >
+              {locating ? (
+                <>
+                  <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  <span>{lang === "bn" ? "খোঁজা হচ্ছে..." : "Locating..."}</span>
+                </>
+              ) : (
+                <>
+                  <span>🎯</span>
+                  <span>{t.locate_me}</span>
+                </>
+              )}
+            </button>
+          )}
 
           {/* Bilingual Language Switcher */}
           <div className="inline-flex rounded-xl bg-zinc-100 dark:bg-zinc-800 p-1 border border-zinc-200 dark:border-zinc-700">
@@ -511,6 +627,37 @@ export default function SafetyMapPage() {
               )}
             </div>
           )}
+
+          {/* Location Notice Banner */}
+          {locationNotice && (
+            <div className="absolute top-4 left-4 right-4 sm:left-auto sm:right-4 z-30 max-w-sm bg-amber-50 dark:bg-amber-950/90 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 rounded-2xl p-3 text-xs shadow-xl flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span>⚠️</span>
+                <span>{locationNotice}</span>
+              </div>
+              <button
+                onClick={() => setLocationNotice(null)}
+                className="text-amber-600 hover:text-amber-800 text-xs font-bold"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+          {/* Floating Map GPS Locate Button */}
+          <button
+            onClick={handleLocateMe}
+            disabled={locating}
+            aria-label="Locate me on map"
+            className="absolute bottom-4 right-4 z-20 flex h-11 w-11 items-center justify-center rounded-2xl bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-100 shadow-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 active:scale-95 transition disabled:opacity-50"
+            title={lang === "bn" ? "আমার অবস্থান" : "Locate Me"}
+          >
+            {locating ? (
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-600 border-t-transparent" />
+            ) : (
+              <span className="text-xl">🎯</span>
+            )}
+          </button>
 
           {/* Map Legend */}
           <div className="absolute bottom-4 left-4 z-20 rounded-2xl bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md p-3 border border-zinc-200 dark:border-zinc-800 shadow-md text-[11px] space-y-1.5 hidden sm:block">

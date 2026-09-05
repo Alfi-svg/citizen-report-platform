@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
 import { Category, Report } from "@/lib/types";
 import EvidenceUploader, { SelectedFileItem } from "@/components/EvidenceUploader";
+import { captureCurrentLocation } from "@/lib/location";
 
 export default function CreateReportPage() {
   const router = useRouter();
@@ -20,9 +21,15 @@ export default function CreateReportPage() {
     categoryId: "",
     description: "",
     locationText: "",
+    latitude: null as number | null,
+    longitude: null as number | null,
+    locationAccuracy: null as number | null,
     incidentDate: "",
     isAnonymous: false,
   });
+
+  const [isLocating, setIsLocating] = useState(false);
+  const [locationNotice, setLocationNotice] = useState<{ type: "info" | "warning"; message: string } | null>(null);
 
   const [selectedFiles, setSelectedFiles] = useState<SelectedFileItem[]>([]);
   const [isReviewMode, setIsReviewMode] = useState(false);
@@ -58,6 +65,53 @@ export default function CreateReportPage() {
       isMounted = false;
     };
   }, []);
+
+  const handleUseCurrentLocation = async () => {
+    setIsLocating(true);
+    setLocationNotice(null);
+
+    const { coordinates, error: locError } = await captureCurrentLocation({
+      enableHighAccuracy: true,
+      timeoutMs: 10000,
+    });
+
+    setIsLocating(false);
+
+    if (locError) {
+      setLocationNotice({
+        type: "warning",
+        message: locError.message,
+      });
+      return;
+    }
+
+    if (coordinates) {
+      setFormData((prev) => ({
+        ...prev,
+        latitude: coordinates.latitude,
+        longitude: coordinates.longitude,
+        locationAccuracy: coordinates.accuracy,
+        locationText: prev.locationText.trim()
+          ? prev.locationText
+          : coordinates.suggestedAreaName || `Near ${coordinates.approximateLatitude.toFixed(3)}, ${coordinates.approximateLongitude.toFixed(3)}`,
+      }));
+
+      setLocationNotice({
+        type: "info",
+        message: `Current location attached (~${coordinates.approximateLatitude.toFixed(3)}, ${coordinates.approximateLongitude.toFixed(3)}). Privacy fuzzing applied.`,
+      });
+    }
+  };
+
+  const handleClearLocationCoordinates = () => {
+    setFormData((prev) => ({
+      ...prev,
+      latitude: null,
+      longitude: null,
+      locationAccuracy: null,
+    }));
+    setLocationNotice(null);
+  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -120,6 +174,8 @@ export default function CreateReportPage() {
         category_id: formData.categoryId,
         description: formData.description.trim(),
         location_text: formData.locationText.trim(),
+        latitude: formData.latitude,
+        longitude: formData.longitude,
         incident_date: formData.incidentDate
           ? new Date(formData.incidentDate).toISOString()
           : null,
@@ -297,9 +353,28 @@ export default function CreateReportPage() {
           {/* Location & Incident Date */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                Location / Landmark <span className="text-red-500">*</span>
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                  Location / Landmark <span className="text-red-500">*</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={handleUseCurrentLocation}
+                  disabled={isLocating}
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 disabled:opacity-50 transition"
+                  title="Detect current device location"
+                >
+                  {isLocating ? (
+                    <>
+                      <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
+                      <span>Locating...</span>
+                    </>
+                  ) : (
+                    <span>📍 Use My Location</span>
+                  )}
+                </button>
+              </div>
+
               <input
                 name="locationText"
                 type="text"
@@ -309,6 +384,53 @@ export default function CreateReportPage() {
                 placeholder="e.g. Road 27, Dhanmondi, Dhaka"
                 className="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3.5 py-2.5 text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:border-emerald-700 focus:outline-none focus:ring-1 focus:ring-emerald-700"
               />
+
+              {/* GPS Coordinates Badge */}
+              {formData.latitude !== null && formData.longitude !== null && (
+                <div className="flex items-center justify-between gap-2 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 px-3 py-1.5 text-[11px]">
+                  <div className="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300">
+                    <span>🛡️</span>
+                    <span className="font-semibold">GPS:</span>
+                    <span>
+                      ~{formData.latitude.toFixed(3)}, {formData.longitude.toFixed(3)}
+                    </span>
+                    <span className="text-emerald-600 dark:text-emerald-400 text-[10px] bg-emerald-100 dark:bg-emerald-900/60 px-1.5 py-0.5 rounded font-medium">
+                      Fuzzed ~110m
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleClearLocationCoordinates}
+                    className="text-zinc-500 hover:text-red-500 font-bold transition text-xs"
+                    title="Remove attached GPS coordinates"
+                  >
+                    ✕ Remove
+                  </button>
+                </div>
+              )}
+
+              {/* Location Notice / Error */}
+              {locationNotice && (
+                <div
+                  className={`flex items-start justify-between gap-2 rounded-xl p-2.5 text-[11px] ${
+                    locationNotice.type === "warning"
+                      ? "bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-800 dark:text-amber-200"
+                      : "bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-200"
+                  }`}
+                >
+                  <div className="flex items-start gap-1.5">
+                    <span>{locationNotice.type === "warning" ? "⚠️" : "ℹ️"}</span>
+                    <span>{locationNotice.message}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setLocationNotice(null)}
+                    className="text-zinc-400 hover:text-zinc-700 font-bold ml-1"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="space-y-1.5">
@@ -390,6 +512,15 @@ export default function CreateReportPage() {
               <span className="font-bold text-zinc-900 dark:text-zinc-100">
                 📍 {formData.locationText}
               </span>
+              {formData.latitude !== null && formData.longitude !== null ? (
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 block mt-0.5">
+                  🛡️ GPS Attached: ~{formData.latitude.toFixed(3)}, {formData.longitude.toFixed(3)} (Fuzzed ~110m)
+                </span>
+              ) : (
+                <span className="text-[10px] text-zinc-400 block mt-0.5">
+                  📝 Manual landmark only
+                </span>
+              )}
             </div>
 
             <div>

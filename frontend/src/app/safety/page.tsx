@@ -5,6 +5,7 @@ import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import { AreaReference, NearbyEmergencyServicesResult, NearbyServiceResponse } from "@/lib/types";
 import { translations, Language } from "@/lib/i18n";
+import { captureCurrentLocation } from "@/lib/location";
 
 export default function SafetyCenterPage() {
   const [lang, setLang] = useState<Language>("en");
@@ -72,35 +73,37 @@ export default function SafetyCenterPage() {
     }
   };
 
-  // Request browser geolocation ONLY on explicit citizen click
-  const handleUseCurrentLocation = () => {
-    if (typeof window === "undefined" || !navigator.geolocation) {
-      setGeoError(t.error_unavailable);
-      return;
-    }
-
+  // Request browser/native geolocation ONLY on explicit citizen click
+  const handleUseCurrentLocation = async () => {
     setLoading(true);
     setGeoError(null);
     setPermissionDenied(false);
 
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        setActiveLocationName(lang === "bn" ? "আপনার বর্তমান অবস্থান (GPS)" : "Your Current Location (GPS)");
-        setSelectedAreaId("");
-        fetchNearbyServices(latitude, longitude);
-      },
-      (err) => {
-        setLoading(false);
-        if (err.code === err.PERMISSION_DENIED) {
-          setPermissionDenied(true);
-          setGeoError(t.permission_denied_desc);
-        } else {
-          setGeoError(t.error_unavailable);
-        }
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    );
+    const { coordinates, error: locError } = await captureCurrentLocation({
+      enableHighAccuracy: true,
+      timeoutMs: 10000,
+    });
+
+    if (locError) {
+      setLoading(false);
+      if (locError.code === "PERMISSION_DENIED") {
+        setPermissionDenied(true);
+        setGeoError(t.permission_denied_desc);
+      } else {
+        setGeoError(locError.message);
+      }
+      return;
+    }
+
+    if (coordinates) {
+      setActiveLocationName(
+        lang === "bn"
+          ? `আপনার অবস্থান (GPS: ~${coordinates.approximateLatitude.toFixed(3)}, ${coordinates.approximateLongitude.toFixed(3)})`
+          : `Your Location (GPS: ~${coordinates.approximateLatitude.toFixed(3)}, ${coordinates.approximateLongitude.toFixed(3)})`
+      );
+      setSelectedAreaId("");
+      fetchNearbyServices(coordinates.latitude, coordinates.longitude);
+    }
   };
 
   // Handle manual area selection

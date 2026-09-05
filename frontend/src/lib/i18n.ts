@@ -96,6 +96,7 @@ export const translations = {
     reset_map_filters: "Reset Filters",
     list_view_toggle: "Switch to List View",
     map_view_toggle: "Switch to Map View",
+    locate_me: "Locate Me",
 
     // Transparency & Crime Analysis Dashboard
     transparency_title: "Transparency & Crime Analysis",
@@ -291,6 +292,7 @@ export const translations = {
     reset_map_filters: "ফিল্টার মুছুন",
     list_view_toggle: "তালিকা ভিউতে যান",
     map_view_toggle: "ম্যাপ ভিউতে যান",
+    locate_me: "আমার অবস্থান",
 
     // Transparency & Crime Analysis Dashboard
     transparency_title: "স্বচ্ছতা ও অপরাধ বিশ্লেষণ",
