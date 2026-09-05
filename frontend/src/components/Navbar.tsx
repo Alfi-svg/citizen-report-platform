@@ -172,8 +172,8 @@ export default function Navbar() {
                   priority
                 />
               </div>
-              <div className="flex flex-col">
-                <span className="text-xs sm:text-base font-black tracking-tight text-zinc-900 dark:text-zinc-100 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition leading-tight">
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs sm:text-base font-black tracking-tight text-zinc-900 dark:text-zinc-100 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition leading-tight truncate max-w-[130px] sm:max-w-none">
                   {lang === "bn" ? "বাংলাদেশ সিটিজেন রিপোর্ট" : "Citizen Report BD"}
                 </span>
                 <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium hidden sm:inline leading-none">
@@ -257,11 +257,10 @@ export default function Navbar() {
             {/* Primary Action: Report an Issue */}
             <Link
               href="/reports/create"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white px-3 sm:px-3.5 py-1.5 text-xs font-bold shadow-2xs transition shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
+              className="hidden sm:inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white px-3 sm:px-3.5 py-1.5 text-xs font-bold shadow-2xs transition shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
             >
               <span className="text-sm leading-none font-bold">+</span>
-              <span className="hidden sm:inline">{lang === "bn" ? "রিপোর্ট করুন" : "Report"}</span>
-              <span className="sm:hidden">{lang === "bn" ? "রিপোর্ট" : "Report"}</span>
+              <span>{lang === "bn" ? "রিপোর্ট করুন" : "Report"}</span>
             </Link>
 
             {/* Language Switcher */}

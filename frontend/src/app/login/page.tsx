@@ -73,7 +73,7 @@ function LoginForm() {
       </div>
 
       {/* Login Card */}
-      <div className="relative z-10 w-full max-w-md space-y-6 bg-white dark:bg-zinc-900 p-8 rounded-3xl shadow-xl border border-zinc-200 dark:border-zinc-800">
+      <div className="relative z-10 w-full max-w-md space-y-6 bg-white dark:bg-zinc-900 p-5 sm:p-8 rounded-3xl shadow-xl border border-zinc-200 dark:border-zinc-800">
         <div className="text-center">
           <div className="mx-auto h-16 w-16 relative rounded-2xl overflow-hidden shadow-md border border-emerald-700/30 mb-3">
             <Image

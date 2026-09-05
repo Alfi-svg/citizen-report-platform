@@ -62,9 +62,9 @@ export default function AdminNav({ pendingReports, pendingFlags }: AdminNavProps
   ];
 
   return (
-    <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 sticky top-16 z-40 shadow-2xs">
+    <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 sticky top-14 sm:top-16 z-40 shadow-2xs">
       {/* Top Admin Status Strip */}
-      <div className="border-b border-zinc-100 dark:border-zinc-800/80 bg-zinc-50/80 dark:bg-zinc-950/40 px-4 sm:px-6 lg:px-8 py-2">
+      <div className="border-b border-zinc-100 dark:border-zinc-800/80 bg-zinc-50/80 dark:bg-zinc-950/40 px-3 sm:px-6 lg:px-8 py-2">
         <div className="mx-auto max-w-7xl flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-500/10 px-2 py-0.5 text-[11px] font-black text-amber-700 dark:text-amber-400 border border-amber-500/30">
@@ -95,7 +95,7 @@ export default function AdminNav({ pendingReports, pendingFlags }: AdminNavProps
       </div>
 
       {/* Admin Horizontal Scroll Navigation Bar */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-3 sm:px-6 lg:px-8">
         <nav
           className="flex items-center py-2 overflow-x-auto gap-1 no-scrollbar"
           aria-label="Admin Navigation"

@@ -213,7 +213,7 @@ export default function TransparencyDashboardPage() {
       {/* 3. Key Statistics (Compact Statistic Blocks) */}
       {kpis && (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 shadow-2xs space-y-1">
+          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3.5 sm:p-4 shadow-2xs space-y-1">
             <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block">
               {t.kpi_total_reports}
             </span>
@@ -225,7 +225,7 @@ export default function TransparencyDashboardPage() {
             </span>
           </div>
 
-          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 shadow-2xs space-y-1">
+          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3.5 sm:p-4 shadow-2xs space-y-1">
             <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block">
               {t.kpi_this_month}
             </span>
@@ -237,7 +237,7 @@ export default function TransparencyDashboardPage() {
             </span>
           </div>
 
-          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 shadow-2xs space-y-1">
+          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3.5 sm:p-4 shadow-2xs space-y-1">
             <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block">
               {t.kpi_this_year}
             </span>
@@ -249,7 +249,7 @@ export default function TransparencyDashboardPage() {
             </span>
           </div>
 
-          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 shadow-2xs space-y-1">
+          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3.5 sm:p-4 shadow-2xs space-y-1">
             <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block">
               {t.kpi_active_missing}
             </span>
@@ -261,7 +261,7 @@ export default function TransparencyDashboardPage() {
             </span>
           </div>
 
-          <div className="col-span-2 sm:col-span-1 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 shadow-2xs space-y-1">
+          <div className="col-span-2 sm:col-span-1 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3.5 sm:p-4 shadow-2xs space-y-1">
             <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider block">
               {t.kpi_districts}
             </span>
@@ -409,7 +409,7 @@ export default function TransparencyDashboardPage() {
               </div>
 
               {/* Month Labels Strip */}
-              <div className="grid grid-cols-12 text-center text-[11px] font-semibold text-zinc-500">
+              <div className="grid grid-cols-12 text-center text-[9px] sm:text-[11px] font-semibold text-zinc-500">
                 {monthly.monthly_data.map((m, idx) => (
                   <button
                     key={m.month}

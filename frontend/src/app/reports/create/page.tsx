@@ -367,7 +367,7 @@ export default function CreateReportPage() {
         </form>
       ) : (
         /* Step 2: Review Screen */
-        <div className="space-y-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 sm:p-8 shadow-sm">
+        <div className="space-y-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 sm:p-8 shadow-sm">
           <div className="border-b border-zinc-100 dark:border-zinc-800 pb-4">
             <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
               Review Before Submission

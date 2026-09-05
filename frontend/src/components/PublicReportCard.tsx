@@ -265,9 +265,9 @@ export default function PublicReportCard({ report }: PublicReportCardProps) {
 
         {/* 4. Bottom Row: Reactions, Comments, Share, and Platform-Reviewed Badge */}
         <div className="p-3 border-t border-zinc-100 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-800/30">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             {/* Social Interactions */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 flex-wrap">
               {/* Support / Helpful Reaction */}
               <button
                 type="button"

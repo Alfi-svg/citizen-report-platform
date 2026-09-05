@@ -226,7 +226,7 @@ export default function MissingPersonsFeedPage() {
             <Link
               key={alert.id}
               href={`/missing-person/${alert.id}`}
-              className="group flex flex-col justify-between rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-sm hover:shadow-md hover:border-red-500/50 transition duration-200"
+              className="group flex flex-col justify-between rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 sm:p-6 shadow-sm hover:shadow-md hover:border-red-500/50 transition duration-200"
             >
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -239,7 +239,7 @@ export default function MissingPersonsFeedPage() {
                 </div>
 
                 {/* Photo & Identity */}
-                <div className="flex gap-4 items-start">
+                <div className="flex gap-3 sm:gap-4 items-start">
                   {alert.profile.photo_url ? (
                     <img
                       src={alert.profile.photo_url}
@@ -252,7 +252,7 @@ export default function MissingPersonsFeedPage() {
                     </div>
                   )}
 
-                  <div className="space-y-1">
+                  <div className="space-y-1 min-w-0">
                     <h3 className="text-base font-extrabold text-zinc-900 dark:text-zinc-100 group-hover:text-red-600 transition">
                       {lang === "bn" && alert.profile.name_bn
                         ? alert.profile.name_bn

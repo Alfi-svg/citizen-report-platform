@@ -206,7 +206,7 @@ export default function HomePage() {
           </div>
 
           {/* Headline */}
-          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight max-w-3xl mx-auto leading-tight">
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-tight max-w-3xl mx-auto leading-tight">
             {lang === "bn"
               ? "বাংলাদেশ সিটিজেন ইনসিডেন্ট অ্যান্ড সেফটি নেটওয়ার্ক"
               : "Bangladesh Citizen Incident & Safety Network"}
@@ -223,7 +223,7 @@ export default function HomePage() {
           <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/reports/create"
-              className="rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 text-xs sm:text-sm font-bold shadow-lg shadow-emerald-700/30 transition active:scale-95 flex items-center gap-2"
+              className="w-full sm:w-auto justify-center rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 text-xs sm:text-sm font-bold shadow-lg shadow-emerald-700/30 transition active:scale-95 flex items-center gap-2"
             >
               <span>+</span>
               <span>{lang === "bn" ? "রিপোর্ট করুন" : "Report an Incident"}</span>
@@ -231,7 +231,7 @@ export default function HomePage() {
 
             <Link
               href="/safety"
-              className="rounded-xl bg-red-600 hover:bg-red-500 text-white px-5 py-3 text-xs sm:text-sm font-bold shadow-lg shadow-red-700/30 transition active:scale-95 flex items-center gap-2"
+              className="w-full sm:w-auto justify-center rounded-xl bg-red-600 hover:bg-red-500 text-white px-5 py-3 text-xs sm:text-sm font-bold shadow-lg shadow-red-700/30 transition active:scale-95 flex items-center gap-2"
             >
               <span>🚨</span>
               <span>{lang === "bn" ? "কাছাকাছি সাহায্য খুঁজুন" : "Find Help Near Me"}</span>
@@ -239,7 +239,7 @@ export default function HomePage() {
 
             <Link
               href="/safety-map"
-              className="rounded-xl border border-zinc-700 bg-zinc-900/80 hover:bg-zinc-800 text-zinc-200 px-4 py-3 text-xs sm:text-sm font-semibold transition backdrop-blur-xs flex items-center gap-1.5"
+              className="w-full sm:w-auto justify-center rounded-xl border border-zinc-700 bg-zinc-900/80 hover:bg-zinc-800 text-zinc-200 px-4 py-3 text-xs sm:text-sm font-semibold transition backdrop-blur-xs flex items-center gap-1.5"
             >
               <span>🗺️</span>
               <span>{lang === "bn" ? "নিরাপত্তা মানচিত্র" : "Safety Map"}</span>
@@ -268,7 +268,7 @@ export default function HomePage() {
         <section className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           <Link
             href="/safety"
-            className="group rounded-2xl border border-red-950/60 bg-red-950/20 p-4 hover:border-red-400/80 transition"
+            className="group rounded-2xl border border-red-950/60 bg-red-950/20 p-3.5 sm:p-4 hover:border-red-400/80 transition"
           >
             <div className="h-9 w-9 rounded-xl bg-red-600 text-white flex items-center justify-center text-lg mb-2 group-hover:scale-105 transition shadow-2xs">
               🚨
@@ -283,7 +283,7 @@ export default function HomePage() {
 
           <Link
             href="/missing-person"
-            className="group rounded-2xl border border-amber-950/60 bg-amber-950/20 p-4 hover:border-amber-400/80 transition"
+            className="group rounded-2xl border border-amber-950/60 bg-amber-950/20 p-3.5 sm:p-4 hover:border-amber-400/80 transition"
           >
             <div className="h-9 w-9 rounded-xl bg-amber-600 text-white flex items-center justify-center text-lg mb-2 group-hover:scale-105 transition shadow-2xs">
               🔍
@@ -298,7 +298,7 @@ export default function HomePage() {
 
           <Link
             href="/safety-map"
-            className="group rounded-2xl border border-emerald-950/60 bg-emerald-950/20 p-4 hover:border-emerald-400/80 transition"
+            className="group rounded-2xl border border-emerald-950/60 bg-emerald-950/20 p-3.5 sm:p-4 hover:border-emerald-400/80 transition"
           >
             <div className="h-9 w-9 rounded-xl bg-emerald-700 text-white flex items-center justify-center text-lg mb-2 group-hover:scale-105 transition shadow-2xs">
               🗺️
@@ -313,7 +313,7 @@ export default function HomePage() {
 
           <Link
             href="/transparency"
-            className="group rounded-2xl border border-blue-950/60 bg-blue-950/20 p-4 hover:border-blue-400/80 transition"
+            className="group rounded-2xl border border-blue-950/60 bg-blue-950/20 p-3.5 sm:p-4 hover:border-blue-400/80 transition"
           >
             <div className="h-9 w-9 rounded-xl bg-blue-600 text-white flex items-center justify-center text-lg mb-2 group-hover:scale-105 transition shadow-2xs">
               📊
@@ -660,7 +660,7 @@ export default function HomePage() {
 
           {/* Dynamic Metric KPI Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-            <div className="rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-800/40 p-4 space-y-1">
+            <div className="rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-800/40 p-3.5 sm:p-4 space-y-1">
               <p className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400">
                 {lang === "bn" ? t.kpi_total_reports : "Total Reviewed Reports"}
               </p>
@@ -672,7 +672,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-800/40 p-4 space-y-1">
+            <div className="rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-800/40 p-3.5 sm:p-4 space-y-1">
               <p className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400">
                 {lang === "bn" ? t.kpi_this_month : "Reviewed This Month"}
               </p>
@@ -684,7 +684,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-800/40 p-4 space-y-1">
+            <div className="rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-800/40 p-3.5 sm:p-4 space-y-1">
               <p className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400">
                 {lang === "bn" ? t.kpi_this_year : "Reviewed This Year"}
               </p>
@@ -696,7 +696,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-800/40 p-4 space-y-1">
+            <div className="rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-800/40 p-3.5 sm:p-4 space-y-1">
               <p className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400">
                 {lang === "bn" ? t.kpi_active_missing : "Active Missing Alerts"}
               </p>
@@ -914,17 +914,17 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto shrink-0">
             <a
               href="tel:999"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-xs font-bold shadow-2xs transition"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-xs font-bold shadow-2xs transition w-full sm:w-auto"
             >
               <span>📞</span>
               <span>{lang === "bn" ? "কল ৯৯৯" : "Call 999"}</span>
             </a>
             <Link
               href="/safety"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-red-300 dark:border-red-900 bg-white dark:bg-zinc-900 text-red-700 dark:text-red-300 text-xs font-bold hover:bg-red-50 dark:hover:bg-red-950/40 transition"
+              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-red-300 dark:border-red-900 bg-white dark:bg-zinc-900 text-red-700 dark:text-red-300 text-xs font-bold hover:bg-red-50 dark:hover:bg-red-950/40 transition w-full sm:w-auto"
             >
               <span>{lang === "bn" ? "কাছাকাছি সেবা খুঁজুন" : "Find Units Near Me"}</span>
               <span>→</span>

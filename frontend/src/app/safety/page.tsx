@@ -181,7 +181,7 @@ export default function SafetyCenterPage() {
 
             <a
               href="tel:999"
-              className="inline-flex items-center justify-center gap-2.5 rounded-2xl bg-white px-8 py-4 text-base font-black text-red-600 shadow-md hover:bg-red-50 active:scale-95 transition text-center shrink-0"
+              className="inline-flex items-center justify-center gap-2.5 rounded-2xl bg-white px-8 py-4 text-base font-black text-red-600 shadow-md hover:bg-red-50 active:scale-95 transition text-center w-full sm:w-auto shrink-0"
             >
               <span className="text-xl">📞</span>
               <span>{t.emergency_call_999}</span>
@@ -248,7 +248,7 @@ export default function SafetyCenterPage() {
       <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <Link
           href="/safety-map"
-          className="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-emerald-500 dark:hover:border-emerald-700 transition shadow-2xs flex flex-col justify-between"
+          className="p-3.5 sm:p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-emerald-500 dark:hover:border-emerald-700 transition shadow-2xs flex flex-col justify-between"
         >
           <div className="h-8 w-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-base mb-2">
             🗺️
@@ -265,7 +265,7 @@ export default function SafetyCenterPage() {
 
         <Link
           href="/missing-person"
-          className="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-amber-500 dark:hover:border-amber-700 transition shadow-2xs flex flex-col justify-between"
+          className="p-3.5 sm:p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-amber-500 dark:hover:border-amber-700 transition shadow-2xs flex flex-col justify-between"
         >
           <div className="h-8 w-8 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 flex items-center justify-center text-base mb-2">
             🔍
@@ -282,7 +282,7 @@ export default function SafetyCenterPage() {
 
         <Link
           href="/reports"
-          className="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-blue-500 dark:hover:border-blue-700 transition shadow-2xs flex flex-col justify-between"
+          className="p-3.5 sm:p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-blue-500 dark:hover:border-blue-700 transition shadow-2xs flex flex-col justify-between"
         >
           <div className="h-8 w-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 flex items-center justify-center text-base mb-2">
             📋
@@ -299,7 +299,7 @@ export default function SafetyCenterPage() {
 
         <Link
           href="/reports/create"
-          className="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-emerald-500 dark:hover:border-emerald-700 transition shadow-2xs flex flex-col justify-between"
+          className="p-3.5 sm:p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-emerald-500 dark:hover:border-emerald-700 transition shadow-2xs flex flex-col justify-between"
         >
           <div className="h-8 w-8 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 flex items-center justify-center text-base mb-2">
             ➕

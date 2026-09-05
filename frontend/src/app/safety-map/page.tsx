@@ -262,7 +262,7 @@ export default function SafetyMapPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => loadMapData(false)}
             className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 transition shadow-xs"
@@ -453,7 +453,7 @@ export default function SafetyMapPage() {
           )}
         </div>
       ) : (
-        <div className="relative rounded-3xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-sm bg-zinc-100 dark:bg-zinc-900 h-[65vh] min-h-[480px]">
+        <div className="relative rounded-3xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-sm bg-zinc-100 dark:bg-zinc-900 h-[55vh] min-h-[360px] sm:min-h-[480px]">
           <div ref={mapContainerRef} className="w-full h-full z-10" />
 
           {loading && (
@@ -467,7 +467,7 @@ export default function SafetyMapPage() {
 
           {/* Selected Point Compact Floating Panel */}
           {selectedPoint && (
-            <div className="absolute top-4 right-4 z-20 max-w-sm w-80 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl p-4 border border-zinc-200 dark:border-zinc-800 shadow-xl space-y-2">
+            <div className="absolute top-4 left-4 sm:left-auto right-4 z-20 max-w-sm w-[calc(100%-2rem)] sm:w-80 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl p-4 border border-zinc-200 dark:border-zinc-800 shadow-xl space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
                   {"report_count" in selectedPoint

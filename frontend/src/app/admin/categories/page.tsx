@@ -190,7 +190,7 @@ export default function AdminCategoriesPage() {
             No incident categories found.
           </div>
         ) : (
-          <div className="overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
+          <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
             <table className="w-full text-left text-xs text-zinc-600 dark:text-zinc-300">
               <thead className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/60 font-semibold text-zinc-900 dark:text-zinc-100">
                 <tr>
@@ -265,8 +265,8 @@ export default function AdminCategoriesPage() {
 
       {/* Create Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-zinc-900 p-6 shadow-xl border border-zinc-200 dark:border-zinc-800 space-y-4 text-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
+          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-zinc-900 p-6 shadow-xl border border-zinc-200 dark:border-zinc-800 space-y-4 text-xs max-h-[90vh] overflow-y-auto">
             <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
               Create New Incident Category
             </h3>
@@ -354,8 +354,8 @@ export default function AdminCategoriesPage() {
 
       {/* Edit Modal */}
       {showEditModal && selectedCategory && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-zinc-900 p-6 shadow-xl border border-zinc-200 dark:border-zinc-800 space-y-4 text-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
+          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-zinc-900 p-6 shadow-xl border border-zinc-200 dark:border-zinc-800 space-y-4 text-xs max-h-[90vh] overflow-y-auto">
             <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
               Edit Category: {selectedCategory.name}
             </h3>
@@ -428,8 +428,8 @@ export default function AdminCategoriesPage() {
 
       {/* Delete / Deactivate Confirmation Modal */}
       {showDeleteModal && selectedCategory && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-zinc-900 p-6 shadow-xl border border-zinc-200 dark:border-zinc-800 space-y-4 text-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
+          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-zinc-900 p-6 shadow-xl border border-zinc-200 dark:border-zinc-800 space-y-4 text-xs max-h-[90vh] overflow-y-auto">
             <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
               {selectedCategory.report_count > 0 ? "Soft Deactivate Category" : "Delete Category"}
             </h3>

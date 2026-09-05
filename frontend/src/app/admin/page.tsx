@@ -108,7 +108,7 @@ export default function AdminDashboardPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 flex-wrap">
             <Link
               href="/admin/reports"
               className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-500 transition"
@@ -133,7 +133,7 @@ export default function AdminDashboardPage() {
         {/* Primary Platform Metrics */}
         {stats && (
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-            <div className="rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 p-4 shadow-sm">
+            <div className="rounded-2xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 p-3.5 sm:p-4 shadow-sm">
               <span className="text-[11px] font-medium text-zinc-500 block">Total Reports</span>
               <span className="text-2xl font-extrabold text-zinc-900 dark:text-zinc-100 mt-1 block">
                 {stats.total_reports}
@@ -141,7 +141,7 @@ export default function AdminDashboardPage() {
               <span className="text-[10px] text-zinc-400 mt-1 block">All created incidents</span>
             </div>
 
-            <div className="rounded-2xl border border-blue-200 bg-blue-50/40 dark:border-blue-900/60 dark:bg-blue-950/20 p-4 shadow-sm">
+            <div className="rounded-2xl border border-blue-200 bg-blue-50/40 dark:border-blue-900/60 dark:bg-blue-950/20 p-3.5 sm:p-4 shadow-sm">
               <span className="text-[11px] font-medium text-blue-700 dark:text-blue-300 block">
                 Pending Review
               </span>
@@ -153,7 +153,7 @@ export default function AdminDashboardPage() {
               </span>
             </div>
 
-            <div className="rounded-2xl border border-amber-200 bg-amber-50/40 dark:border-amber-900/60 dark:bg-amber-950/20 p-4 shadow-sm">
+            <div className="rounded-2xl border border-amber-200 bg-amber-50/40 dark:border-amber-900/60 dark:bg-amber-950/20 p-3.5 sm:p-4 shadow-sm">
               <span className="text-[11px] font-medium text-amber-700 dark:text-amber-300 block">
                 Under Review
               </span>
@@ -165,7 +165,7 @@ export default function AdminDashboardPage() {
               </span>
             </div>
 
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50/40 dark:border-emerald-900/60 dark:bg-emerald-950/20 p-4 shadow-sm">
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50/40 dark:border-emerald-900/60 dark:bg-emerald-950/20 p-3.5 sm:p-4 shadow-sm">
               <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-300 block">
                 Verified & Published
               </span>
@@ -177,7 +177,7 @@ export default function AdminDashboardPage() {
               </span>
             </div>
 
-            <div className="rounded-2xl border border-purple-200 bg-purple-50/40 dark:border-purple-900/60 dark:bg-purple-950/20 p-4 shadow-sm">
+            <div className="rounded-2xl border border-purple-200 bg-purple-50/40 dark:border-purple-900/60 dark:bg-purple-950/20 p-3.5 sm:p-4 shadow-sm">
               <span className="text-[11px] font-medium text-purple-700 dark:text-purple-300 block">
                 Total Users
               </span>
@@ -189,7 +189,7 @@ export default function AdminDashboardPage() {
               </span>
             </div>
 
-            <div className="rounded-2xl border border-cyan-200 bg-cyan-50/40 dark:border-cyan-900/60 dark:bg-cyan-950/20 p-4 shadow-sm">
+            <div className="rounded-2xl border border-cyan-200 bg-cyan-50/40 dark:border-cyan-900/60 dark:bg-cyan-950/20 p-3.5 sm:p-4 shadow-sm">
               <span className="text-[11px] font-medium text-cyan-700 dark:text-cyan-300 block">
                 Safety Flags
               </span>
