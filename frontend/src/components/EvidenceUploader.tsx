@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import { ReportMedia } from "@/lib/types";
-import { getApiBaseUrl } from "@/lib/api";
+import { apiFetch } from "@/lib/api";
 
 export interface SelectedFileItem {
   file: File;
@@ -94,10 +94,6 @@ export default function EvidenceUploader({
     if (!reportId || selectedItems.length === 0) return;
     setUploading(true);
     setError(null);
-
-    const apiBase = getApiBaseUrl();
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-
     try {
       for (let i = 0; i < selectedItems.length; i++) {
         const item = selectedItems[i];
@@ -107,20 +103,12 @@ export default function EvidenceUploader({
         formData.append("file", item.file);
         if (item.caption.trim()) formData.append("caption", item.caption.trim());
 
-        const res = await fetch(`${apiBase}/reports/${reportId}/media`, {
+        const newMedia = await apiFetch<ReportMedia>(`/reports/${reportId}/media`, {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${token || ""}`,
-          },
           body: formData,
+          timeoutMs: 60000, // Allow 60s for media upload
         });
 
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({ detail: res.statusText }));
-          throw new Error(errData.detail || `Upload failed for ${item.file.name}`);
-        }
-
-        const newMedia: ReportMedia = await res.json();
         if (onUploadComplete) onUploadComplete(newMedia);
       }
 
