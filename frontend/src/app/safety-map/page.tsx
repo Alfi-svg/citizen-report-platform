@@ -50,12 +50,22 @@ export default function SafetyMapPage() {
       .catch(() => {});
   }, []);
 
+  // Debounce search state to prevent burst API calls on keystrokes
+  const [debouncedSearch, setDebouncedSearch] = useState<string>("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   // Fetch map data with real-time background sync
   const loadMapData = (isBackground = false) => {
     if (!isBackground) setLoading(true);
     const params = new URLSearchParams();
     if (selectedCategory) params.append("category_slug", selectedCategory);
-    if (search.trim()) params.append("search", search.trim());
+    if (debouncedSearch.trim()) params.append("search", debouncedSearch.trim());
 
     if (dateFilter === "7d") {
       const d = new Date();
@@ -96,7 +106,7 @@ export default function SafetyMapPage() {
       }
     }, 8000);
     return () => clearInterval(interval);
-  }, [selectedCategory, search, dateFilter]);
+  }, [selectedCategory, debouncedSearch, dateFilter]);
 
   // Leaflet dynamic injection & map initialization
   useEffect(() => {
@@ -147,6 +157,13 @@ export default function SafetyMapPage() {
     } else {
       initLeafletMap();
     }
+
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+    };
   }, [isListView]);
 
   // Render markers whenever data or viewMode changes
