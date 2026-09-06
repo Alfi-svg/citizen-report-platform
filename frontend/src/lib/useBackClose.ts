@@ -1,72 +1,88 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { Capacitor } from "@capacitor/core";
+import { registerBackHandler, BackPriority } from "@/lib/backButton";
 
 /**
  * useBackClose
  *
- * Provides Android back-button (and browser back navigation) compatibility for
- * modals, drawers, and nested UI overlays.
+ * Provides Android hardware/gesture Back button and browser back navigation
+ * compatibility for modals, drawers, and nested UI overlays.
  *
- * Expected behavior:
- * - When an overlay opens, a shallow history entry is pushed.
- * - If the user presses the Android back button / gesture, the popstate event
- *   intercepts it, closes the overlay, and keeps the user on the current page.
- * - If the user closes the overlay via UI (e.g. close button, backdrop click, ESC),
- *   the pushed history entry is cleanly reverted so history stays tidy.
- * - If the user navigates to a new route via a Link inside the overlay, history is
- *   preserved for the new route without accidental back-stepping.
+ * Native Android Behavior:
+ * - Registers directly with the centralized priority-ordered Back Handler Registry.
+ * - Hardware back dismisses the topmost active modal without polluting or
+ *   desynchronizing the WebView browser history stack.
+ *
+ * Web Browser Behavior:
+ * - Pushes a shallow history state ({ modalOverlay: id }).
+ * - Intercepts browser 'popstate' to close the overlay cleanly.
+ * - Reverts the history entry when closed via UI (close button, backdrop, ESC).
  */
 export function useBackClose(
   isOpen: boolean,
   onClose: () => void,
-  id: string
+  id: string,
+  priority: BackPriority | number = BackPriority.OVERLAY
 ) {
   const isHandlingPopRef = useRef(false);
   const pushedRef = useRef(false);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || !isOpen) {
+      pushedRef.current = false;
+      return;
+    }
 
-    if (isOpen) {
-      const initialPath = window.location.pathname;
-
-      if (!pushedRef.current) {
-        window.history.pushState(
-          { ...window.history.state, modalOverlay: id },
-          ""
-        );
-        pushedRef.current = true;
-      }
-
-      const handlePopState = () => {
-        isHandlingPopRef.current = true;
-        pushedRef.current = false;
+    // 1. Native Android platform: Hook directly into Capacitor Back Priority Registry
+    if (Capacitor.isNativePlatform()) {
+      const unregister = registerBackHandler(id, priority, () => {
         onClose();
-        setTimeout(() => {
-          isHandlingPopRef.current = false;
-        }, 50);
-      };
-
-      window.addEventListener("popstate", handlePopState);
+        return true;
+      });
 
       return () => {
-        window.removeEventListener("popstate", handlePopState);
-
-        // If the overlay is closed via UI and NOT from popstate,
-        // and user is still on the same page, step back in history to clean up.
-        if (
-          pushedRef.current &&
-          !isHandlingPopRef.current &&
-          window.location.pathname === initialPath &&
-          window.history.state?.modalOverlay === id
-        ) {
-          pushedRef.current = false;
-          window.history.back();
-        }
+        unregister();
       };
-    } else {
-      pushedRef.current = false;
     }
-  }, [isOpen, onClose, id]);
+
+    // 2. Web Browser: Use History API pushState / popstate
+    const initialPath = window.location.pathname;
+
+    if (!pushedRef.current) {
+      window.history.pushState(
+        { ...window.history.state, modalOverlay: id },
+        ""
+      );
+      pushedRef.current = true;
+    }
+
+    const handlePopState = () => {
+      isHandlingPopRef.current = true;
+      pushedRef.current = false;
+      onClose();
+      setTimeout(() => {
+        isHandlingPopRef.current = false;
+      }, 50);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+
+      // If the overlay is closed via UI and NOT from popstate,
+      // and user is still on the same page, step back in history to clean up.
+      if (
+        pushedRef.current &&
+        !isHandlingPopRef.current &&
+        window.location.pathname === initialPath &&
+        window.history.state?.modalOverlay === id
+      ) {
+        pushedRef.current = false;
+        window.history.back();
+      }
+    };
+  }, [isOpen, onClose, id, priority]);
 }

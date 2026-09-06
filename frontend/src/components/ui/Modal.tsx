@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
+import { useBackClose } from "@/lib/useBackClose";
 
 export interface ModalProps {
   isOpen: boolean;
@@ -22,6 +23,9 @@ export const Modal: React.FC<ModalProps> = ({
   maxWidth = "md",
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
+
+  // Android hardware back & browser popstate support
+  useBackClose(isOpen, onClose, title ? `uiModal_${title.replace(/\s+/g, "_")}` : "uiModal");
 
   // Keyboard Escape listener & body scroll lock
   useEffect(() => {

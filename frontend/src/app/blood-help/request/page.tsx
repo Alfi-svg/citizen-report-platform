@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 import { BloodGroup, BloodUrgency, PublicBloodRequest } from "@/lib/types";
 import { useAuth } from "@/context/AuthContext";
+import { useBackClose } from "@/lib/useBackClose";
+import { registerBackHandler, BackPriority } from "@/lib/backButton";
 
 const BLOOD_GROUPS: BloodGroup[] = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
@@ -32,14 +34,23 @@ export default function CreateBloodRequestPage() {
   const [contactMethod, setContactMethod] = useState("PHONE");
   const [additionalInfo, setAdditionalInfo] = useState("");
 
-  React.useEffect(() => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    setRequiredDate(tomorrow.toISOString().slice(0, 10));
-  }, []);
-
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showDiscardModal, setShowDiscardModal] = useState(false);
+
+  // 1. Android Back on Discard Dialog -> Closes the dialog
+  useBackClose(showDiscardModal, () => setShowDiscardModal(false), "bloodRequestDiscardModal", BackPriority.OVERLAY);
+
+  // 2. Android Back with unsaved draft -> Prompts discard confirmation
+  const hasUnsavedContent = Boolean(hospitalName.trim() || contactPhone.trim() || contactName.trim() || additionalInfo.trim());
+  React.useEffect(() => {
+    if (!hasUnsavedContent || showDiscardModal || submitting) return;
+
+    return registerBackHandler("bloodRequestDraftSafety", BackPriority.FORM_DIRTY, () => {
+      setShowDiscardModal(true);
+      return true;
+    });
+  }, [hasUnsavedContent, showDiscardModal, submitting]);
 
   if (authLoading) {
     return (
@@ -361,6 +372,59 @@ export default function CreateBloodRequestPage() {
           </div>
         </form>
       </div>
+
+      {/* Discard Draft Confirmation Dialog */}
+      {showDiscardModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-xs"
+          onClick={() => setShowDiscardModal(false)}
+        >
+          <div
+            className="relative w-full max-w-sm rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-2xl space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 font-bold text-lg">
+                🩸
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                  Discard Blood Request?
+                </h3>
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                  Unsaved details will be lost
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+              You have started entering emergency blood request details. Are you sure you want to leave and discard this request?
+            </p>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowDiscardModal(false)}
+                className="rounded-xl border border-zinc-200 dark:border-zinc-700 px-4 py-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition min-h-[38px]"
+              >
+                Keep Editing
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDiscardModal(false);
+                  router.back();
+                }}
+                className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 text-xs font-bold transition shadow-xs min-h-[38px]"
+              >
+                Discard & Exit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

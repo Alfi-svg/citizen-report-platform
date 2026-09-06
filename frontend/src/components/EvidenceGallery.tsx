@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { ReportMedia } from "@/lib/types";
 import { getApiBaseUrl } from "@/lib/api";
+import { useBackClose } from "@/lib/useBackClose";
 
 interface EvidenceGalleryProps {
   media: ReportMedia[];
@@ -24,6 +25,9 @@ export default function EvidenceGallery({
   deletingId = null,
 }: EvidenceGalleryProps) {
   const [lightboxImage, setLightboxImage] = useState<{ url: string; title: string; caption?: string | null } | null>(null);
+
+  // Android hardware back & browser popstate support for full-screen photo viewer
+  useBackClose(Boolean(lightboxImage), () => setLightboxImage(null), "evidenceLightbox");
 
   if (!media || media.length === 0) {
     return (

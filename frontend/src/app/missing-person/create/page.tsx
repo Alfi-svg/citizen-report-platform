@@ -6,8 +6,12 @@ import { useAuth } from "@/context/AuthContext";
 import { apiFetch, getApiBaseUrl } from "@/lib/api";
 import { MissingPersonSubmissionResponse } from "@/lib/types";
 import { captureCurrentLocation } from "@/lib/location";
+import { useRouter } from "next/navigation";
+import { useBackClose } from "@/lib/useBackClose";
+import { registerBackHandler, BackPriority } from "@/lib/backButton";
 
 export default function CreateMissingPersonPage() {
+  const router = useRouter();
   const { isAuthenticated, isLoading, isAdmin } = useAuth();
 
   // Form State
@@ -36,6 +40,21 @@ export default function CreateMissingPersonPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successResponse, setSuccessResponse] = useState<MissingPersonSubmissionResponse | null>(null);
+  const [showDiscardModal, setShowDiscardModal] = useState(false);
+
+  // 1. Android Back on Discard Dialog -> Closes the dialog
+  useBackClose(showDiscardModal, () => setShowDiscardModal(false), "missingPersonDiscardModal", BackPriority.OVERLAY);
+
+  // 2. Android Back with unsaved draft -> Prompts discard confirmation
+  const hasUnsavedContent = Boolean(fullName.trim() || lastSeenLocation.trim() || description.trim() || photoFile);
+  React.useEffect(() => {
+    if (!hasUnsavedContent || showDiscardModal || submitting) return;
+
+    return registerBackHandler("missingPersonDraftSafety", BackPriority.FORM_DIRTY, () => {
+      setShowDiscardModal(true);
+      return true;
+    });
+  }, [hasUnsavedContent, showDiscardModal, submitting]);
 
   const handleDetectLocation = async () => {
     setDetectingLocation(true);
@@ -612,6 +631,59 @@ export default function CreateMissingPersonPage() {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Discard Draft Confirmation Dialog */}
+      {showDiscardModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-xs"
+          onClick={() => setShowDiscardModal(false)}
+        >
+          <div
+            className="relative w-full max-w-sm rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-2xl space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400 font-bold text-lg">
+                ⚠️
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                  Discard Missing Person Alert?
+                </h3>
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                  Unsaved details will be lost
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+              You have started entering missing person alert information. Are you sure you want to leave and discard this draft?
+            </p>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowDiscardModal(false)}
+                className="rounded-xl border border-zinc-200 dark:border-zinc-700 px-4 py-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition min-h-[38px]"
+              >
+                Keep Editing
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDiscardModal(false);
+                  router.back();
+                }}
+                className="rounded-xl bg-red-600 hover:bg-red-700 text-white px-4 py-2 text-xs font-bold transition shadow-xs min-h-[38px]"
+              >
+                Discard & Exit
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

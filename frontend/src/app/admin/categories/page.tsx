@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
 import { AdminCategory } from "@/lib/types";
 import AdminNav from "@/components/AdminNav";
+import { useBackClose } from "@/lib/useBackClose";
 
 export default function AdminCategoriesPage() {
   const router = useRouter();
@@ -20,6 +21,11 @@ export default function AdminCategoriesPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<AdminCategory | null>(null);
+
+  // Android Back support for category admin modals
+  useBackClose(showCreateModal, () => setShowCreateModal(false), "adminCategoryCreateModal");
+  useBackClose(showEditModal, () => { setShowEditModal(false); setSelectedCategory(null); }, "adminCategoryEditModal");
+  useBackClose(showDeleteModal, () => { setShowDeleteModal(false); setSelectedCategory(null); }, "adminCategoryDeleteModal");
 
   // Form states
   const [name, setName] = useState("");

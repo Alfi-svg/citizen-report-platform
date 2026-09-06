@@ -11,6 +11,8 @@ import {
 } from "@/lib/types";
 import { translations, Language } from "@/lib/i18n";
 import { captureCurrentLocation } from "@/lib/location";
+import { useBackClose } from "@/lib/useBackClose";
+import { isAppActive } from "@/lib/appLifecycle";
 
 export default function SafetyMapPage() {
   const [lang, setLang] = useState<Language>("en");
@@ -28,6 +30,9 @@ export default function SafetyMapPage() {
   const [dateFilter, setDateFilter] = useState<string>("");
   const [isListView, setIsListView] = useState<boolean>(false);
   const [selectedPoint, setSelectedPoint] = useState<PublicMapIncidentPoint | PublicMapClusterPoint | null>(null);
+
+  // Android hardware back & browser popstate support for closing selected marker panel
+  useBackClose(Boolean(selectedPoint), () => setSelectedPoint(null), "safetyMapSelectedPoint");
 
   // Locate Me state
   const [locating, setLocating] = useState<boolean>(false);
@@ -84,9 +89,9 @@ export default function SafetyMapPage() {
 
   useEffect(() => {
     loadMapData();
-    // Real-time live polling every 8 seconds
+    // Real-time live polling every 8 seconds (paused when app is in background)
     const interval = setInterval(() => {
-      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+      if (typeof document !== "undefined" && document.visibilityState === "visible" && isAppActive()) {
         loadMapData(true);
       }
     }, 8000);

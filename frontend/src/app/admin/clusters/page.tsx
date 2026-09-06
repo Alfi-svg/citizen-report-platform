@@ -9,6 +9,7 @@ import {
   CategoryResponse,
   SuggestedRelatedReportResponse,
 } from "@/lib/types";
+import { useBackClose } from "@/lib/useBackClose";
 
 export default function AdminClustersPage() {
   const [data, setData] = useState<IncidentClusterListResponse | null>(null);
@@ -27,6 +28,10 @@ export default function AdminClustersPage() {
   const [activeCluster, setActiveCluster] = useState<IncidentClusterDetailResponse | null>(null);
   const [suggestedReports, setSuggestedReports] = useState<SuggestedRelatedReportResponse[]>([]);
   const [inspectingReportId, setInspectingReportId] = useState<string | null>(null);
+
+  // Android Back support for admin modals & cluster review sheet
+  useBackClose(isCreateModalOpen, () => setIsCreateModalOpen(false), "adminCreateClusterModal");
+  useBackClose(Boolean(activeCluster), () => setActiveCluster(null), "adminActiveClusterSheet");
 
   // Form State for Create
   const [newTitle, setNewTitle] = useState("");

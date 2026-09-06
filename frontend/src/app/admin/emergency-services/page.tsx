@@ -12,6 +12,7 @@ import {
   SafetyServiceVerificationAudit,
   SafetyServiceDuplicateCandidate,
 } from "@/lib/types";
+import { useBackClose } from "@/lib/useBackClose";
 
 const DIVISIONS = [
   "Dhaka",
@@ -70,6 +71,14 @@ export default function AdminEmergencyServicesPage() {
   const [importJsonText, setImportJsonText] = useState("");
   const [importResult, setImportResult] = useState<{ total: number; imported: number; duplicates: number; errors: string[] } | null>(null);
   const [importLoading, setImportLoading] = useState(false);
+
+  // Android Back support for all admin modals
+  useBackClose(isEditModalOpen, () => { setIsEditModalOpen(false); setEditingService(null); }, "adminEmergencyEditModal");
+  useBackClose(isVerifyModalOpen, () => { setIsVerifyModalOpen(false); setVerifyTarget(null); }, "adminEmergencyVerifyModal");
+  useBackClose(isReviewModalOpen, () => { setIsReviewModalOpen(false); setReviewTarget(null); }, "adminEmergencyReviewModal");
+  useBackClose(isHistoryModalOpen, () => { setIsHistoryModalOpen(false); setHistoryService(null); }, "adminEmergencyHistoryModal");
+  useBackClose(isDuplicateModalOpen, () => setIsDuplicateModalOpen(false), "adminEmergencyDuplicateModal");
+  useBackClose(isImportModalOpen, () => setIsImportModalOpen(false), "adminEmergencyImportModal");
 
   // Form data for create/edit
   const [formData, setFormData] = useState({

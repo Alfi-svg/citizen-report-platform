@@ -12,6 +12,7 @@ import ReactionControls from "@/components/ReactionControls";
 import CommentsSection from "@/components/CommentsSection";
 import FlagModal from "@/components/FlagModal";
 import ReportLocationMap from "@/components/ReportLocationMap";
+import { useBackClose } from "@/lib/useBackClose";
 
 const STATUS_BADGES: Record<
   ReportStatus,
@@ -80,6 +81,7 @@ export default function ReportDetailPage() {
 
   // Edit mode state for report owner
   const [isEditing, setIsEditing] = useState(false);
+  useBackClose(isEditing, () => setIsEditing(false), "reportEditMode");
   const [editForm, setEditForm] = useState({
     title: "",
     categoryId: "",

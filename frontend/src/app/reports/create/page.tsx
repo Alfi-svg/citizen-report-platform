@@ -9,6 +9,8 @@ import { Category, Report } from "@/lib/types";
 import EvidenceUploader, { SelectedFileItem } from "@/components/EvidenceUploader";
 import { captureCurrentLocation, approximateCoordinates, suggestNearestArea } from "@/lib/location";
 import ReportLocationMap from "@/components/ReportLocationMap";
+import { useBackClose } from "@/lib/useBackClose";
+import { registerBackHandler, BackPriority } from "@/lib/backButton";
 
 export default function CreateReportPage() {
   const router = useRouter();
@@ -34,9 +36,27 @@ export default function CreateReportPage() {
 
   const [selectedFiles, setSelectedFiles] = useState<SelectedFileItem[]>([]);
   const [isReviewMode, setIsReviewMode] = useState(false);
+  const [showDiscardModal, setShowDiscardModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+
+  // 1. Android Back on Discard Dialog -> Closes the dialog
+  useBackClose(showDiscardModal, () => setShowDiscardModal(false), "reportDiscardModal", BackPriority.OVERLAY);
+
+  // 2. Android Back on Review Step -> Returns to edit form without losing inputs
+  useBackClose(isReviewMode, () => setIsReviewMode(false), "reportCreateReviewMode", BackPriority.FORM_STEP);
+
+  // 3. Android Back with unsaved draft -> Intercepts and prompts discard confirmation
+  const hasUnsavedContent = Boolean(formData.title.trim() || formData.description.trim() || selectedFiles.length > 0);
+  useEffect(() => {
+    if (!hasUnsavedContent || isReviewMode || showDiscardModal || submitting) return;
+
+    return registerBackHandler("reportDraftSafety", BackPriority.FORM_DIRTY, () => {
+      setShowDiscardModal(true);
+      return true;
+    });
+  }, [hasUnsavedContent, isReviewMode, showDiscardModal, submitting]);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -682,6 +702,59 @@ export default function CreateReportPage() {
             >
               {submitting ? "Submitting..." : "Submit Incident Report ✓"}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Discard Draft Confirmation Dialog */}
+      {showDiscardModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-xs"
+          onClick={() => setShowDiscardModal(false)}
+        >
+          <div
+            className="relative w-full max-w-sm rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-2xl space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 font-bold text-lg">
+                ⚠️
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                  Discard Report Draft?
+                </h3>
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                  Unsaved changes will be lost
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+              You have started entering incident report details. Are you sure you want to leave and discard this draft?
+            </p>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowDiscardModal(false)}
+                className="rounded-xl border border-zinc-200 dark:border-zinc-700 px-4 py-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition min-h-[38px]"
+              >
+                Keep Editing
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDiscardModal(false);
+                  router.back();
+                }}
+                className="rounded-xl bg-red-600 hover:bg-red-700 text-white px-4 py-2 text-xs font-bold transition shadow-xs min-h-[38px]"
+              >
+                Discard & Exit
+              </button>
+            </div>
           </div>
         </div>
       )}

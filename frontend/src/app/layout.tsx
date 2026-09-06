@@ -5,6 +5,8 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import MobileBottomNav from "@/components/MobileBottomNav";
 
+import AndroidLifecycleProvider from "@/components/AndroidLifecycleProvider";
+
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://citizenreport.gov.bd";
 
 export const viewport: Viewport = {
@@ -58,10 +60,12 @@ export default function RootLayout({
     <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col font-sans bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
         <AuthProvider>
-          <Navbar />
-          <main className="flex-1 pb-16 md:pb-0">{children}</main>
-          <Footer />
-          <MobileBottomNav />
+          <AndroidLifecycleProvider>
+            <Navbar />
+            <main className="flex-1 pb-16 md:pb-0">{children}</main>
+            <Footer />
+            <MobileBottomNav />
+          </AndroidLifecycleProvider>
         </AuthProvider>
       </body>
     </html>
