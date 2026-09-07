@@ -29,6 +29,8 @@ def resolve_notification_url(
         return "/missing-person"
     elif val.startswith("BLOOD_REQUEST_"):
         return "/blood-help"
+    elif val.startswith("EMERGENCY_"):
+        return "/guard"
     elif val in ("COMMENT_MODERATED", "FLAG_REVIEWED"):
         return f"/reports/{report_id}" if report_id else "/notifications"
     return "/notifications"

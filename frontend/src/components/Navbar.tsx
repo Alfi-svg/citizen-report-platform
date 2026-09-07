@@ -138,6 +138,12 @@ export default function Navbar() {
       isHelp: true,
     },
     {
+      href: "/guard",
+      label: "Guard",
+      bn: "গার্ড",
+      isGuard: true,
+    },
+    {
       href: "/blood-help",
       label: "Blood Help",
       bn: "রক্ত সহায়তা",
@@ -231,7 +237,8 @@ export default function Navbar() {
                       : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:text-zinc-100 dark:hover:bg-zinc-800"
                   }`}
                 >
-                  {item.isHelp && <span className="text-emerald-600 dark:text-emerald-400">🛡️</span>}
+                  {item.isHelp && <span className="text-emerald-600 dark:text-emerald-400">🚨</span>}
+                  {item.isGuard && <span className="text-emerald-600 dark:text-emerald-400">🛡️</span>}
                   {item.isBlood && <span className="text-rose-600 dark:text-rose-400">🩸</span>}
                   <span>{lang === "bn" ? item.bn : item.label}</span>
                 </Link>
@@ -527,6 +534,20 @@ export default function Navbar() {
                   >
                     <span>🚨</span>
                     <span>{lang === "bn" ? "জরুরি সেবা ও ৯৯৯" : "Find Help & SOS 999"}</span>
+                  </Link>
+
+                  <Link
+                    href="/guard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    aria-current={isItemActive("/guard") ? "page" : undefined}
+                    className={`flex items-center gap-3 px-3 py-2.5 min-h-[40px] rounded-lg font-bold transition text-emerald-700 dark:text-emerald-400 ${
+                      isItemActive("/guard")
+                        ? "bg-emerald-50 dark:bg-emerald-950/60"
+                        : "hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                    }`}
+                  >
+                    <span>🛡️</span>
+                    <span>{lang === "bn" ? "নিরাপত্তা গার্ড" : "Nirapotta Guard"}</span>
                   </Link>
                 </div>
 

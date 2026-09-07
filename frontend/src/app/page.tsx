@@ -116,6 +116,23 @@ export default function HomePage() {
     };
   }, []);
 
+  // 5. Active Blood Requests Counter
+  const [bloodCount, setBloodCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    apiFetch<{ total: number }>("/blood/requests?limit=1&status=OPEN")
+      .then((res) => {
+        if (isMounted && res && typeof res.total === "number") {
+          setBloodCount(res.total);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   // Fetch Public Approved Reports Feed
   useEffect(() => {
     let isMounted = true;
@@ -285,9 +302,9 @@ export default function HomePage() {
       {/* Main Container */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-10 sm:space-y-14">
         {/* =================================================================== */}
-        {/* 2. CIVIC QUICK ACTIONS (Matching media_1788378720889.png)          */}
+        {/* 2. CIVIC QUICK ACTIONS (5 Pillars: Safety, Blood, Guard, Missing, Map) */}
         {/* =================================================================== */}
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
           <Link
             href="/safety"
             className="group rounded-2xl border border-red-950/60 bg-red-950/20 p-3.5 sm:p-4 hover:border-red-400/80 transition"
@@ -300,6 +317,36 @@ export default function HomePage() {
             </h2>
             <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1 leading-snug">
               {lang === "bn" ? "৯৯৯ হটলাইন ও নিকটস্থ পুলিশ ইউনিট।" : "999 hotline & verified nearby police units."}
+            </p>
+          </Link>
+
+          <Link
+            href="/blood-help"
+            className="group rounded-2xl border border-rose-950/60 bg-rose-950/20 p-3.5 sm:p-4 hover:border-rose-400/80 transition"
+          >
+            <div className="h-9 w-9 rounded-xl bg-rose-600 text-white flex items-center justify-center text-lg mb-2 group-hover:scale-105 transition shadow-2xs">
+              🩸
+            </div>
+            <h2 className="font-bold text-sm text-zinc-900 dark:text-zinc-100 leading-tight">
+              {lang === "bn" ? "রক্ত সহায়তা" : "Blood Help"}
+            </h2>
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1 leading-snug">
+              {lang === "bn" ? "জরুরি রক্ত গ্রহণ ও রক্তদানের নেটওয়ার্ক।" : "Emergency blood requests & verified donor network."}
+            </p>
+          </Link>
+
+          <Link
+            href="/guard"
+            className="group rounded-2xl border border-emerald-950/60 bg-emerald-950/20 p-3.5 sm:p-4 hover:border-emerald-400/80 transition"
+          >
+            <div className="h-9 w-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-lg mb-2 group-hover:scale-105 transition shadow-2xs">
+              🛡️
+            </div>
+            <h2 className="font-bold text-sm text-zinc-900 dark:text-zinc-100 leading-tight">
+              {lang === "bn" ? "নিরাপত্তা গার্ড" : "Nirapotta Guard"}
+            </h2>
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1 leading-snug">
+              {lang === "bn" ? "বিপদে বিশ্বস্ত ব্যক্তিদের দ্রুত জানান।" : "Rapid emergency alerts to trusted contacts."}
             </p>
           </Link>
 
@@ -320,9 +367,9 @@ export default function HomePage() {
 
           <Link
             href="/safety-map"
-            className="group rounded-2xl border border-emerald-950/60 bg-emerald-950/20 p-3.5 sm:p-4 hover:border-emerald-400/80 transition"
+            className="group rounded-2xl border border-cyan-950/60 bg-cyan-950/20 p-3.5 sm:p-4 hover:border-cyan-400/80 transition col-span-2 sm:col-span-1"
           >
-            <div className="h-9 w-9 rounded-xl bg-emerald-700 text-white flex items-center justify-center text-lg mb-2 group-hover:scale-105 transition shadow-2xs">
+            <div className="h-9 w-9 rounded-xl bg-cyan-700 text-white flex items-center justify-center text-lg mb-2 group-hover:scale-105 transition shadow-2xs">
               🗺️
             </div>
             <h2 className="font-bold text-sm text-zinc-900 dark:text-zinc-100 leading-tight">
@@ -332,21 +379,53 @@ export default function HomePage() {
               {lang === "bn" ? "বিপদ ক্লাস্টারিং ও সুরক্ষা অ্যালার্ট।" : "Geographic hazard clustering & safety alerts."}
             </p>
           </Link>
+        </section>
 
-          <Link
-            href="/transparency"
-            className="group rounded-2xl border border-blue-950/60 bg-blue-950/20 p-3.5 sm:p-4 hover:border-blue-400/80 transition"
-          >
-            <div className="h-9 w-9 rounded-xl bg-blue-600 text-white flex items-center justify-center text-lg mb-2 group-hover:scale-105 transition shadow-2xs">
-              📊
+        {/* =================================================================== */}
+        {/* 2.1 PROMINENT BLOOD HELP ACCESS SECTION                             */}
+        {/* =================================================================== */}
+        <section className="relative overflow-hidden rounded-3xl border border-rose-500/30 bg-gradient-to-br from-rose-950/30 via-zinc-900/60 to-zinc-950/90 p-5 sm:p-6 backdrop-blur-md shadow-xl">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black bg-rose-500/20 text-rose-300 border border-rose-500/40">
+                <span className="h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
+                <span>🩸 {t.home_blood_cta_title}</span>
+              </div>
+              <h2 className="text-lg sm:text-2xl font-black text-white tracking-tight">
+                {t.home_blood_cta_subtitle}
+              </h2>
+              <p className="text-xs sm:text-sm text-zinc-300 max-w-xl">
+                {bloodCount !== null && bloodCount > 0
+                  ? `🔴 ${bloodCount} ${t.home_blood_urgent_summary}`
+                  : t.home_blood_nearby_fallback}
+              </p>
             </div>
-            <h2 className="font-bold text-sm text-zinc-900 dark:text-zinc-100 leading-tight">
-              {lang === "bn" ? "স্বচ্ছতা ও তথ্য" : "Transparency"}
-            </h2>
-            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1 leading-snug">
-              {lang === "bn" ? "রিপোর্ট অ্যানালিটিক্স ও বার্ষিক প্রবণতা।" : "Platform report analytics & annual trends."}
-            </p>
-          </Link>
+
+            <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0">
+              <Link
+                href="/blood-help/request"
+                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white px-4 py-2.5 text-xs sm:text-sm font-black shadow-lg shadow-rose-700/30 transition active:scale-95 min-h-[44px]"
+              >
+                <span>🩸</span>
+                <span>{t.home_blood_need_btn}</span>
+              </Link>
+
+              <Link
+                href="/blood-help"
+                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-xl border border-rose-500/40 bg-rose-950/30 hover:bg-rose-900/50 text-rose-200 px-4 py-2.5 text-xs sm:text-sm font-black transition active:scale-95 min-h-[44px]"
+              >
+                <span>🤝</span>
+                <span>{t.home_blood_donate_btn}</span>
+              </Link>
+
+              <Link
+                href="/blood-help"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-zinc-700 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-200 px-3.5 py-2.5 text-xs sm:text-sm font-semibold transition active:scale-95 min-h-[44px]"
+              >
+                <span>{t.home_blood_find_btn} →</span>
+              </Link>
+            </div>
+          </div>
         </section>
 
         {/* =================================================================== */}

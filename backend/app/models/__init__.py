@@ -42,6 +42,14 @@ from app.models.reputation import (
     ImpactPointTransaction,
     TrustScoreHistory,
 )
+from app.models.guard import (
+    EmergencyStatus,
+    DeliveryStatus,
+    TrustedContact,
+    GuardSettings,
+    EmergencySession,
+    EmergencyAlertRecipient,
+)
 
 __all__ = [
     "Base",
@@ -95,4 +103,10 @@ __all__ = [
     "BloodDonationRecord",
     "UserDevice",
     "DevicePlatform",
+    "EmergencyStatus",
+    "DeliveryStatus",
+    "TrustedContact",
+    "GuardSettings",
+    "EmergencySession",
+    "EmergencyAlertRecipient",
 ]
