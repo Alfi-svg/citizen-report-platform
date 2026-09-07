@@ -36,7 +36,34 @@ from app.models.blood import (
     BloodFlagStatus,
     BloodUrgency,
     BloodGroup,
+    DonationStatus,
+    BloodDonationRecord,
 )
+from app.models.reputation import (
+    UserReputation,
+    ImpactPointTransaction,
+    TrustScoreHistory,
+)
+from app.schemas.reputation import (
+    AdminReputationAdjustRequest,
+    AdminUserReputationItem,
+    UserReputationResponse,
+    ReputationHistoryResponse,
+    ImpactPointTransactionResponse,
+    TrustScoreHistoryResponse,
+)
+from app.schemas.blood import (
+    BloodDonationResponse,
+    AdminBloodDonationModerateRequest,
+)
+from app.services.reputation import (
+    award_impact_points,
+    adjust_trust_score,
+    increment_contribution_count,
+    get_or_create_user_reputation,
+    get_user_reputation_history,
+)
+from app.services import blood as blood_service
 from app.schemas.moderation import (
     AdminDashboardStats,
     ModerationActionRequest,
@@ -391,6 +418,48 @@ async def approve_report(
         message=f"Your incident report '{report.title}' has been approved and published to the public news feed.",
     )
 
+    # Award impact points and update trust score
+    if report.user_id:
+        has_media = bool(report.media and len(report.media) > 0)
+        cluster_stmt = select(IncidentClusterMember).where(IncidentClusterMember.report_id == report.id)
+        is_clustered = bool((await db.execute(cluster_stmt)).scalar_one_or_none())
+
+        pts = 10
+        desc = "Approved incident report"
+        if has_media and is_clustered:
+            pts = 30
+            desc = "Approved verified incident report with photo evidence and community corroboration"
+        elif has_media:
+            pts = 20
+            desc = "Approved verified incident report with photo evidence"
+        elif is_clustered:
+            pts = 20
+            desc = "Approved verified incident report corroborated by community cluster"
+
+        await award_impact_points(
+            db=db,
+            user_id=report.user_id,
+            points=pts,
+            action_type="REPORT_APPROVED",
+            description=desc,
+            reference_type="REPORT",
+            reference_id=report.id,
+        )
+        await adjust_trust_score(
+            db=db,
+            user_id=report.user_id,
+            delta=5,
+            reason="Approved authentic report",
+            reference_type="REPORT",
+            reference_id=report.id,
+        )
+        await increment_contribution_count(
+            db=db,
+            user_id=report.user_id,
+            contribution_type="REPORT",
+            count=1,
+        )
+
     # Synchronize attached missing person alert if present
     mp_alert_stmt = select(MissingPersonAlert).where(MissingPersonAlert.report_id == report.id)
     mp_alert_res = await db.execute(mp_alert_stmt)
@@ -452,6 +521,17 @@ async def reject_report(
         title="Incident Report Rejected",
         message=f"Your incident report '{report.title}' was reviewed and rejected{msg_reason}",
     )
+
+    # Adjust trust score (-10 penalty for false/rejected report)
+    if report.user_id:
+        await adjust_trust_score(
+            db=db,
+            user_id=report.user_id,
+            delta=-10,
+            reason=f"Incident report '{report.title}' rejected by moderators",
+            reference_type="REPORT",
+            reference_id=report.id,
+        )
 
     # Synchronize attached missing person alert if present: close and deactivate
     mp_alert_stmt = select(MissingPersonAlert).where(MissingPersonAlert.report_id == report.id)
@@ -2351,6 +2431,31 @@ async def moderate_missing_person_sighting(
             message=f"আপনার সাবমিট করা নিখোঁজ ব্যক্তির দেখার তথ্য মডারেশন টিম দ্বারা {status_text}।",
         )
 
+        if payload.status == SightingStatus.APPROVED:
+            await award_impact_points(
+                db=db,
+                user_id=sighting.user_id,
+                points=20,
+                action_type="SIGHTING_APPROVED",
+                description="Approved missing person sighting report",
+                reference_type="SIGHTING",
+                reference_id=sighting.id,
+            )
+            await adjust_trust_score(
+                db=db,
+                user_id=sighting.user_id,
+                delta=5,
+                reason="Approved verified sighting report",
+                reference_type="SIGHTING",
+                reference_id=sighting.id,
+            )
+            await increment_contribution_count(
+                db=db,
+                user_id=sighting.user_id,
+                contribution_type="MISSING_PERSON",
+                count=1,
+            )
+
     await db.commit()
     await db.refresh(sighting)
     return AdminMissingPersonSightingResponse.model_validate(sighting)
@@ -2968,6 +3073,310 @@ async def resolve_blood_flag(
 
     await db.commit()
     return {"status": "ok", "message": f"Flag marked as {flag.status.value}"}
+
+
+# ---------------------------------------------------------
+# REPUTATION & TRUST SCORE MANAGEMENT
+# ---------------------------------------------------------
+
+@router.get("/reputation/users", response_model=dict)
+async def list_users_reputation(
+    search: Optional[str] = Query(None, description="Search by username or name"),
+    role: Optional[UserRole] = Query(None, description="Filter by user role"),
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    List users with their Trust Scores, Impact Points, Badges, and Help Ratings.
+    """
+    query = select(User).where(User.is_active == True)
+    if search:
+        search_fmt = f"%{search.strip()}%"
+        query = query.where(or_(User.username.ilike(search_fmt), User.full_name.ilike(search_fmt)))
+    if role:
+        query = query.where(User.role == role)
+
+    total_stmt = select(func.count()).select_from(query.subquery())
+    total = (await db.execute(total_stmt)).scalar() or 0
+
+    query = query.order_by(User.created_at.desc()).offset(offset).limit(limit)
+    users = (await db.execute(query)).scalars().all()
+
+    items = []
+    for u in users:
+        rep = await get_or_create_user_reputation(db, u.id)
+        items.append({
+            "user_id": u.id,
+            "username": u.username,
+            "full_name": u.full_name,
+            "role": u.role.value if hasattr(u.role, "value") else str(u.role),
+            "reputation": {
+                "user_id": rep.user_id,
+                "trust_score": rep.trust_score,
+                "trust_level": rep.trust_level,
+                "trust_description": rep.trust_description,
+                "impact_points": rep.impact_points,
+                "badge": rep.badge,
+                "verified_reports_count": rep.verified_reports_count,
+                "missing_person_contributions_count": rep.missing_person_contributions_count,
+                "verified_blood_donations_count": rep.verified_blood_donations_count,
+                "helpful_verifications_count": rep.helpful_verifications_count,
+                "help_rating": rep.help_rating,
+                "help_rating_count": rep.help_rating_count,
+                "updated_at": rep.updated_at,
+            },
+        })
+
+    return {
+        "items": items,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
+
+
+@router.get("/reputation/users/{user_id}", response_model=dict)
+async def get_user_reputation_detail(
+    user_id: uuid.UUID,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Get full reputation record, impact point transactions, and trust score history for a user.
+    """
+    user_stmt = select(User).where(User.id == user_id)
+    target_user = (await db.execute(user_stmt)).scalar_one_or_none()
+    if not target_user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    rep = await get_or_create_user_reputation(db, user_id)
+    history = await get_user_reputation_history(db, user_id, limit=50)
+
+    return {
+        "user_id": target_user.id,
+        "username": target_user.username,
+        "full_name": target_user.full_name,
+        "role": target_user.role.value if hasattr(target_user.role, "value") else str(target_user.role),
+        "reputation": {
+            "user_id": rep.user_id,
+            "trust_score": rep.trust_score,
+            "trust_level": rep.trust_level,
+            "trust_description": rep.trust_description,
+            "impact_points": rep.impact_points,
+            "badge": rep.badge,
+            "verified_reports_count": rep.verified_reports_count,
+            "missing_person_contributions_count": rep.missing_person_contributions_count,
+            "verified_blood_donations_count": rep.verified_blood_donations_count,
+            "helpful_verifications_count": rep.helpful_verifications_count,
+            "help_rating": rep.help_rating,
+            "help_rating_count": rep.help_rating_count,
+            "updated_at": rep.updated_at,
+        },
+        "history": history,
+    }
+
+
+@router.post("/reputation/adjust", response_model=dict)
+async def adjust_user_reputation(
+    payload: AdminReputationAdjustRequest,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Admin manually adjusts a user's trust score and/or impact points with an audit log reason.
+    """
+    user_stmt = select(User).where(User.id == payload.user_id)
+    target_user = (await db.execute(user_stmt)).scalar_one_or_none()
+    if not target_user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    # Apply points delta if non-zero
+    if payload.points_delta and payload.points_delta != 0:
+        await award_impact_points(
+            db=db,
+            user_id=payload.user_id,
+            points=payload.points_delta,
+            action_type="ADMIN_ADJUSTMENT",
+            description=f"Admin adjustment: {payload.reason}",
+            reference_type="ADMIN_ACTION",
+            reference_id=current_admin.id,
+        )
+
+    # Apply trust score delta if non-zero
+    if payload.trust_score_delta and payload.trust_score_delta != 0:
+        await adjust_trust_score(
+            db=db,
+            user_id=payload.user_id,
+            delta=payload.trust_score_delta,
+            reason=f"Admin adjustment: {payload.reason}",
+            reference_type="ADMIN_ACTION",
+            reference_id=current_admin.id,
+        )
+
+    await db.commit()
+
+    rep = await get_or_create_user_reputation(db, payload.user_id)
+    return {
+        "status": "ok",
+        "message": "Reputation adjusted successfully",
+        "reputation": {
+            "user_id": rep.user_id,
+            "trust_score": rep.trust_score,
+            "trust_level": rep.trust_level,
+            "trust_description": rep.trust_description,
+            "impact_points": rep.impact_points,
+            "badge": rep.badge,
+            "verified_reports_count": rep.verified_reports_count,
+            "missing_person_contributions_count": rep.missing_person_contributions_count,
+            "verified_blood_donations_count": rep.verified_blood_donations_count,
+            "helpful_verifications_count": rep.helpful_verifications_count,
+            "help_rating": rep.help_rating,
+            "help_rating_count": rep.help_rating_count,
+            "updated_at": rep.updated_at,
+        },
+    }
+
+
+# ---------------------------------------------------------
+# BLOOD DONATION OVERSIGHT & DISPUTE RESOLUTION
+# ---------------------------------------------------------
+
+@router.get("/blood/donations", response_model=dict)
+async def list_admin_blood_donations(
+    status_filter: Optional[str] = Query(None, description="Filter by status (DISPUTED, PENDING_CONFIRMATION, VERIFIED, REJECTED)"),
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    List blood donation records for administrative monitoring, disputes, and audit.
+    """
+    from sqlalchemy.orm import selectinload
+    stmt = select(BloodDonationRecord).options(
+        selectinload(BloodDonationRecord.donor),
+        selectinload(BloodDonationRecord.recipient),
+        selectinload(BloodDonationRecord.request),
+    )
+
+    if status_filter:
+        try:
+            status_enum = DonationStatus(status_filter)
+            stmt = stmt.where(BloodDonationRecord.status == status_enum)
+        except ValueError:
+            pass
+
+    count_stmt = select(func.count()).select_from(stmt.subquery())
+    total = (await db.execute(count_stmt)).scalar() or 0
+
+    stmt = stmt.order_by(
+        (BloodDonationRecord.status == DonationStatus.DISPUTED).desc(),
+        BloodDonationRecord.created_at.desc(),
+    ).offset(offset).limit(limit)
+
+    results = (await db.execute(stmt)).scalars().all()
+
+    items = []
+    for d in results:
+        d_name = "Anonymous"
+        if d.donor:
+            d_name = d.donor.full_name or d.donor.username
+        r_name = "Anonymous"
+        if d.recipient:
+            r_name = d.recipient.full_name or d.recipient.username
+
+        hosp = d.request.hospital_name if d.request else "Unknown Hospital"
+        dist = d.request.district if d.request else "Unknown District"
+        bg = d.request.blood_group.value if (d.request and hasattr(d.request.blood_group, "value")) else "Unknown"
+
+        items.append({
+            "id": d.id,
+            "request_id": d.request_id,
+            "donor_id": d.donor_id,
+            "donor_name": d_name,
+            "recipient_id": d.recipient_id,
+            "recipient_name": r_name,
+            "status": d.status.value,
+            "claimed_at": d.claimed_at,
+            "confirmed_at": d.confirmed_at,
+            "disputed_at": d.disputed_at,
+            "dispute_reason": d.dispute_reason,
+            "admin_notes": d.admin_notes,
+            "impact_points_awarded": d.impact_points_awarded,
+            "donor_rating": d.donor_rating,
+            "donor_review": d.donor_review,
+            "rated_at": d.rated_at,
+            "hospital_name": hosp,
+            "district": dist,
+            "blood_group": bg,
+        })
+
+    return {
+        "items": items,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
+
+
+@router.post("/blood/donations/{donation_id}/moderate", response_model=dict)
+async def moderate_blood_donation_admin(
+    donation_id: uuid.UUID,
+    payload: AdminBloodDonationModerateRequest,
+    current_admin: User = Depends(get_current_active_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Admin resolves blood donation disputes or false claims.
+    Actions: VERIFY (awards points & marks verified), REJECT (marks rejected, applies trust penalty), KEEP_DISPUTED.
+    """
+    donation = await blood_service.moderate_blood_donation(
+        db=db,
+        donation_id=donation_id,
+        admin_user_id=current_admin.id,
+        action=payload.action,
+        admin_notes=payload.admin_notes,
+    )
+
+    d_name = "Anonymous"
+    if donation.donor:
+        d_name = donation.donor.full_name or donation.donor.username
+    r_name = "Anonymous"
+    if donation.recipient:
+        r_name = donation.recipient.full_name or donation.recipient.username
+
+    hosp = donation.request.hospital_name if donation.request else "Unknown Hospital"
+    dist = donation.request.district if donation.request else "Unknown District"
+    bg = donation.request.blood_group.value if (donation.request and hasattr(donation.request.blood_group, "value")) else "Unknown"
+
+    return {
+        "status": "ok",
+        "message": f"Donation {donation_id} moderated with action '{payload.action}'",
+        "donation": {
+            "id": donation.id,
+            "request_id": donation.request_id,
+            "donor_id": donation.donor_id,
+            "donor_name": d_name,
+            "recipient_id": donation.recipient_id,
+            "recipient_name": r_name,
+            "status": donation.status.value,
+            "claimed_at": donation.claimed_at,
+            "confirmed_at": donation.confirmed_at,
+            "disputed_at": donation.disputed_at,
+            "dispute_reason": donation.dispute_reason,
+            "admin_notes": donation.admin_notes,
+            "impact_points_awarded": donation.impact_points_awarded,
+            "donor_rating": donation.donor_rating,
+            "donor_review": donation.donor_review,
+            "rated_at": donation.rated_at,
+            "hospital_name": hosp,
+            "district": dist,
+            "blood_group": bg,
+        },
+    }
+
 
 
 

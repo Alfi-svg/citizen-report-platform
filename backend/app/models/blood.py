@@ -53,6 +53,14 @@ class BloodFlagStatus(str, enum.Enum):
     DISMISSED = "DISMISSED"
 
 
+class DonationStatus(str, enum.Enum):
+    PENDING_CONFIRMATION = "PENDING_CONFIRMATION"
+    VERIFIED = "VERIFIED"
+    DISPUTED = "DISPUTED"
+    REJECTED = "REJECTED"
+    CANCELLED = "CANCELLED"
+
+
 class BloodRequest(Base, TimestampMixin):
     __tablename__ = "blood_requests"
 
@@ -155,6 +163,13 @@ class BloodRequest(Base, TimestampMixin):
         back_populates="request",
         cascade="all, delete-orphan",
         lazy="selectin",
+    )
+    donations: Mapped[List["BloodDonationRecord"]] = relationship(
+        "BloodDonationRecord",
+        back_populates="request",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+        order_by="BloodDonationRecord.created_at.desc()",
     )
 
     __table_args__ = (
@@ -335,3 +350,112 @@ class BloodRequestFlag(Base, TimestampMixin):
 
     def __repr__(self) -> str:
         return f"<BloodRequestFlag(id={self.id}, request_id={self.request_id}, status='{self.status}')>"
+
+
+class BloodDonationRecord(Base, TimestampMixin):
+    __tablename__ = "blood_donation_records"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        GUID,
+        primary_key=True,
+        default=uuid.uuid4,
+        nullable=False,
+    )
+    request_id: Mapped[uuid.UUID] = mapped_column(
+        GUID,
+        ForeignKey("blood_requests.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    donor_id: Mapped[uuid.UUID] = mapped_column(
+        GUID,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    recipient_id: Mapped[uuid.UUID] = mapped_column(
+        GUID,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    response_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        GUID,
+        ForeignKey("blood_request_responses.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    status: Mapped[DonationStatus] = mapped_column(
+        SQLEnum(DonationStatus, native_enum=False, values_callable=lambda obj: [e.value for e in obj]),
+        default=DonationStatus.PENDING_CONFIRMATION,
+        nullable=False,
+        index=True,
+    )
+    claimed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+    confirmed_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    disputed_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    dispute_reason: Mapped[Optional[str]] = mapped_column(
+        Text,
+        nullable=True,
+    )
+    admin_notes: Mapped[Optional[str]] = mapped_column(
+        Text,
+        nullable=True,
+    )
+    impact_points_awarded: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+    )
+    donor_rating: Mapped[Optional[int]] = mapped_column(
+        Integer,
+        nullable=True,
+    )
+    donor_review: Mapped[Optional[str]] = mapped_column(
+        Text,
+        nullable=True,
+    )
+    rated_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    # Relationships
+    request: Mapped["BloodRequest"] = relationship(
+        "BloodRequest",
+        back_populates="donations",
+        lazy="selectin",
+    )
+    donor: Mapped["User"] = relationship(
+        "User",
+        foreign_keys=[donor_id],
+        lazy="selectin",
+    )
+    recipient: Mapped["User"] = relationship(
+        "User",
+        foreign_keys=[recipient_id],
+        lazy="selectin",
+    )
+    response: Mapped[Optional["BloodRequestResponse"]] = relationship(
+        "BloodRequestResponse",
+        lazy="selectin",
+    )
+
+    __table_args__ = (
+        Index("ix_blood_donations_req_donor", "request_id", "donor_id", unique=True),
+        Index("ix_blood_donations_status", "status"),
+        Index("ix_blood_donations_donor_id", "donor_id"),
+        Index("ix_blood_donations_recipient_id", "recipient_id"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<BloodDonationRecord(id={self.id}, request_id={self.request_id}, donor_id={self.donor_id}, status='{self.status}')>"
+

@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 from typing import List, Optional
+from fastapi import HTTPException, status
 from sqlalchemy import select, func, and_, or_, case
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.blood import (
@@ -10,10 +11,18 @@ from app.models.blood import (
     DonorAvailability,
     ResponseStatus,
     BloodFlagStatus,
+    DonationStatus,
     BloodRequest,
     BloodDonorProfile,
     BloodRequestResponse,
     BloodRequestFlag,
+    BloodDonationRecord,
+)
+from app.services.reputation import (
+    award_impact_points,
+    adjust_trust_score,
+    increment_contribution_count,
+    record_donor_rating,
 )
 from app.models.user import User
 from app.models.notification import Notification, NotificationType
@@ -331,3 +340,328 @@ async def create_request_flag(
     await db.commit()
     await db.refresh(flag)
     return flag
+
+
+async def get_donation_by_id(
+    db: AsyncSession,
+    donation_id: uuid.UUID,
+) -> Optional[BloodDonationRecord]:
+    stmt = select(BloodDonationRecord).where(BloodDonationRecord.id == donation_id)
+    res = await db.execute(stmt)
+    return res.scalar_one_or_none()
+
+
+async def claim_blood_donation(
+    db: AsyncSession,
+    request_id: uuid.UUID,
+    donor_user: User,
+    response_id: Optional[uuid.UUID] = None,
+) -> BloodDonationRecord:
+    """
+    Register a donor's claim that they provided blood.
+    Requires recipient confirmation before points are awarded.
+    """
+    req_stmt = select(BloodRequest).where(BloodRequest.id == request_id)
+    req_res = await db.execute(req_stmt)
+    req = req_res.scalar_one_or_none()
+
+    if not req or not req.is_active:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Blood request not found")
+
+    if req.user_id == donor_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You cannot claim a blood donation for your own request",
+        )
+
+    # Check for existing claim
+    existing_stmt = select(BloodDonationRecord).where(
+        BloodDonationRecord.request_id == request_id,
+        BloodDonationRecord.donor_id == donor_user.id,
+    )
+    existing = (await db.execute(existing_stmt)).scalar_one_or_none()
+    if existing:
+        if existing.status == DonationStatus.PENDING_CONFIRMATION:
+            return existing
+        elif existing.status == DonationStatus.VERIFIED:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Your blood donation for this request has already been verified",
+            )
+
+    donation = BloodDonationRecord(
+        request_id=request_id,
+        donor_id=donor_user.id,
+        recipient_id=req.user_id,
+        response_id=response_id,
+        status=DonationStatus.PENDING_CONFIRMATION,
+        claimed_at=datetime.now(timezone.utc),
+        impact_points_awarded=False,
+    )
+    db.add(donation)
+
+    # Notify recipient to confirm or dispute
+    donor_display = donor_user.full_name or donor_user.username
+    notif = Notification(
+        user_id=req.user_id,
+        type=NotificationType.BLOOD_DONATION_CLAIMED,
+        title="রক্তদান নিশ্চিতকরণ অনুরোধ (Confirm Blood Donation)",
+        message=f"স্বেচ্ছাসেবী রক্তদাতা '{donor_display}' আপনার '{req.hospital_name}' অনুরোধে রক্তদান করেছেন বলে জানিয়েছেন। অনুগ্রহ করে নিশ্চিত করুন।",
+    )
+    db.add(notif)
+
+    await db.commit()
+    await db.refresh(donation)
+    return donation
+
+
+async def confirm_blood_donation(
+    db: AsyncSession,
+    donation_id: uuid.UUID,
+    recipient_user_id: uuid.UUID,
+) -> BloodDonationRecord:
+    """
+    Recipient confirms blood was received.
+    Awards +50 Impact Points, updates Trust Score, and increments verified donation count.
+    """
+    donation = await get_donation_by_id(db, donation_id)
+    if not donation:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Donation record not found")
+
+    if donation.recipient_id != recipient_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the recipient of this blood request can confirm the donation",
+        )
+
+    if donation.status == DonationStatus.VERIFIED:
+        return donation
+
+    if donation.status != DonationStatus.PENDING_CONFIRMATION:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot confirm donation with status '{donation.status.value}'",
+        )
+
+    donation.status = DonationStatus.VERIFIED
+    donation.confirmed_at = datetime.now(timezone.utc)
+
+    # Award points safely & idempotently
+    if not donation.impact_points_awarded:
+        await award_impact_points(
+            db=db,
+            user_id=donation.donor_id,
+            points=50,
+            action_type="BLOOD_DONATION_VERIFIED",
+            description=f"Verified blood donation for request at {donation.request.hospital_name}",
+            reference_type="BLOOD_DONATION",
+            reference_id=donation.id,
+        )
+        await adjust_trust_score(
+            db=db,
+            user_id=donation.donor_id,
+            delta=5,
+            reason="Verified community blood donation",
+            reference_type="BLOOD_DONATION",
+            reference_id=donation.id,
+        )
+        await increment_contribution_count(
+            db=db,
+            user_id=donation.donor_id,
+            contribution_type="BLOOD",
+            count=1,
+        )
+        donation.impact_points_awarded = True
+
+    # Notify donor
+    donor_notif = Notification(
+        user_id=donation.donor_id,
+        type=NotificationType.BLOOD_DONATION_VERIFIED,
+        title="রক্তদান সফলভাবে যাচাইকৃত (+৫০ পয়েন্ট)",
+        message=f"আপনার রক্তদান গ্রহণকারী দ্বারা নিশ্চিত করা হয়েছে! +৫০ ইমপ্যাক্ট পয়েন্ট আপনার প্রোফাইলে যুক্ত হয়েছে।",
+    )
+    db.add(donor_notif)
+
+    await db.commit()
+    await db.refresh(donation)
+    return donation
+
+
+async def dispute_blood_donation(
+    db: AsyncSession,
+    donation_id: uuid.UUID,
+    recipient_user_id: uuid.UUID,
+    dispute_reason: str,
+) -> BloodDonationRecord:
+    """
+    Recipient disputes donation. Sets status to DISPUTED for Admin verification.
+    No points awarded.
+    """
+    donation = await get_donation_by_id(db, donation_id)
+    if not donation:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Donation record not found")
+
+    if donation.recipient_id != recipient_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the recipient can dispute this donation claim",
+        )
+
+    if donation.status != DonationStatus.PENDING_CONFIRMATION:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot dispute donation with status '{donation.status.value}'",
+        )
+
+    donation.status = DonationStatus.DISPUTED
+    donation.disputed_at = datetime.now(timezone.utc)
+    donation.dispute_reason = dispute_reason.strip()
+
+    # Notify donor about dispute
+    donor_notif = Notification(
+        user_id=donation.donor_id,
+        type=NotificationType.BLOOD_DONATION_DISPUTED,
+        title="রক্তদানের দাবি পর্যালোচনায় রয়েছে (Under Review)",
+        message="আপনার রক্তদানের দাবিটি গ্রহণকারী বিতর্ক করেছেন। অ্যাডমিন মডারেশন টিম এটি খতিয়ে দেখছে।",
+    )
+    db.add(donor_notif)
+
+    await db.commit()
+    await db.refresh(donation)
+    return donation
+
+
+async def rate_blood_donor(
+    db: AsyncSession,
+    donation_id: uuid.UUID,
+    recipient_user_id: uuid.UUID,
+    rating: int,
+    review: Optional[str] = None,
+) -> BloodDonationRecord:
+    """
+    Recipient rates donor (1-5 stars) after donation is VERIFIED.
+    """
+    donation = await get_donation_by_id(db, donation_id)
+    if not donation:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Donation record not found")
+
+    if donation.recipient_id != recipient_user_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only recipient can rate this donor")
+
+    if donation.status != DonationStatus.VERIFIED:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Rating is only allowed after the blood donation is verified",
+        )
+
+    if donation.donor_rating is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You have already submitted a rating for this donation",
+        )
+
+    clamped_rating = max(1, min(5, rating))
+    donation.donor_rating = clamped_rating
+    donation.donor_review = review.strip() if review else None
+    donation.rated_at = datetime.now(timezone.utc)
+
+    await record_donor_rating(db, donation.donor_id, clamped_rating)
+
+    # Notify donor
+    notif = Notification(
+        user_id=donation.donor_id,
+        type=NotificationType.BLOOD_DONATION_RATED,
+        title="নতুন রেটিং পেয়েছেন (New Donor Rating)",
+        message=f"আপনার সাম্প্রতিক রক্তদানের জন্য {clamped_rating}/৫ রেটিং পেয়েছেন।",
+    )
+    db.add(notif)
+
+    await db.commit()
+    await db.refresh(donation)
+    return donation
+
+
+async def moderate_blood_donation(
+    db: AsyncSession,
+    donation_id: uuid.UUID,
+    admin_user_id: uuid.UUID,
+    action: str,
+    admin_notes: Optional[str] = None,
+) -> BloodDonationRecord:
+    """
+    Admin resolves blood donation disputes (VERIFY, REJECT, KEEP_DISPUTED).
+    """
+    donation = await get_donation_by_id(db, donation_id)
+    if not donation:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Donation record not found")
+
+    if action == "VERIFY":
+        donation.status = DonationStatus.VERIFIED
+        donation.admin_notes = admin_notes
+        if not donation.confirmed_at:
+            donation.confirmed_at = datetime.now(timezone.utc)
+
+        if not donation.impact_points_awarded:
+            await award_impact_points(
+                db=db,
+                user_id=donation.donor_id,
+                points=50,
+                action_type="BLOOD_DONATION_VERIFIED",
+                description=f"Admin verified blood donation for request {donation.request.hospital_name}",
+                reference_type="BLOOD_DONATION",
+                reference_id=donation.id,
+            )
+            await adjust_trust_score(
+                db=db,
+                user_id=donation.donor_id,
+                delta=5,
+                reason="Admin-verified blood donation",
+                reference_type="BLOOD_DONATION",
+                reference_id=donation.id,
+            )
+            await increment_contribution_count(
+                db=db,
+                user_id=donation.donor_id,
+                contribution_type="BLOOD",
+                count=1,
+            )
+            donation.impact_points_awarded = True
+
+        notif = Notification(
+            user_id=donation.donor_id,
+            type=NotificationType.BLOOD_DONATION_VERIFIED,
+            title="রক্তদান অ্যাডমিন দ্বারা যাচাইকৃত (+৫০ পয়েন্ট)",
+            message="অ্যাডমিন পর্যালোচনায় আপনার রক্তদান যাচাই ও অনুমোদিত হয়েছে। +৫০ পয়েন্ট যুক্ত হয়েছে।",
+        )
+        db.add(notif)
+
+    elif action == "REJECT":
+        donation.status = DonationStatus.REJECTED
+        donation.admin_notes = admin_notes
+
+        # Penalize fraudulent claim
+        await adjust_trust_score(
+            db=db,
+            user_id=donation.donor_id,
+            delta=-10,
+            reason="Rejected false blood donation claim",
+            reference_type="BLOOD_DONATION",
+            reference_id=donation.id,
+        )
+
+        notif = Notification(
+            user_id=donation.donor_id,
+            type=NotificationType.BLOOD_DONATION_DISPUTED,
+            title="রক্তদানের দাবি প্রত্যাখ্যাত হয়েছে",
+            message="অ্যাডমিন পর্যালোচনায় আপনার রক্তদানের দাবিটি অসত্য বা অসম্পূর্ণ হিসেবে প্রত্যাখ্যাত হয়েছে।",
+        )
+        db.add(notif)
+
+    elif action == "KEEP_DISPUTED":
+        donation.status = DonationStatus.DISPUTED
+        donation.admin_notes = admin_notes
+
+    await db.commit()
+    await db.refresh(donation)
+    return donation
+

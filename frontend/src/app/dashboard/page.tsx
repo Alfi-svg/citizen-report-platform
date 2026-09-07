@@ -5,13 +5,18 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
-import { Report } from "@/lib/types";
+import { Report, UserReputation, ReputationHistoryResponse } from "@/lib/types";
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading, logout, isAdmin } = useAuth();
   const [reports, setReports] = useState<Report[]>([]);
   const [loadingReports, setLoadingReports] = useState(true);
+  const [reputation, setReputation] = useState<UserReputation | null>(null);
+  const [loadingReputation, setLoadingReputation] = useState(true);
+  const [history, setHistory] = useState<ReputationHistoryResponse | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -30,11 +35,31 @@ export default function DashboardPage() {
         .finally(() => {
           if (isMounted) setLoadingReports(false);
         });
+
+      apiFetch<UserReputation>("/reputation/me")
+        .then((data) => {
+          if (isMounted) setReputation(data);
+        })
+        .catch(() => {})
+        .finally(() => {
+          if (isMounted) setLoadingReputation(false);
+        });
     }
     return () => {
       isMounted = false;
     };
   }, [isAuthenticated]);
+
+  const toggleHistory = () => {
+    if (!showHistory && !history) {
+      setLoadingHistory(true);
+      apiFetch<ReputationHistoryResponse>("/reputation/history")
+        .then((data) => setHistory(data))
+        .catch(() => {})
+        .finally(() => setLoadingHistory(false));
+    }
+    setShowHistory(!showHistory);
+  };
 
   if (isLoading) {
     return (
@@ -54,6 +79,17 @@ export default function DashboardPage() {
   ).length;
   const approvedCount = reports.filter((r) => r.status === "APPROVED").length;
 
+  // Next badge tier calculation
+  const getBadgeTierInfo = (points: number) => {
+    if (points < 50) return { current: "New Contributor", next: "Active Helper", target: 50, progress: (points / 50) * 100 };
+    if (points < 200) return { current: "Active Helper", next: "Trusted Contributor", target: 200, progress: ((points - 50) / 150) * 100 };
+    if (points < 500) return { current: "Trusted Contributor", next: "Community Guardian", target: 500, progress: ((points - 200) / 300) * 100 };
+    if (points < 1000) return { current: "Community Guardian", next: "Nirapotta Champion", target: 1000, progress: ((points - 500) / 500) * 100 };
+    return { current: "Nirapotta Champion", next: "Max Tier", target: 1000, progress: 100 };
+  };
+
+  const badgeInfo = reputation ? getBadgeTierInfo(reputation.impact_points) : null;
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
       {/* 1. Citizen Profile Banner */}
@@ -71,9 +107,14 @@ export default function DashboardPage() {
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
                   {user.role}
                 </span>
+                {reputation && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300">
+                    🏅 {reputation.badge}
+                  </span>
+                )}
               </div>
               <p className="text-xs text-zinc-500 mt-0.5">
-                @{user.username} • Verified Citizen Reporter
+                @{user.username} • Verified Citizen Contributor
               </p>
             </div>
           </div>
@@ -141,6 +182,251 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* 2. Community Contributor & Reputation Section */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+              <span>🛡️</span> Community Standing & Impact
+            </h2>
+            <p className="text-xs text-zinc-500">
+              Reliability score and contributions verified by the Nirapotta community
+            </p>
+          </div>
+          <button
+            onClick={toggleHistory}
+            className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:underline flex items-center gap-1"
+          >
+            {showHistory ? "Hide Activity Log" : "View Activity Log →"}
+          </button>
+        </div>
+
+        {loadingReputation ? (
+          <div className="h-44 rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 animate-pulse" />
+        ) : reputation ? (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Trust Score Card */}
+              <div className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 sm:p-6 shadow-2xs space-y-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+                      Reliability Score
+                    </span>
+                    <div className="flex items-baseline gap-2 mt-1">
+                      <span className="text-3xl sm:text-4xl font-black text-zinc-900 dark:text-zinc-100">
+                        {reputation.trust_score}
+                      </span>
+                      <span className="text-sm text-zinc-400 font-medium">/ 100</span>
+                      <span
+                        className={`ml-2 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                          reputation.trust_score >= 80
+                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                            : reputation.trust_score >= 60
+                            ? "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300"
+                            : reputation.trust_score >= 40
+                            ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                            : "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300"
+                        }`}
+                      >
+                        {reputation.trust_level}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="h-10 w-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 flex items-center justify-center text-xl shrink-0">
+                    🛡️
+                  </div>
+                </div>
+
+                {/* Progress bar */}
+                <div className="space-y-1.5">
+                  <div className="h-2.5 w-full rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        reputation.trust_score >= 80
+                          ? "bg-emerald-600"
+                          : reputation.trust_score >= 60
+                          ? "bg-blue-600"
+                          : reputation.trust_score >= 40
+                          ? "bg-amber-500"
+                          : "bg-red-500"
+                      }`}
+                      style={{ width: `${Math.max(5, reputation.trust_score)}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                    {reputation.trust_description}
+                  </p>
+                </div>
+              </div>
+
+              {/* Impact Points Card */}
+              <div className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 sm:p-6 shadow-2xs space-y-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+                      Community Impact Points
+                    </span>
+                    <div className="flex items-baseline gap-2 mt-1">
+                      <span className="text-3xl sm:text-4xl font-black text-amber-600 dark:text-amber-400">
+                        {reputation.impact_points}
+                      </span>
+                      <span className="text-sm text-zinc-400 font-medium">pts</span>
+                      <span className="ml-2 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300">
+                        🏅 {reputation.badge}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="h-10 w-10 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center text-xl shrink-0">
+                    ⭐
+                  </div>
+                </div>
+
+                {badgeInfo && (
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-xs text-zinc-500">
+                      <span>Tier: {badgeInfo.current}</span>
+                      <span>Next: {badgeInfo.next} ({badgeInfo.target} pts)</span>
+                    </div>
+                    <div className="h-2.5 w-full rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-amber-500 transition-all duration-500"
+                        style={{ width: `${Math.min(100, Math.max(5, badgeInfo.progress))}%` }}
+                      />
+                    </div>
+                    <p className="text-[11px] text-zinc-500">
+                      Earn points by contributing authentic reports (+10), verified blood donations (+50), and missing person sightings (+20).
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Contribution Breakdown Row */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 text-center">
+                <span className="text-2xl font-black text-zinc-900 dark:text-zinc-100 block">
+                  {reputation.verified_reports_count}
+                </span>
+                <span className="text-[11px] text-zinc-500 font-medium">
+                  Verified Reports
+                </span>
+              </div>
+
+              <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 text-center">
+                <span className="text-2xl font-black text-rose-600 dark:text-rose-400 block">
+                  {reputation.verified_blood_donations_count}
+                </span>
+                <span className="text-[11px] text-zinc-500 font-medium">
+                  Blood Donations
+                </span>
+              </div>
+
+              <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 text-center">
+                <span className="text-2xl font-black text-blue-600 dark:text-blue-400 block">
+                  {reputation.missing_person_contributions_count}
+                </span>
+                <span className="text-[11px] text-zinc-500 font-medium">
+                  Missing Sightings
+                </span>
+              </div>
+
+              <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 text-center">
+                <span className="text-2xl font-black text-amber-500 block">
+                  {reputation.help_rating > 0 ? `★ ${reputation.help_rating}` : "—"}
+                </span>
+                <span className="text-[11px] text-zinc-500 font-medium">
+                  {reputation.help_rating_count > 0 ? `${reputation.help_rating_count} donor review(s)` : "Donor Rating"}
+                </span>
+              </div>
+            </div>
+
+            {/* Expandable History Drawer */}
+            {showHistory && (
+              <div className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 sm:p-6 shadow-2xs space-y-4">
+                <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                  <span>📜</span> Recent Point Ledger & Trust Score History
+                </h3>
+
+                {loadingHistory ? (
+                  <div className="py-8 text-center text-xs text-zinc-400 animate-pulse">
+                    Loading activity history...
+                  </div>
+                ) : history && (history.transactions.length > 0 || history.trust_history.length > 0) ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Points transactions */}
+                    <div className="space-y-2">
+                      <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider block">
+                        Impact Points Log
+                      </span>
+                      <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                        {history.transactions.map((tx) => (
+                          <div
+                            key={tx.id}
+                            className="p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-100 dark:border-zinc-800 text-xs flex items-center justify-between gap-2"
+                          >
+                            <div>
+                              <p className="font-semibold text-zinc-800 dark:text-zinc-200">
+                                {tx.description}
+                              </p>
+                              <span className="text-[10px] text-zinc-400">
+                                {new Date(tx.created_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <span
+                              className={`font-black shrink-0 ${
+                                tx.points >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"
+                              }`}
+                            >
+                              {tx.points >= 0 ? `+${tx.points}` : tx.points}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Trust history */}
+                    <div className="space-y-2">
+                      <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider block">
+                        Trust Score Audit Log
+                      </span>
+                      <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                        {history.trust_history.map((th) => (
+                          <div
+                            key={th.id}
+                            className="p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-100 dark:border-zinc-800 text-xs flex items-center justify-between gap-2"
+                          >
+                            <div>
+                              <p className="font-semibold text-zinc-800 dark:text-zinc-200">
+                                {th.reason}
+                              </p>
+                              <span className="text-[10px] text-zinc-400">
+                                {new Date(th.created_at).toLocaleDateString()} • {th.old_score} → {th.new_score}
+                              </span>
+                            </div>
+                            <span
+                              className={`font-black shrink-0 ${
+                                th.change >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500"
+                              }`}
+                            >
+                              {th.change >= 0 ? `+${th.change}` : th.change}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-zinc-400 py-4 text-center">
+                    No history records yet.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        ) : null}
+      </section>
 
       {/* 2. My Reports List */}
       <section className="space-y-4">

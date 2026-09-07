@@ -16,6 +16,8 @@ from app.models.blood import (
     BloodRequest,
     BloodDonorProfile,
     BloodRequestResponse,
+    DonationStatus,
+    BloodDonationRecord,
 )
 from app.schemas.blood import (
     BloodRequestCreate,
@@ -30,6 +32,10 @@ from app.schemas.blood import (
     BloodRespondCreate,
     BloodResponseItem,
     BloodFlagCreate,
+    BloodDonationClaimCreate,
+    BloodDonationDisputeRequest,
+    BloodDonationRateRequest,
+    BloodDonationResponse,
 )
 from app.services import blood as blood_service
 
@@ -611,3 +617,158 @@ async def get_donor_matches(
         offset=0,
     )
     return [_to_public_request(r, current_user) for r in requests]
+
+
+def _to_donation_response(donation: BloodDonationRecord) -> BloodDonationResponse:
+    donor_name = (donation.donor.full_name or donation.donor.username) if donation.donor else "Volunteer Donor"
+    recipient_name = (donation.recipient.full_name or donation.recipient.username) if donation.recipient else "Requester"
+    hosp = donation.request.hospital_name if donation.request else "Hospital"
+    dist = donation.request.district if donation.request else "District"
+    bg = donation.request.blood_group.value if donation.request else "N/A"
+    return BloodDonationResponse(
+        id=donation.id,
+        request_id=donation.request_id,
+        donor_id=donation.donor_id,
+        donor_name=donor_name,
+        recipient_id=donation.recipient_id,
+        recipient_name=recipient_name,
+        status=donation.status,
+        claimed_at=donation.claimed_at,
+        confirmed_at=donation.confirmed_at,
+        disputed_at=donation.disputed_at,
+        dispute_reason=donation.dispute_reason,
+        admin_notes=donation.admin_notes,
+        impact_points_awarded=donation.impact_points_awarded,
+        donor_rating=donation.donor_rating,
+        donor_review=donation.donor_review,
+        rated_at=donation.rated_at,
+        hospital_name=hosp,
+        district=dist,
+        blood_group=bg,
+    )
+
+
+@router.post("/requests/{request_id}/claim-donation", response_model=BloodDonationResponse, status_code=status.HTTP_201_CREATED)
+async def claim_blood_donation_endpoint(
+    request_id: uuid.UUID,
+    data: BloodDonationClaimCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Donor marks that they provided blood for this request.
+    Creates a pending verification record; points are only awarded after recipient confirmation.
+    """
+    donation = await blood_service.claim_blood_donation(
+        db=db,
+        request_id=request_id,
+        donor_user=current_user,
+        response_id=data.response_id,
+    )
+    return _to_donation_response(donation)
+
+
+@router.post("/donations/{donation_id}/confirm", response_model=BloodDonationResponse)
+async def confirm_blood_donation_endpoint(
+    donation_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Recipient confirms that blood was received. Awards +50 Impact Points and increments verified donation count.
+    """
+    donation = await blood_service.confirm_blood_donation(
+        db=db,
+        donation_id=donation_id,
+        recipient_user_id=current_user.id,
+    )
+    return _to_donation_response(donation)
+
+
+@router.post("/donations/{donation_id}/dispute", response_model=BloodDonationResponse)
+async def dispute_blood_donation_endpoint(
+    donation_id: uuid.UUID,
+    data: BloodDonationDisputeRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Recipient disputes donation claim. Flags for administrative oversight without awarding points.
+    """
+    donation = await blood_service.dispute_blood_donation(
+        db=db,
+        donation_id=donation_id,
+        recipient_user_id=current_user.id,
+        dispute_reason=data.dispute_reason,
+    )
+    return _to_donation_response(donation)
+
+
+@router.post("/donations/{donation_id}/rate", response_model=BloodDonationResponse)
+async def rate_blood_donor_endpoint(
+    donation_id: uuid.UUID,
+    data: BloodDonationRateRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Recipient rates the donor (1-5 stars) after a donation is confirmed as VERIFIED.
+    """
+    donation = await blood_service.rate_blood_donor(
+        db=db,
+        donation_id=donation_id,
+        recipient_user_id=current_user.id,
+        rating=data.rating,
+        review=data.review,
+    )
+    return _to_donation_response(donation)
+
+
+@router.get("/requests/{request_id}/donations", response_model=List[BloodDonationResponse])
+async def list_request_donations(
+    request_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    List donation claims for a specific blood request.
+    Only accessible by the requester, the claiming donor, or an admin.
+    """
+    req = await blood_service.get_blood_request_by_id(db, request_id)
+    if not req:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Blood request not found")
+
+    stmt = select(BloodDonationRecord).where(BloodDonationRecord.request_id == request_id)
+    res = await db.execute(stmt)
+    donations = list(res.scalars().all())
+
+    # Authorization check
+    if req.user_id != current_user.id and current_user.role != UserRole.ADMIN:
+        # Filter only the donations created by the current user
+        donations = [d for d in donations if d.donor_id == current_user.id]
+
+    return [_to_donation_response(d) for d in donations]
+
+
+@router.get("/donations/my", response_model=List[BloodDonationResponse])
+async def list_my_donations(
+    role: str = Query("all", pattern="^(all|donor|recipient)$"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    List blood donation records involving the authenticated user (as donor or as recipient).
+    """
+    conditions = []
+    if role == "donor":
+        conditions.append(BloodDonationRecord.donor_id == current_user.id)
+    elif role == "recipient":
+        conditions.append(BloodDonationRecord.recipient_id == current_user.id)
+    else:
+        conditions.append(or_(BloodDonationRecord.donor_id == current_user.id, BloodDonationRecord.recipient_id == current_user.id))
+
+    stmt = select(BloodDonationRecord).where(and_(*conditions)).order_by(BloodDonationRecord.created_at.desc())
+    res = await db.execute(stmt)
+    donations = list(res.scalars().all())
+    return [_to_donation_response(d) for d in donations]
+

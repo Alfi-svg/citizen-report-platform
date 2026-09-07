@@ -56,8 +56,8 @@ export default function AdminNav({ pendingReports, pendingFlags }: AdminNavProps
       icon: "👁️",
     },
     { href: "/admin/clusters", label: "Clusters", bn: "ক্লাস্টার", icon: "🔶" },
-    { href: "/admin/analytics", label: "Analytics", bn: "বিশ্লেষণ", icon: "📈" },
     { href: "/admin/users", label: "Users", bn: "ব্যবহারকারী", icon: "👥" },
+    { href: "/admin/reputation", label: "Reputation & Blood", bn: "সুনাম ও রক্তদান", icon: "🛡️" },
     { href: "/admin/categories", label: "Categories", bn: "ক্যাটাগরি", icon: "🏷️" },
   ];
 

@@ -30,10 +30,17 @@ from app.models.blood import (
     DonorAvailability,
     ResponseStatus,
     BloodFlagStatus,
+    DonationStatus,
     BloodRequest,
     BloodDonorProfile,
     BloodRequestResponse,
     BloodRequestFlag,
+    BloodDonationRecord,
+)
+from app.models.reputation import (
+    UserReputation,
+    ImpactPointTransaction,
+    TrustScoreHistory,
 )
 
 __all__ = [
@@ -42,6 +49,9 @@ __all__ = [
     "TimestampMixin",
     "User",
     "UserRole",
+    "UserReputation",
+    "ImpactPointTransaction",
+    "TrustScoreHistory",
     "Category",
     "Report",
     "ReportStatus",
@@ -77,10 +87,12 @@ __all__ = [
     "DonorAvailability",
     "ResponseStatus",
     "BloodFlagStatus",
+    "DonationStatus",
     "BloodRequest",
     "BloodDonorProfile",
     "BloodRequestResponse",
     "BloodRequestFlag",
+    "BloodDonationRecord",
     "UserDevice",
     "DevicePlatform",
 ]

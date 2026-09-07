@@ -1055,6 +1055,82 @@ export interface BloodFlagItem {
   created_at: string;
 }
 
+export type DonationStatus =
+  | "PENDING_CONFIRMATION"
+  | "VERIFIED"
+  | "DISPUTED"
+  | "REJECTED"
+  | "CANCELLED";
+
+export interface UserReputation {
+  user_id: string;
+  trust_score: number;
+  trust_level: string;
+  trust_description: string;
+  impact_points: number;
+  badge: string;
+  verified_reports_count: number;
+  missing_person_contributions_count: number;
+  verified_blood_donations_count: number;
+  helpful_verifications_count: number;
+  help_rating: number;
+  help_rating_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ImpactPointTransaction {
+  id: string;
+  user_id: string;
+  points: number;
+  action_type: string;
+  description: string;
+  reference_type: string;
+  reference_id?: string | null;
+  created_at: string;
+}
+
+export interface TrustScoreHistory {
+  id: string;
+  user_id: string;
+  old_score: number;
+  new_score: number;
+  change: number;
+  reason: string;
+  reference_type?: string | null;
+  reference_id?: string | null;
+  created_at: string;
+}
+
+export interface ReputationHistoryResponse {
+  reputation: UserReputation;
+  transactions: ImpactPointTransaction[];
+  trust_history: TrustScoreHistory[];
+}
+
+export interface BloodDonationRecord {
+  id: string;
+  request_id: string;
+  donor_id: string;
+  donor_name: string;
+  recipient_id: string;
+  recipient_name: string;
+  status: DonationStatus;
+  claimed_at: string;
+  confirmed_at?: string | null;
+  disputed_at?: string | null;
+  dispute_reason?: string | null;
+  admin_notes?: string | null;
+  impact_points_awarded: boolean;
+  donor_rating?: number | null;
+  donor_review?: string | null;
+  rated_at?: string | null;
+  hospital_name: string;
+  district: string;
+  blood_group: string;
+}
+
+
 
 
 

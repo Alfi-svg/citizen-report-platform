@@ -9,6 +9,7 @@ from app.models.blood import (
     DonorAvailability,
     ResponseStatus,
     BloodFlagStatus,
+    DonationStatus,
 )
 
 
@@ -175,3 +176,46 @@ class BloodFlagItem(BaseModel):
     details: Optional[str] = None
     status: BloodFlagStatus
     created_at: datetime
+
+
+class BloodDonationClaimCreate(BaseModel):
+    response_id: Optional[uuid.UUID] = None
+
+
+class BloodDonationDisputeRequest(BaseModel):
+    dispute_reason: str = Field(..., min_length=3, max_length=500)
+
+
+class BloodDonationRateRequest(BaseModel):
+    rating: int = Field(..., ge=1, le=5)
+    review: Optional[str] = Field(None, max_length=500)
+
+
+class BloodDonationResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    request_id: uuid.UUID
+    donor_id: uuid.UUID
+    donor_name: str
+    recipient_id: uuid.UUID
+    recipient_name: str
+    status: DonationStatus
+    claimed_at: datetime
+    confirmed_at: Optional[datetime] = None
+    disputed_at: Optional[datetime] = None
+    dispute_reason: Optional[str] = None
+    admin_notes: Optional[str] = None
+    impact_points_awarded: bool
+    donor_rating: Optional[int] = None
+    donor_review: Optional[str] = None
+    rated_at: Optional[datetime] = None
+    hospital_name: str
+    district: str
+    blood_group: str
+
+
+class AdminBloodDonationModerateRequest(BaseModel):
+    action: str = Field(..., pattern="^(VERIFY|REJECT|KEEP_DISPUTED)$")
+    admin_notes: Optional[str] = Field(None, max_length=500)
+
