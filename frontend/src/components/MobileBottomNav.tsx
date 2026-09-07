@@ -73,7 +73,7 @@ export default function MobileBottomNav() {
   return (
     <nav
       aria-label="Mobile Navigation"
-      className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-t border-slate-200/70 dark:border-white/10 pb-safe shadow-[0_-4px_24px_rgba(0,0,0,0.06)] dark:shadow-[0_-4px_24px_rgba(0,0,0,0.4)]"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/92 dark:bg-zinc-900/92 backdrop-blur-md border-t border-slate-200 dark:border-zinc-800 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.06)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.3)]"
     >
       <div className="grid grid-cols-5 h-14 items-center px-1">
         {navItems.map((item) => {
@@ -123,8 +123,8 @@ export default function MobileBottomNav() {
               className={`flex flex-col items-center justify-center min-h-[44px] py-1 text-center transition select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 rounded-xl active:scale-95 ${
                 isActive
                   ? item.isEmergency
-                    ? "text-red-600 font-black"
-                    : "text-emerald-700 dark:text-emerald-400 font-black"
+                    ? "text-red-600 font-bold"
+                    : "text-emerald-700 dark:text-emerald-400 font-bold"
                   : "text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
               }`}
             >

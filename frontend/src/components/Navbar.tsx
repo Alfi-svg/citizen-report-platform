@@ -237,9 +237,21 @@ export default function Navbar() {
                       : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:text-zinc-100 dark:hover:bg-zinc-800"
                   }`}
                 >
-                  {item.isHelp && <span className="text-emerald-600 dark:text-emerald-400">🚨</span>}
-                  {item.isGuard && <span className="text-emerald-600 dark:text-emerald-400">🛡️</span>}
-                  {item.isBlood && <span className="text-rose-600 dark:text-rose-400">🩸</span>}
+                  {item.isHelp && (
+                    <svg className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m0-10.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.75c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.75h-.152c-3.196 0-6.1-1.249-8.25-3.286Zm0 13.036h.008v.008H12v-.008Z" />
+                    </svg>
+                  )}
+                  {item.isGuard && (
+                    <svg className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.75c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.75h-.152c-3.196 0-6.1-1.249-8.25-3.286Zm0 13.036h.008v.008H12v-.008Z" />
+                    </svg>
+                  )}
+                  {item.isBlood && (
+                    <svg className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 21.75c4.97 0 9-3.917 9-8.75 0-4.043-4.14-8.748-7.795-12.012a1.658 1.658 0 0 0-2.41 0C7.14 4.252 3 8.957 3 13c0 4.833 4.03 8.75 9 8.75Z" />
+                    </svg>
+                  )}
                   <span>{lang === "bn" ? item.bn : item.label}</span>
                 </Link>
               );
@@ -504,7 +516,9 @@ export default function Navbar() {
                         : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                     }`}
                   >
-                    <span>🏠</span>
+                    <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+                    </svg>
                     <span>{lang === "bn" ? "হোম ফিড" : "Home Feed"}</span>
                   </Link>
 
@@ -518,7 +532,9 @@ export default function Navbar() {
                         : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                     }`}
                   >
-                    <span>🗺️</span>
+                    <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.31a1.125 1.125 0 0 0-1.006 0L3.622 5.748A1.125 1.125 0 0 0 3 6.754v11.926c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z" />
+                    </svg>
                     <span>{lang === "bn" ? "নিরাপত্তা মানচিত্র" : "Safety Map"}</span>
                   </Link>
 
@@ -526,13 +542,15 @@ export default function Navbar() {
                     href="/safety"
                     onClick={() => setMobileMenuOpen(false)}
                     aria-current={isItemActive("/safety") ? "page" : undefined}
-                    className={`flex items-center gap-3 px-3 py-2.5 min-h-[40px] rounded-lg font-bold transition text-emerald-700 dark:text-emerald-400 ${
+                    className={`flex items-center gap-3 px-3 py-2.5 min-h-[40px] rounded-lg font-bold transition text-red-600 dark:text-red-400 ${
                       isItemActive("/safety")
-                        ? "bg-emerald-50 dark:bg-emerald-950/60"
+                        ? "bg-red-50 dark:bg-red-950/60"
                         : "hover:bg-zinc-100 dark:hover:bg-zinc-800"
                     }`}
                   >
-                    <span>🚨</span>
+                    <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m0-10.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.75c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.75h-.152c-3.196 0-6.1-1.249-8.25-3.286Zm0 13.036h.008v.008H12v-.008Z" />
+                    </svg>
                     <span>{lang === "bn" ? "জরুরি সেবা ও ৯৯৯" : "Find Help & SOS 999"}</span>
                   </Link>
 
@@ -546,7 +564,9 @@ export default function Navbar() {
                         : "hover:bg-zinc-100 dark:hover:bg-zinc-800"
                     }`}
                   >
-                    <span>🛡️</span>
+                    <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.75c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.75h-.152c-3.196 0-6.1-1.249-8.25-3.286Zm0 13.036h.008v.008H12v-.008Z" />
+                    </svg>
                     <span>{lang === "bn" ? "নিরাপত্তা গার্ড" : "Nirapotta Guard"}</span>
                   </Link>
                 </div>
@@ -566,7 +586,9 @@ export default function Navbar() {
                         : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                     }`}
                   >
-                    <span>🩸</span>
+                    <svg className="h-4 w-4 text-rose-600 dark:text-rose-400 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 21.75c4.97 0 9-3.917 9-8.75 0-4.043-4.14-8.748-7.795-12.012a1.658 1.658 0 0 0-2.41 0C7.14 4.252 3 8.957 3 13c0 4.833 4.03 8.75 9 8.75Z" />
+                    </svg>
                     <span>{lang === "bn" ? "রক্ত সহায়তা" : "Blood Help"}</span>
                   </Link>
 
@@ -576,11 +598,13 @@ export default function Navbar() {
                     aria-current={isItemActive("/missing-person") ? "page" : undefined}
                     className={`flex items-center gap-3 px-3 py-2.5 min-h-[40px] rounded-lg font-semibold transition ${
                       isItemActive("/missing-person")
-                        ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold"
+                        ? "bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 font-bold"
                         : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                     }`}
                   >
-                    <span>🔍</span>
+                    <svg className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                    </svg>
                     <span>{lang === "bn" ? "নিখোঁজ ব্যক্তি অনুসন্ধান" : "Missing Persons"}</span>
                   </Link>
 
@@ -594,7 +618,9 @@ export default function Navbar() {
                         : "text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30"
                     }`}
                   >
-                    <span>➕</span>
+                    <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
                     <span>{lang === "bn" ? "ঘটনা রিপোর্ট করুন" : "Report an Incident"}</span>
                   </Link>
 
@@ -608,7 +634,9 @@ export default function Navbar() {
                         : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                     }`}
                   >
-                    <span>📢</span>
+                    <svg className="h-4 w-4 text-zinc-500 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 1 1 0-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.45a13.923 13.923 0 0 1-1.37-3.926m3.032-.298 7.37-3.685a1.5 1.5 0 0 0 0-2.684l-7.37-3.685m0 10.054V6.973" />
+                    </svg>
                     <span>{lang === "bn" ? "নিখোঁজ ব্যক্তির তথ্য দিন" : "Submit Missing Alert"}</span>
                   </Link>
                 </div>
@@ -628,7 +656,9 @@ export default function Navbar() {
                         : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                     }`}
                   >
-                    <span>📊</span>
+                    <svg className="h-4 w-4 text-zinc-500 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
+                    </svg>
                     <span>{lang === "bn" ? "স্বচ্ছতা ও ক্রাইম অ্যানালিটিক্স" : "Transparency & Analytics"}</span>
                   </Link>
                 </div>
@@ -644,7 +674,9 @@ export default function Navbar() {
                       onClick={() => setMobileMenuOpen(false)}
                       className="flex items-center gap-3 px-3 py-2.5 min-h-[40px] rounded-lg font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 hover:bg-amber-100 transition"
                     >
-                      <span>🛡️</span>
+                      <svg className="h-4 w-4 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.75c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.75h-.152c-3.196 0-6.1-1.249-8.25-3.286Zm0 13.036h.008v.008H12v-.008Z" />
+                      </svg>
                       <span>Admin Management Console</span>
                     </Link>
                   </div>
