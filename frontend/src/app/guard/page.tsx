@@ -340,7 +340,7 @@ export default function GuardPage() {
     }
   };
 
-  if (authLoading) {
+  if (authLoading || (isAuthenticated && loading && !activeSession && contacts.length === 0)) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="animate-spin h-8 w-8 rounded-full border-2 border-emerald-500 border-t-transparent" />
@@ -363,7 +363,7 @@ export default function GuardPage() {
             : "Sign in to configure trusted contacts and trigger rapid emergency alerts with Nirapotta Guard."}
         </p>
         <Link
-          href="/auth/login"
+          href="/login?redirect=/guard"
           className="inline-flex items-center justify-center rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-6 py-3 text-sm shadow-lg shadow-emerald-700/30 transition active:scale-95"
         >
           {lang === "bn" ? "লগইন করুন" : "Sign In to Access"}

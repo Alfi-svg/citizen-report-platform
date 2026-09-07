@@ -34,10 +34,10 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
     case "ACTIVE":
       return (
         <span
-          className={`inline-flex items-center gap-1.5 font-black text-white bg-red-600 rounded-full px-2.5 py-0.5 text-[11px] shadow-2xs select-none ${className}`}
+          className={`inline-flex items-center gap-1.5 font-bold text-white bg-red-600 rounded-full px-2.5 py-0.5 text-[11px] shadow-2xs select-none ${className}`}
         >
-          <span className="h-1.5 w-1.5 rounded-full bg-white animate-ping" />
-          <span>{lang === "bn" ? "🚨 সক্রিয় অ্যালার্ট" : "🚨 Active Alert"}</span>
+          <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+          <span>{lang === "bn" ? "সক্রিয় অ্যালার্ট" : "Active Alert"}</span>
         </span>
       );
 

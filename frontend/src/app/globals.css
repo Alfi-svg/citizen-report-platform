@@ -17,6 +17,12 @@
   --bd-red-dark: #991b1b;
   --bd-red-subtle: #fef2f2;
 
+  /* Blood Network Tokens */
+  --bd-blood: #e11d48;
+  --bd-blood-hover: #be123c;
+  --bd-blood-dark: #9f1239;
+  --bd-blood-subtle: #fff1f2;
+
   /* Status Tokens */
   --status-warning: #d97706;
   --status-warning-subtle: #fffbeb;
@@ -27,14 +33,24 @@
 
   /* Neutral Surface & Border */
   --surface: #ffffff;
-  --surface-muted: #f1f5f9;
+  --surface-muted: #f8fafc;
+  --surface-raised: #ffffff;
   --border: #e2e8f0;
-  --border-subtle: #f8fafc;
+  --border-subtle: #f1f5f9;
   --text-primary: #0f172a;
   --text-secondary: #475569;
   --text-muted: #94a3b8;
   --card-bg: #ffffff;
   --card-border: #e2e8f0;
+
+  /* Standard Radii Tokens */
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+  --radius-full: 9999px;
 }
 
 @theme inline {
@@ -42,10 +58,17 @@
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
   --color-surface-muted: var(--surface-muted);
+  --color-surface-raised: var(--surface-raised);
   --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
   --color-text-muted: var(--text-muted);
+  --color-card-bg: var(--card-bg);
+  --color-card-border: var(--card-border);
+  --color-bd-green: var(--bd-green);
+  --color-bd-red: var(--bd-red);
+  --color-bd-blood: var(--bd-blood);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -54,6 +77,7 @@
     --foreground: #f4f4f5;
     --surface: #18181b;
     --surface-muted: #27272a;
+    --surface-raised: #222226;
     --border: #27272a;
     --border-subtle: #1f1f23;
     --text-primary: #f8fafc;
@@ -63,6 +87,7 @@
     --card-border: #27272a;
     --bd-green-subtle: rgba(0, 106, 78, 0.2);
     --bd-red-subtle: rgba(220, 38, 38, 0.2);
+    --bd-blood-subtle: rgba(225, 29, 72, 0.2);
     --status-warning-subtle: rgba(217, 119, 6, 0.2);
     --status-info-subtle: rgba(37, 99, 235, 0.2);
     --status-success-subtle: rgba(5, 150, 105, 0.2);
@@ -128,87 +153,169 @@ body {
   }
 }
 
+/* Touch target utility for accessible mobile tap areas */
+.min-touch {
+  min-height: 44px;
+  min-width: 44px;
+}
+
 /* ==========================================================================
-   NIRAPOTTA Premium Glass UI Design System
+   Standard Content Surfaces (Solid First, High Contrast)
+   ========================================================================== */
+
+.surface-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+}
+
+.surface-muted {
+  background-color: var(--surface-muted);
+  border: 1px solid var(--border);
+}
+
+.surface-raised {
+  background-color: var(--surface-raised);
+  border: 1px solid var(--border);
+}
+
+/* ==========================================================================
+   Typography Consistency Utilities
+   ========================================================================== */
+
+.type-page-title {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+@media (min-width: 640px) {
+  .type-page-title {
+    font-size: 1.875rem;
+    line-height: 2.25rem;
+  }
+}
+
+.type-section-title {
+  font-size: 1.125rem;
+  line-height: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+@media (min-width: 640px) {
+  .type-section-title {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+  }
+}
+
+.type-card-title {
+  font-size: 0.9375rem;
+  line-height: 1.375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.type-body {
+  font-size: 0.875rem;
+  line-height: 1.375rem;
+  font-weight: 400;
+}
+
+.type-body-sm {
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+  font-weight: 400;
+}
+
+.type-caption {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   NIRAPOTTA Restrained Glass UI (Reserved for Overlays, Nav & Floating Sheets)
    ========================================================================== */
 
 .glass-surface {
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(226, 232, 240, 0.8);
+  background: rgba(255, 255, 255, 0.90);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(226, 232, 240, 0.85);
   box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03);
 }
 
 .glass-nav {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-color: rgba(226, 232, 240, 0.75);
+  background: rgba(255, 255, 255, 0.90);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-color: rgba(226, 232, 240, 0.8);
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(226, 232, 240, 0.85);
-  box-shadow: 0 2px 12px -1px rgba(0, 0, 0, 0.03);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 2px 8px -1px rgba(0, 0, 0, 0.03);
 }
 
 .glass-modal {
-  background: rgba(255, 255, 255, 0.94);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
   box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.12);
 }
 
 .glass-pill {
-  background: rgba(241, 245, 249, 0.75);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(203, 213, 225, 0.6);
+  background: rgba(241, 245, 249, 0.85);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(203, 213, 225, 0.7);
 }
 
 .glass-button {
-  background: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(226, 232, 240, 0.9);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 @media (prefers-color-scheme: dark) {
   .glass-surface {
-    background: rgba(24, 24, 27, 0.82);
+    background: rgba(24, 24, 27, 0.90);
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.3);
   }
 
   .glass-nav {
-    background: rgba(9, 9, 11, 0.85);
+    background: rgba(9, 9, 11, 0.90);
     border-color: rgba(255, 255, 255, 0.08);
   }
 
   .glass-card {
-    background: rgba(24, 24, 27, 0.8);
+    background: rgba(24, 24, 27, 0.92);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 2px 12px -1px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 2px 8px -1px rgba(0, 0, 0, 0.25);
   }
 
   .glass-modal {
-    background: rgba(24, 24, 27, 0.94);
+    background: rgba(24, 24, 27, 0.96);
     border: 1px solid rgba(255, 255, 255, 0.12);
     box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6);
   }
 
   .glass-pill {
-    background: rgba(39, 39, 42, 0.75);
+    background: rgba(39, 39, 42, 0.85);
     border: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   .glass-button {
-    background: rgba(39, 39, 42, 0.75);
+    background: rgba(39, 39, 42, 0.85);
     border: 1px solid rgba(255, 255, 255, 0.12);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   }

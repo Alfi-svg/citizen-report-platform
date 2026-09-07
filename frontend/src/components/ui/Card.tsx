@@ -2,20 +2,34 @@
 
 import React, { forwardRef } from "react";
 
+export type CardVariant = "default" | "glass" | "subtle" | "elevated";
+
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   hoverable?: boolean;
+  variant?: CardVariant;
 }
 
 export const Card = forwardRef<HTMLDivElement, CardProps>(
-  ({ children, className = "", hoverable = false, ...props }, ref) => {
+  ({ children, className = "", hoverable = false, variant = "default", ...props }, ref) => {
     const hoverClass = hoverable
       ? "hover:border-emerald-600/50 hover:shadow-xs transition-all duration-150"
       : "";
 
+    const variantStyles: Record<CardVariant, string> = {
+      default:
+        "bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-2xs",
+      glass:
+        "bg-white/92 dark:bg-zinc-900/92 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-2xs",
+      subtle:
+        "bg-slate-50/80 dark:bg-zinc-900/40 border border-slate-200/60 dark:border-zinc-800/60",
+      elevated:
+        "bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-md",
+    };
+
     return (
       <div
         ref={ref}
-        className={`rounded-2xl border border-slate-200/80 dark:border-zinc-800/80 bg-white/85 dark:bg-zinc-900/85 backdrop-blur-md shadow-2xs ${hoverClass} ${className}`}
+        className={`rounded-2xl ${variantStyles[variant]} ${hoverClass} ${className}`}
         {...props}
       >
         {children}
