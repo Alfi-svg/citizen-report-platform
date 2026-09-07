@@ -33,6 +33,10 @@ htmlcov/
 *.env.local
 */.env
 */.env.local
+*.jks
+*.keystore
+keystore.properties
+signing.properties
 
 # Next.js Build Output
 .next/
