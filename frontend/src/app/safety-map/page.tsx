@@ -143,6 +143,12 @@ export default function SafetyMapPage() {
         const markersLayer = L.layerGroup().addTo(map);
         mapInstanceRef.current = map;
         markersLayerRef.current = markersLayer;
+
+        setTimeout(() => {
+          if (mapInstanceRef.current) {
+            mapInstanceRef.current.invalidateSize();
+          }
+        }, 250);
       }
 
       renderMarkers();
@@ -645,8 +651,8 @@ export default function SafetyMapPage() {
             <div className="absolute bottom-16 sm:bottom-auto sm:top-4 left-3 right-3 sm:left-auto sm:right-4 z-30 sm:max-w-sm sm:w-80 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl p-4 border border-zinc-200 dark:border-zinc-800 shadow-2xl space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                  {"report_count" in selectedPoint
-                    ? `🔶 Incident Cluster (${selectedPoint.report_count} reports)`
+                  {"member_count" in selectedPoint
+                    ? `🔶 Incident Cluster (${selectedPoint.member_count} reports)`
                     : "is_missing_person" in selectedPoint && selectedPoint.is_missing_person
                     ? "🚨 Missing Person"
                     : "category_name" in selectedPoint
@@ -674,13 +680,21 @@ export default function SafetyMapPage() {
                 <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
                   <Link
                     href={
-                      "is_missing_person" in selectedPoint && selectedPoint.is_missing_person && selectedPoint.missing_person_alert_id
+                      "member_count" in selectedPoint
+                        ? `/reports?cluster_id=${selectedPoint.id}`
+                        : "is_missing_person" in selectedPoint && selectedPoint.is_missing_person && selectedPoint.missing_person_alert_id
                         ? `/missing-person/${selectedPoint.missing_person_alert_id}`
                         : `/reports/${selectedPoint.id}`
                     }
                     className="text-xs font-bold text-emerald-600 hover:underline inline-flex items-center gap-1"
                   >
-                    <span>{t.view_incident_detail}</span>
+                    <span>
+                      {"member_count" in selectedPoint
+                        ? lang === "bn"
+                          ? "ক্লাস্টারের রিপোর্টগুলো দেখুন"
+                          : "View cluster reports"
+                        : t.view_incident_detail}
+                    </span>
                     <span>→</span>
                   </Link>
                 </div>

@@ -144,8 +144,8 @@ export async function captureCurrentLocation(options?: {
     try {
       let permStatus = await Geolocation.checkPermissions();
 
-      if (permStatus.location === "denied") {
-        // Request permissions
+      if (permStatus.location !== "granted") {
+        // Request permissions on any ungranted state ('prompt', 'prompt-with-rationale', etc.)
         permStatus = await Geolocation.requestPermissions({ permissions: ["location"] });
       }
 

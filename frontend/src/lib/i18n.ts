@@ -34,7 +34,7 @@ export const translations = {
     // Privacy & Disclaimers
     privacy_notice: "🔒 Your location is used only to find nearby emergency services. We never track, store, or share your live location.",
     permission_denied_title: "Location Permission Denied",
-    permission_denied_desc: "Please enable location in your browser settings or select your area manually below.",
+    permission_denied_desc: "Please enable location in your device or browser settings, or select your area manually below.",
     error_unavailable: "Could not retrieve your GPS location. Please choose your area manually.",
     unverified_badge: "Pending Verification",
     verified_badge: "Official Verified",
@@ -250,7 +250,7 @@ export const translations = {
     // Privacy & Disclaimers
     privacy_notice: "🔒 আপনার বর্তমান লোকেশন শুধুমাত্র নিকটস্থ জরুরি সেবাগুলো খুঁজে দিতে ব্যবহৃত হয়। আমরা কখনোই আপনার লোকেশন সংরক্ষণ বা ট্র্যাক করি না।",
     permission_denied_title: "লোকেশন পারমিশন দেওয়া হয়নি",
-    permission_denied_desc: "ব্রাউজার সেটিংসে লোকেশন অন করুন অথবা নিচে থেকে আপনার এলাকাটি সরাসরি নির্বাচন করুন।",
+    permission_denied_desc: "ডিভাইস বা ব্রাউজার সেটিংসে লোকেশন অন করুন অথবা নিচে থেকে আপনার এলাকাটি সরাসরি নির্বাচন করুন।",
     error_unavailable: "আপনার জিপিএস লোকেশন পাওয়া যায়নি। অনুগ্রহ করে তালিকা থেকে এলাকা নির্বাচন করুন।",
     unverified_badge: "যাচাই প্রক্রিয়াধীন",
     verified_badge: "সরকারি যাচাইকৃত",

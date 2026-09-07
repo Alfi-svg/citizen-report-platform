@@ -397,11 +397,24 @@ export default function SafetyCenterPage() {
 
         {/* Location Permission Denied / Error State */}
         {geoError && (
-          <div className="rounded-2xl bg-amber-50 dark:bg-amber-950/40 p-4 border border-amber-200 dark:border-amber-900 text-xs text-amber-800 dark:text-amber-300 space-y-1">
-            <p className="font-bold">
-              ⚠️ {permissionDenied ? t.permission_denied_title : (lang === "bn" ? "অবস্থান শনাক্তকরণ সতর্কতা" : "Location Access Notice")}:
-            </p>
-            <p>{geoError}</p>
+          <div className="rounded-2xl bg-amber-50 dark:bg-amber-950/40 p-3.5 border border-amber-200 dark:border-amber-900 text-xs text-amber-900 dark:text-amber-200 space-y-2 animate-in fade-in duration-200">
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-1">
+                <p className="font-bold flex items-center gap-1.5">
+                  <span>⚠️</span>
+                  <span>{permissionDenied ? t.permission_denied_title : (lang === "bn" ? "অবস্থান শনাক্তকরণ সতর্কতা" : "Location Access Notice")}</span>
+                </p>
+                <p className="text-[11px] leading-relaxed text-amber-800 dark:text-amber-300">{geoError}</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleUseCurrentLocation}
+                disabled={loading}
+                className="shrink-0 px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-600/15 hover:bg-amber-600/25 active:scale-95 text-amber-900 dark:text-amber-200 border border-amber-500/30 transition-all cursor-pointer"
+              >
+                {lang === "bn" ? "পুনরায় চেষ্টা" : "Retry"}
+              </button>
+            </div>
           </div>
         )}
 

@@ -153,7 +153,7 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-slate-200/70 dark:border-zinc-800/70 glass-nav transition-colors">
+      <header className="sticky top-0 z-40 border-b border-slate-200/70 dark:border-zinc-800/70 glass-nav transition-colors pt-safe">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-3 sm:px-6 lg:px-8 h-14 sm:h-16">
           {/* ========================================================= */}
           {/* LEFT: Mobile Menu Button + Brand Logo & Title */}

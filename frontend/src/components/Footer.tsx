@@ -6,10 +6,16 @@ import Image from "next/image";
 import { Language } from "@/lib/i18n";
 import { DEVELOPER_CONFIG } from "@/lib/developerConfig";
 import DeveloperProfileModal from "@/components/DeveloperProfileModal";
+import { Capacitor } from "@capacitor/core";
 
 export default function Footer() {
   const [lang, setLang] = useState<Language>("en");
   const [isDeveloperModalOpen, setIsDeveloperModalOpen] = useState(false);
+  const [isNative, setIsNative] = useState(false);
+
+  useEffect(() => {
+    setIsNative(Capacitor.isNativePlatform());
+  }, []);
 
   // Synchronize language with global storage & event
   useEffect(() => {
@@ -121,16 +127,18 @@ export default function Footer() {
                     {isBn ? "অ্যাকাউন্ট মোচন" : "Account Deletion"}
                   </Link>
                 </li>
-                <li>
-                  <a
-                    href="/nirapotta.apk"
-                    download="nirapotta.apk"
-                    className="hover:text-emerald-700 dark:hover:text-emerald-400 transition inline-flex items-center gap-1 font-semibold text-emerald-800 dark:text-emerald-300"
-                  >
-                    <span>📱</span>
-                    <span>{isBn ? "অ্যান্ড্রয়েড অ্যাপ (APK)" : "Download Android App"}</span>
-                  </a>
-                </li>
+                {!isNative && (
+                  <li>
+                    <a
+                      href="/nirapotta.apk"
+                      download="nirapotta.apk"
+                      className="hover:text-emerald-700 dark:hover:text-emerald-400 transition inline-flex items-center gap-1 font-semibold text-emerald-800 dark:text-emerald-300"
+                    >
+                      <span>📱</span>
+                      <span>{isBn ? "অ্যান্ড্রয়েড অ্যাপ (APK)" : "Download Android App"}</span>
+                    </a>
+                  </li>
+                )}
               </ul>
             </div>
 

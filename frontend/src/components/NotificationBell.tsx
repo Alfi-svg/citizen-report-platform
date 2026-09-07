@@ -145,105 +145,116 @@ export default function NotificationBell() {
 
       {/* Clean Notification Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-[calc(100vw-24px)] max-w-sm sm:w-96 rounded-xl bg-white dark:bg-zinc-900 shadow-lg border border-zinc-200 dark:border-zinc-800 py-2.5 z-50 text-xs animate-in fade-in zoom-in-95 duration-150">
-          <div className="flex items-center justify-between px-3.5 pb-2 border-b border-zinc-100 dark:border-zinc-800">
-            <span className="font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
-              <span>Notifications</span>
-              <span className="text-[10px] text-zinc-400 font-normal">/ বিজ্ঞপ্তি</span>
-            </span>
-            {unreadCount > 0 && (
-              <button
-                type="button"
-                onClick={handleMarkAllAsRead}
-                className="text-[11px] font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 transition"
-              >
-                Mark all read
-              </button>
-            )}
-          </div>
+        <>
+          {/* Mobile backdrop for easy dismissal */}
+          <div
+            className="fixed inset-0 z-40 bg-black/25 backdrop-blur-2xs sm:hidden"
+            onClick={() => setIsOpen(false)}
+            aria-hidden="true"
+          />
+          <div className="fixed inset-x-3 top-[calc(3.75rem+env(safe-area-inset-top,0px))] sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-96 sm:max-w-sm rounded-2xl bg-white dark:bg-zinc-900 shadow-2xl border border-zinc-200 dark:border-zinc-800 py-2.5 z-50 text-xs animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between px-3.5 pb-2 border-b border-zinc-100 dark:border-zinc-800">
+              <span className="font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                <span>Notifications</span>
+                <span className="text-[10px] text-zinc-400 font-normal">/ বিজ্ঞপ্তি</span>
+              </span>
+              {unreadCount > 0 && (
+                <button
+                  type="button"
+                  onClick={handleMarkAllAsRead}
+                  className="text-[11px] font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 transition cursor-pointer"
+                >
+                  Mark all read
+                </button>
+              )}
+            </div>
 
-          <div className="max-h-72 overflow-y-auto divide-y divide-zinc-100 dark:divide-zinc-800">
-            {loading ? (
-              <div className="py-6 text-center text-zinc-400 text-xs">
-                Loading notifications...
-              </div>
-            ) : recentNotifications.length === 0 ? (
-              <div className="py-6 text-center text-zinc-400 text-xs">
-                No recent notifications.
-              </div>
-            ) : (
-              recentNotifications.map((n) => {
-                const isUnread = !n.read_at;
-                return (
-                  <div
-                    key={n.id}
-                    onClick={() => {
-                      if (n.report_id) {
-                        setIsOpen(false);
-                        router.push(`/reports/${n.report_id}`);
-                      }
-                    }}
-                    className={`p-3 transition ${n.report_id ? "cursor-pointer" : ""} ${
-                      isUnread
-                        ? "bg-emerald-50/40 dark:bg-emerald-950/20"
-                        : "hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="space-y-0.5 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          {isUnread && (
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 shrink-0" />
+            <div className="max-h-72 overflow-y-auto divide-y divide-zinc-100 dark:divide-zinc-800">
+              {loading ? (
+                <div className="py-6 text-center text-zinc-400 text-xs">
+                  Loading notifications...
+                </div>
+              ) : recentNotifications.length === 0 ? (
+                <div className="py-6 text-center text-zinc-400 text-xs">
+                  No recent notifications.
+                </div>
+              ) : (
+                recentNotifications.map((n) => {
+                  const isUnread = !n.read_at;
+                  return (
+                    <div
+                      key={n.id}
+                      onClick={() => {
+                        if (n.report_id) {
+                          setIsOpen(false);
+                          router.push(`/reports/${n.report_id}`);
+                        }
+                      }}
+                      className={`p-3 transition ${n.report_id ? "cursor-pointer" : ""} ${
+                        isUnread
+                          ? "bg-emerald-50/40 dark:bg-emerald-950/20"
+                          : "hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="space-y-0.5 min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            {isUnread && (
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 shrink-0" />
+                            )}
+                            <span className="font-bold text-zinc-900 dark:text-zinc-100 break-words line-clamp-1">
+                              {n.title}
+                            </span>
+                          </div>
+                          <p className="text-zinc-600 dark:text-zinc-400 text-[11px] leading-relaxed line-clamp-2 break-words">
+                            {n.message}
+                          </p>
+                          <span className="text-[10px] text-zinc-400 block pt-0.5">
+                            {new Date(n.created_at).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}{" "}
+                            • {new Date(n.created_at).toLocaleDateString()}
+                          </span>
+                          {n.report_id && (
+                            <span className="inline-flex items-center gap-1 pt-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">
+                              <span>View report details</span>
+                              <span>→</span>
+                            </span>
                           )}
-                          <span className="font-bold text-zinc-900 dark:text-zinc-100 truncate">
-                            {n.title}
-                          </span>
                         </div>
-                        <p className="text-zinc-600 dark:text-zinc-400 text-[11px] leading-relaxed line-clamp-2">
-                          {n.message}
-                        </p>
-                        <span className="text-[10px] text-zinc-400 block pt-0.5">
-                          {new Date(n.created_at).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}{" "}
-                          • {new Date(n.created_at).toLocaleDateString()}
-                        </span>
-                        {n.report_id && (
-                          <span className="inline-flex items-center gap-1 pt-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">
-                            <span>View report details</span>
-                            <span>→</span>
-                          </span>
+
+                        {isUnread && (
+                          <button
+                            type="button"
+                            onClick={(e) => handleMarkAsRead(e, n.id)}
+                            className="shrink-0 rounded p-1 text-[10px] font-semibold text-zinc-400 hover:text-emerald-700 dark:hover:text-emerald-400"
+                            title="Mark as read"
+                          >
+                            ✓
+                          </button>
                         )}
                       </div>
-
-                      {isUnread && (
-                        <button
-                          type="button"
-                          onClick={(e) => handleMarkAsRead(e, n.id)}
-                          className="shrink-0 rounded p-1 text-[10px] font-semibold text-zinc-400 hover:text-emerald-700 dark:hover:text-emerald-400"
-                          title="Mark as read"
-                        >
-                          ✓
-                        </button>
-                      )}
                     </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
+                  );
+                })
+              )}
+            </div>
 
-          <div className="border-t border-zinc-100 dark:border-zinc-800 px-3.5 pt-2 text-center">
-            <Link
-              href="/notifications"
-              onClick={() => setIsOpen(false)}
-              className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300 block"
-            >
-              View All Notifications →
-            </Link>
+            <div className="px-3.5 pt-2 border-t border-zinc-100 dark:border-zinc-800 flex justify-between items-center text-[11px]">
+              <span className="text-zinc-400">
+                {unreadCount > 0 ? `${unreadCount} unread` : "All caught up"}
+              </span>
+              <Link
+                href="/notifications"
+                onClick={() => setIsOpen(false)}
+                className="font-semibold text-emerald-700 dark:text-emerald-400 hover:underline"
+              >
+                View all notifications →
+              </Link>
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

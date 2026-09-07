@@ -16,9 +16,15 @@ import { translations, Language } from "@/lib/i18n";
 import PublicReportCard from "@/components/PublicReportCard";
 import { StatusBadge } from "@/components/ui";
 import EmergencyCallModal from "@/components/EmergencyCallModal";
+import { Capacitor } from "@capacitor/core";
 
 export default function HomePage() {
   const { isAuthenticated, user } = useAuth();
+  const [isNative, setIsNative] = useState(false);
+
+  useEffect(() => {
+    setIsNative(Capacitor.isNativePlatform());
+  }, []);
 
   // Language state synchronized with app_lang
   const [lang, setLang] = useState<Language>("en");
@@ -187,7 +193,7 @@ export default function HomePage() {
         </div>
 
         {/* Hero Content */}
-        <div className="relative z-10 mx-auto max-w-5xl px-4 py-12 sm:py-20 text-center space-y-5">
+        <div className="relative z-10 mx-auto max-w-5xl px-4 py-10 sm:py-16 text-center space-y-5">
           {/* Trust Pill */}
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 backdrop-blur-xs">
             <span>🛡️</span>
@@ -249,15 +255,17 @@ export default function HomePage() {
               <span>{lang === "bn" ? "নিরাপত্তা মানচিত্র" : "Safety Map"}</span>
             </Link>
 
-            <a
-              href="/nirapotta.apk"
-              download="nirapotta.apk"
-              className="w-full sm:w-auto justify-center rounded-xl border border-emerald-600/50 bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-300 px-4 py-3 text-xs sm:text-sm font-semibold transition backdrop-blur-xs flex items-center gap-1.5 shadow-xs"
-              title={lang === "bn" ? "অ্যান্ড্রয়েড অ্যাপ ডাউনলোড করুন" : "Download Android App (APK)"}
-            >
-              <span>📱</span>
-              <span>{lang === "bn" ? "অ্যাপ ডাউনলোড (APK)" : "Download APK"}</span>
-            </a>
+            {!isNative && (
+              <a
+                href="/nirapotta.apk"
+                download="nirapotta.apk"
+                className="w-full sm:w-auto justify-center rounded-xl border border-emerald-600/50 bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-300 px-4 py-3 text-xs sm:text-sm font-semibold transition backdrop-blur-xs flex items-center gap-1.5 shadow-xs"
+                title={lang === "bn" ? "অ্যান্ড্রয়েড অ্যাপ ডাউনলোড করুন" : "Download Android App (APK)"}
+              >
+                <span>📱</span>
+                <span>{lang === "bn" ? "অ্যাপ ডাউনলোড (APK)" : "Download APK"}</span>
+              </a>
+            )}
           </div>
 
           {/* Logged in state */}

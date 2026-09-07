@@ -46,7 +46,7 @@ async def get_public_safety_map(
 ) -> Any:
     # 1. Build query for reports with usable geographic coordinates (real-time live map)
     conditions = [
-        Report.status.in_([ReportStatus.APPROVED, ReportStatus.SUBMITTED]),
+        Report.status == ReportStatus.APPROVED,
         Report.latitude.isnot(None),
         Report.longitude.isnot(None),
     ]
@@ -103,7 +103,7 @@ async def get_public_safety_map(
 
     stmt = (
         select(Report)
-        .join(Category, Report.category_id == Category.id)
+        .outerjoin(Category, Report.category_id == Category.id)
         .where(and_(*conditions))
         .order_by(Report.created_at.desc())
         .limit(limit)
