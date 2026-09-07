@@ -248,6 +248,16 @@ export default function HomePage() {
               <span>🗺️</span>
               <span>{lang === "bn" ? "নিরাপত্তা মানচিত্র" : "Safety Map"}</span>
             </Link>
+
+            <a
+              href="/nirapotta.apk"
+              download="nirapotta.apk"
+              className="w-full sm:w-auto justify-center rounded-xl border border-emerald-600/50 bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-300 px-4 py-3 text-xs sm:text-sm font-semibold transition backdrop-blur-xs flex items-center gap-1.5 shadow-xs"
+              title={lang === "bn" ? "অ্যান্ড্রয়েড অ্যাপ ডাউনলোড করুন" : "Download Android App (APK)"}
+            >
+              <span>📱</span>
+              <span>{lang === "bn" ? "অ্যাপ ডাউনলোড (APK)" : "Download APK"}</span>
+            </a>
           </div>
 
           {/* Logged in state */}

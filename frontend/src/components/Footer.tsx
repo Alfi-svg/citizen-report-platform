@@ -121,6 +121,16 @@ export default function Footer() {
                     {isBn ? "অ্যাকাউন্ট মোচন" : "Account Deletion"}
                   </Link>
                 </li>
+                <li>
+                  <a
+                    href="/nirapotta.apk"
+                    download="nirapotta.apk"
+                    className="hover:text-emerald-700 dark:hover:text-emerald-400 transition inline-flex items-center gap-1 font-semibold text-emerald-800 dark:text-emerald-300"
+                  >
+                    <span>📱</span>
+                    <span>{isBn ? "অ্যান্ড্রয়েড অ্যাপ (APK)" : "Download Android App"}</span>
+                  </a>
+                </li>
               </ul>
             </div>
 
