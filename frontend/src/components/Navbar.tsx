@@ -153,7 +153,7 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-zinc-200/90 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md transition-colors">
+      <header className="sticky top-0 z-40 border-b border-slate-200/70 dark:border-zinc-800/70 glass-nav transition-colors">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-3 sm:px-6 lg:px-8 h-14 sm:h-16">
           {/* ========================================================= */}
           {/* LEFT: Mobile Menu Button + Brand Logo & Title */}
@@ -190,7 +190,7 @@ export default function Navbar() {
               <div className="relative h-8 w-8 sm:h-10 sm:w-10 rounded-lg sm:rounded-xl overflow-hidden shadow-2xs border border-emerald-700/20 group-hover:scale-105 transition shrink-0">
                 <Image
                   src="/brand/logo-sm.jpg"
-                  alt="Bangladesh Citizen Report Emblem"
+                  alt="NIRAPOTTA Emblem"
                   width={40}
                   height={40}
                   className="object-cover h-full w-full"
@@ -199,10 +199,10 @@ export default function Navbar() {
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="text-xs sm:text-base font-black tracking-tight text-zinc-900 dark:text-zinc-100 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition leading-tight truncate max-w-[130px] sm:max-w-none">
-                  {lang === "bn" ? "বাংলাদেশ সিটিজেন রিপোর্ট" : "Citizen Report BD"}
+                  {lang === "bn" ? "নিরাপত্তা" : "NIRAPOTTA"}
                 </span>
                 <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium hidden sm:inline leading-none">
-                  {lang === "bn" ? "নিরাপদ বাংলাদেশ গড়ার প্ল্যাটফর্ম" : "Empowering Safer Communities"}
+                  {lang === "bn" ? "নাগরিক নিরাপত্তা প্ল্যাটফর্ম" : "Citizen Safety Platform"}
                 </span>
               </div>
             </Link>
@@ -440,19 +440,19 @@ export default function Navbar() {
           {/* Backdrop */}
           <div
             onClick={() => setMobileMenuOpen(false)}
-            className="fixed inset-0 bg-zinc-950/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+            className="fixed inset-0 bg-zinc-950/60 backdrop-blur-md transition-opacity animate-in fade-in duration-200"
           />
 
           {/* Drawer Panel */}
-          <div className="relative w-4/5 max-w-sm bg-white dark:bg-zinc-900 h-full shadow-2xl flex flex-col justify-between overflow-y-auto border-r border-zinc-200 dark:border-zinc-800 z-10 animate-in slide-in-from-left duration-200">
+          <div className="relative w-4/5 max-w-sm bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl h-full shadow-2xl flex flex-col justify-between overflow-y-auto border-r border-slate-200/80 dark:border-zinc-800/80 z-10 animate-in slide-in-from-left duration-200">
             {/* Drawer Header */}
             <div>
-              <div className="p-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+              <div className="p-4 border-b border-slate-100/80 dark:border-zinc-800/80 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="relative h-8 w-8 rounded-lg overflow-hidden border border-emerald-700/20">
                     <Image
                       src="/brand/logo-sm.jpg"
-                      alt="Logo"
+                      alt="NIRAPOTTA Logo"
                       width={32}
                       height={32}
                       className="object-cover"
@@ -460,7 +460,7 @@ export default function Navbar() {
                   </div>
                   <div>
                     <h2 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                      {lang === "bn" ? "বাংলাদেশ সিটিজেন রিপোর্ট" : "Citizen Report BD"}
+                      {lang === "bn" ? "নিরাপত্তা" : "NIRAPOTTA"}
                     </h2>
                     <p className="text-[10px] text-zinc-400">
                       {lang === "bn" ? "নাগরিক নিরাপত্তা নেটওয়ার্ক" : "Civic Safety Network"}

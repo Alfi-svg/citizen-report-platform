@@ -96,8 +96,8 @@ export default function MissingPersonsFeedPage() {
             </h1>
             <p className="text-xs text-zinc-500">
               {lang === "bn"
-                ? "বাংলাদেশ নাগরিক সুরক্ষা নেটওয়ার্ক — যাচাইকৃত নিখোঁজ ব্যক্তি সন্ধান"
-                : "Bangladesh Citizen Safety Network — Verified Missing Person Alerts"}
+                ? "নিরাপত্তা সুরক্ষা নেটওয়ার্ক — যাচাইকৃত নিখোঁজ ব্যক্তি সন্ধান"
+                : "NIRAPOTTA Safety Network — Verified Missing Person Alerts"}
             </p>
           </div>
         </div>
@@ -143,7 +143,7 @@ export default function MissingPersonsFeedPage() {
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="flex flex-col sm:flex-row gap-3 bg-white dark:bg-zinc-900 p-4 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
+      <div className="flex flex-col sm:flex-row gap-3 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md p-4 rounded-3xl border border-slate-200/80 dark:border-zinc-800/80 shadow-2xs">
         <div className="flex-1">
           <input
             type="text"
@@ -226,7 +226,7 @@ export default function MissingPersonsFeedPage() {
             <Link
               key={alert.id}
               href={`/missing-person/${alert.id}`}
-              className="group flex flex-col justify-between rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 sm:p-6 shadow-sm hover:shadow-md hover:border-red-500/50 transition duration-200"
+              className="group flex flex-col justify-between rounded-3xl border border-slate-200/80 dark:border-zinc-800/80 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md p-4 sm:p-6 shadow-2xs hover:shadow-md hover:border-red-500/50 transition-all duration-200"
             >
               <div className="space-y-4">
                 <div className="flex items-center justify-between">

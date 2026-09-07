@@ -530,7 +530,7 @@ export default function CreateReportPage() {
           </div>
 
           {/* Evidence File Uploader */}
-          <div className="space-y-2 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/50 p-4">
+          <div className="space-y-2 rounded-2xl border border-slate-200/80 dark:border-zinc-800/80 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md p-4 sm:p-5 shadow-2xs">
             <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
               Photographic / Document Evidence
             </h3>
@@ -543,7 +543,7 @@ export default function CreateReportPage() {
           </div>
 
           {/* Anonymous Reporting Checkbox */}
-          <div className="rounded-2xl border border-purple-200/80 dark:border-purple-900/60 bg-purple-50/50 dark:bg-purple-950/20 p-4 flex items-start gap-3">
+          <div className="rounded-2xl border border-purple-200/80 dark:border-purple-900/60 bg-purple-50/70 dark:bg-purple-950/30 backdrop-blur-xs p-4 flex items-start gap-3 shadow-2xs">
             <input
               type="checkbox"
               id="isAnonymous"
@@ -563,7 +563,7 @@ export default function CreateReportPage() {
           <div className="flex items-center justify-end gap-3 pt-2">
             <button
               type="submit"
-              className="w-full sm:w-auto rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white px-6 py-2.5 text-xs font-bold shadow-md transition active:scale-98 min-h-[44px] flex items-center justify-center cursor-pointer"
+              className="w-full sm:w-auto rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white px-6 py-2.5 text-xs font-bold shadow-md shadow-emerald-700/30 transition active:scale-[0.98] min-h-[44px] flex items-center justify-center cursor-pointer"
             >
               Continue to Review →
             </button>

@@ -135,13 +135,13 @@ export default function PublicReportCard({ report }: PublicReportCardProps) {
 
   return (
     <>
-      <article className="group relative flex flex-col justify-between rounded-2xl border border-zinc-200/90 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-2xs hover:shadow-md hover:border-emerald-700/40 dark:hover:border-emerald-500/40 transition duration-200 overflow-hidden">
+      <article className="group relative flex flex-col justify-between rounded-2xl border border-slate-200/80 dark:border-zinc-800/80 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md shadow-2xs hover:shadow-md hover:border-emerald-600/50 dark:hover:border-emerald-500/50 transition-all duration-200 overflow-hidden">
         <div>
           {/* 1. Card Top Bar: Category Badge + Author / Time + More Menu */}
-          <div className="p-4 pb-3 flex items-center justify-between gap-2 border-b border-zinc-100 dark:border-zinc-800/80">
+          <div className="p-4 pb-3 flex items-center justify-between gap-2 border-b border-slate-100/80 dark:border-zinc-800/70">
             <div className="flex items-center gap-2 min-w-0">
               {/* Category Pill */}
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-900/60 shrink-0">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50/80 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-900/60 backdrop-blur-xs shrink-0">
                 {report.category?.name || "Civic Incident"}
               </span>
 
@@ -230,7 +230,7 @@ export default function PublicReportCard({ report }: PublicReportCardProps) {
 
             {/* Metadata: Approximate Location + Date */}
             <div className="flex flex-wrap items-center gap-3 pt-1 text-[11px] text-zinc-500 dark:text-zinc-400">
-              <div className="inline-flex items-center gap-1 font-medium bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md max-w-full truncate">
+              <div className="inline-flex items-center gap-1 font-medium bg-slate-100/80 dark:bg-zinc-800/80 backdrop-blur-xs px-2.5 py-0.5 rounded-lg max-w-full truncate">
                 <span>📍</span>
                 <span className="truncate">{report.location_text}</span>
               </div>
@@ -264,7 +264,7 @@ export default function PublicReportCard({ report }: PublicReportCardProps) {
         </div>
 
         {/* 4. Bottom Row: Reactions, Comments, Share, and Platform-Reviewed Badge */}
-        <div className="p-3 border-t border-zinc-100 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-800/30">
+        <div className="p-3 border-t border-slate-100/80 dark:border-zinc-800/70 bg-slate-50/70 dark:bg-zinc-900/50 backdrop-blur-xs">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             {/* Social Interactions */}
             <div className="flex items-center gap-1 flex-wrap">
@@ -273,7 +273,7 @@ export default function PublicReportCard({ report }: PublicReportCardProps) {
                 type="button"
                 onClick={(e) => handleToggleReaction("SUPPORT", e)}
                 disabled={isReacting}
-                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition ${
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-semibold active:scale-95 transition ${
                   hasSupported
                     ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 shadow-2xs"
                     : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60"
@@ -287,7 +287,7 @@ export default function PublicReportCard({ report }: PublicReportCardProps) {
               {/* Comments count link */}
               <Link
                 href={`/reports/${report.id}#comments`}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60 transition"
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60 active:scale-95 transition"
                 title="View discussion & comments"
               >
                 <span>💬</span>
@@ -298,7 +298,7 @@ export default function PublicReportCard({ report }: PublicReportCardProps) {
               <button
                 type="button"
                 onClick={handleShare}
-                className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60 transition"
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60 active:scale-95 transition"
                 title="Share report"
               >
                 <span>↗</span>
@@ -308,7 +308,7 @@ export default function PublicReportCard({ report }: PublicReportCardProps) {
 
             {/* Platform Reviewed Status Badge */}
             <div className="shrink-0">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/60">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50/80 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/60 backdrop-blur-xs">
                 <span className="h-1.5 w-1.5 rounded-full bg-blue-600 animate-pulse" />
                 <span>Reviewed</span>
               </span>

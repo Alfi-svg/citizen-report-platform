@@ -2,7 +2,7 @@
 
 import React, { forwardRef } from "react";
 
-export type ButtonVariant = "primary" | "secondary" | "outline" | "danger" | "ghost";
+export type ButtonVariant = "primary" | "secondary" | "outline" | "danger" | "ghost" | "glass";
 export type ButtonSize = "sm" | "md" | "lg" | "icon";
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -33,7 +33,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ) => {
     // Base styles: clean, accessible, consistent tap target
     const baseStyles =
-      "inline-flex items-center justify-center font-semibold transition-colors duration-150 select-none rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98]";
+      "inline-flex items-center justify-center font-semibold transition-all duration-150 select-none rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98]";
 
     // Variant mappings
     const variantStyles: Record<ButtonVariant, string> = {
@@ -47,6 +47,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         "bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-2xs",
       ghost:
         "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100",
+      glass:
+        "border border-slate-200/80 dark:border-white/10 bg-white/75 dark:bg-zinc-800/75 backdrop-blur-md text-zinc-900 dark:text-zinc-100 hover:bg-white/95 dark:hover:bg-zinc-700/80 shadow-2xs",
     };
 
     // Sizing scale

@@ -9,13 +9,13 @@ export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 export const Card = forwardRef<HTMLDivElement, CardProps>(
   ({ children, className = "", hoverable = false, ...props }, ref) => {
     const hoverClass = hoverable
-      ? "hover:border-emerald-600/40 hover:shadow-xs transition-all duration-150"
+      ? "hover:border-emerald-600/50 hover:shadow-xs transition-all duration-150"
       : "";
 
     return (
       <div
         ref={ref}
-        className={`rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-2xs ${hoverClass} ${className}`}
+        className={`rounded-2xl border border-slate-200/80 dark:border-zinc-800/80 bg-white/85 dark:bg-zinc-900/85 backdrop-blur-md shadow-2xs ${hoverClass} ${className}`}
         {...props}
       >
         {children}
@@ -29,7 +29,7 @@ export const CardHeader = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDi
   ({ children, className = "", ...props }, ref) => (
     <div
       ref={ref}
-      className={`p-4 sm:p-5 border-b border-zinc-100 dark:border-zinc-800/80 ${className}`}
+      className={`p-4 sm:p-5 border-b border-slate-100/80 dark:border-zinc-800/70 ${className}`}
       {...props}
     >
       {children}
@@ -77,7 +77,7 @@ export const CardFooter = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDi
   ({ children, className = "", ...props }, ref) => (
     <div
       ref={ref}
-      className={`p-4 sm:p-5 pt-0 flex items-center justify-between gap-3 border-t border-zinc-100 dark:border-zinc-800/80 pt-4 ${className}`}
+      className={`p-4 sm:p-5 pt-0 flex items-center justify-between gap-3 border-t border-slate-100/80 dark:border-zinc-800/70 pt-4 ${className}`}
       {...props}
     >
       {children}

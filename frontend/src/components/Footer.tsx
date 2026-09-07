@@ -37,7 +37,7 @@ export default function Footer() {
 
   return (
     <>
-      <footer className="border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 py-10 text-xs text-zinc-600 dark:text-zinc-400 mt-auto transition-colors">
+      <footer className="border-t border-slate-200/80 dark:border-zinc-800/80 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md py-10 text-xs text-zinc-600 dark:text-zinc-400 mt-auto transition-colors">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
           {/* Main Footer Columns */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-8">
@@ -47,7 +47,7 @@ export default function Footer() {
                 <div className="relative h-8 w-8 sm:h-9 sm:w-9 rounded-xl overflow-hidden border border-emerald-700/20 shadow-2xs shrink-0">
                   <Image
                     src="/brand/logo-icon.jpg"
-                    alt="Bangladesh Citizen Report Emblem"
+                    alt="NIRAPOTTA Emblem"
                     width={36}
                     height={36}
                     className="object-cover h-full w-full"
@@ -55,7 +55,7 @@ export default function Footer() {
                 </div>
                 <div>
                   <span className="font-extrabold text-sm text-zinc-900 dark:text-zinc-100 block leading-tight">
-                    {isBn ? "বাংলাদেশ সিটিজেন রিপোর্ট" : "BANGLADESH CITIZEN REPORT"}
+                    {isBn ? "নিরাপত্তা" : "NIRAPOTTA"}
                   </span>
                   <span className="text-[10px] text-zinc-500 dark:text-zinc-400 block leading-none">
                     {isBn ? "একসাথে গড়ি নিরাপদ বাংলাদেশ।" : "Together for a safer Bangladesh."}
@@ -176,7 +176,7 @@ export default function Footer() {
           <div className="border-t border-zinc-200/80 dark:border-zinc-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-zinc-500">
             {/* Bottom Line: Copyright */}
             <p>
-              © {new Date().getFullYear()} {isBn ? "বাংলাদেশ সিটিজেন রিপোর্ট" : "Bangladesh Citizen Report"}. {isBn ? "সর্বস্বত্ব সংরক্ষিত।" : "All rights reserved."}
+              © {new Date().getFullYear()} {isBn ? "নিরাপত্তা" : "NIRAPOTTA"}. {isBn ? "সর্বস্বত্ব সংরক্ষিত।" : "All rights reserved."}
             </p>
 
             {/* Clickable Developer Attribution */}

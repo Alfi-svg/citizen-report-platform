@@ -178,14 +178,15 @@ export default function SafetyCenterPage() {
         </h2>
 
         {/* Primary 999 Banner */}
-        <div className="relative overflow-hidden rounded-3xl bg-linear-to-r from-red-600 to-red-700 p-6 sm:p-8 text-white shadow-md">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-red-600 via-rose-650 to-red-700 p-6 sm:p-8 text-white shadow-xl border border-red-400/30">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
             <div className="space-y-1.5 max-w-lg">
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-red-800/60 px-3 py-0.5 text-[11px] font-bold tracking-wider uppercase text-red-100">
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-red-900/50 backdrop-blur-xs px-3 py-0.5 text-[11px] font-bold tracking-wider uppercase text-red-100 border border-red-400/20">
                 <span>🇧🇩</span> {lang === "bn" ? t.national_emergency_title : "National Emergency Service"}
               </div>
-              <h3 className="text-3xl sm:text-4xl font-black tracking-tight">
-                999
+              <h3 className="text-3xl sm:text-4xl font-black tracking-tight flex items-center gap-2">
+                <span>999</span>
+                <span className="h-2.5 w-2.5 rounded-full bg-white animate-ping" />
               </h3>
               <p className="text-xs sm:text-sm text-red-100 leading-relaxed">
                 {lang === "bn"
@@ -197,7 +198,7 @@ export default function SafetyCenterPage() {
             <button
               type="button"
               onClick={() => handleInitiateEmergencyCall("999", lang === "bn" ? "জাতীয় জরুরি সেবা — ৯৯৯" : "National Emergency Service — 999")}
-              className="inline-flex items-center justify-center gap-2.5 rounded-2xl bg-white px-8 py-4 text-base font-black text-red-600 shadow-md hover:bg-red-50 active:scale-95 transition text-center w-full sm:w-auto shrink-0 min-h-[48px] cursor-pointer"
+              className="inline-flex items-center justify-center gap-2.5 rounded-2xl bg-white px-8 py-4 text-base font-black text-red-600 shadow-xl shadow-red-950/20 hover:bg-red-50 active:scale-95 transition-all text-center w-full sm:w-auto shrink-0 min-h-[52px] cursor-pointer ring-4 ring-white/30"
             >
               <span className="text-xl">📞</span>
               <span>{t.emergency_call_999}</span>
@@ -210,7 +211,7 @@ export default function SafetyCenterPage() {
           <button
             type="button"
             onClick={() => handleInitiateEmergencyCall("109", lang === "bn" ? "জাতীয় নারী ও শিশু নির্যাতন প্রতিরোধ হটলাইন (১০৯)" : "National Women & Children Helpline (109)")}
-            className="flex items-center justify-between p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-red-400 dark:hover:border-red-800 transition shadow-2xs group text-left min-h-[48px] cursor-pointer"
+            className="flex items-center justify-between p-4 rounded-2xl border border-slate-200/80 dark:border-zinc-800/80 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md hover:border-red-400 dark:hover:border-red-800 active:scale-[0.98] transition-all shadow-2xs group text-left min-h-[52px] cursor-pointer"
           >
             <div>
               <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">
@@ -228,7 +229,7 @@ export default function SafetyCenterPage() {
           <button
             type="button"
             onClick={() => handleInitiateEmergencyCall("333", lang === "bn" ? "জাতীয় তথ্য ও দুর্যোগ সেবা হটলাইন (৩৩৩)" : "National Citizen Info & Disaster Helpline (333)")}
-            className="flex items-center justify-between p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-blue-400 dark:hover:border-blue-800 transition shadow-2xs group text-left min-h-[48px] cursor-pointer"
+            className="flex items-center justify-between p-4 rounded-2xl border border-slate-200/80 dark:border-zinc-800/80 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md hover:border-blue-400 dark:hover:border-blue-800 active:scale-[0.98] transition-all shadow-2xs group text-left min-h-[52px] cursor-pointer"
           >
             <div>
               <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">
@@ -246,7 +247,7 @@ export default function SafetyCenterPage() {
           <button
             type="button"
             onClick={() => handleInitiateEmergencyCall("106", lang === "bn" ? "দুর্নীতি দমন কমিশন (দুদক) হটলাইন (১০৬)" : "Anti-Corruption Commission Helpline (106)")}
-            className="flex items-center justify-between p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-emerald-400 dark:hover:border-emerald-800 transition shadow-2xs group text-left min-h-[48px] cursor-pointer"
+            className="flex items-center justify-between p-4 rounded-2xl border border-slate-200/80 dark:border-zinc-800/80 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md hover:border-emerald-400 dark:hover:border-emerald-800 active:scale-[0.98] transition-all shadow-2xs group text-left min-h-[52px] cursor-pointer"
           >
             <div>
               <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">

@@ -83,7 +83,7 @@ export default function AdminNav({ pendingReports, pendingFlags }: AdminNavProps
               ADMIN CONSOLE • অ্যাডমিন প্যানেল
             </span>
             <span className="hidden sm:inline text-xs text-zinc-400 font-medium">
-              Bangladesh Citizen Report Moderation & Oversight
+              NIRAPOTTA Moderation & Oversight
             </span>
           </div>
 

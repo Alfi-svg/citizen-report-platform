@@ -73,7 +73,7 @@ export default function MobileBottomNav() {
   return (
     <nav
       aria-label="Mobile Navigation"
-      className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md border-t border-zinc-200 dark:border-zinc-800 pb-safe shadow-lg"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-t border-slate-200/70 dark:border-white/10 pb-safe shadow-[0_-4px_24px_rgba(0,0,0,0.06)] dark:shadow-[0_-4px_24px_rgba(0,0,0,0.4)]"
     >
       <div className="grid grid-cols-5 h-14 items-center px-1">
         {navItems.map((item) => {
@@ -103,8 +103,8 @@ export default function MobileBottomNav() {
               <div key={item.href} className="flex justify-center items-center">
                 <Link
                   href={item.href}
-                  className={`flex flex-col items-center justify-center -mt-5 h-12 w-12 rounded-full bg-emerald-700 text-white shadow-md shadow-emerald-700/30 ring-4 ring-white dark:ring-zinc-900 hover:bg-emerald-600 active:scale-95 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 ${
-                    isActive ? "ring-emerald-300 dark:ring-emerald-800" : ""
+                  className={`flex flex-col items-center justify-center -mt-5 h-12 w-12 rounded-full bg-gradient-to-br from-emerald-600 to-emerald-800 text-white shadow-lg shadow-emerald-700/40 ring-4 ring-white/90 dark:ring-zinc-900/90 hover:from-emerald-500 hover:to-emerald-700 active:scale-95 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 ${
+                    isActive ? "ring-emerald-400 dark:ring-emerald-600 shadow-emerald-600/50" : ""
                   }`}
                   aria-label={lang === "bn" ? "নতুন ঘটনা রিপোর্ট করুন" : "Create Incident Report"}
                   aria-current={isActive ? "page" : undefined}
@@ -120,7 +120,7 @@ export default function MobileBottomNav() {
               key={item.href}
               href={item.href}
               aria-current={isActive ? "page" : undefined}
-              className={`flex flex-col items-center justify-center min-h-[44px] py-1 text-center transition select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 rounded-lg ${
+              className={`flex flex-col items-center justify-center min-h-[44px] py-1 text-center transition select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 rounded-xl active:scale-95 ${
                 isActive
                   ? item.isEmergency
                     ? "text-red-600 font-black"

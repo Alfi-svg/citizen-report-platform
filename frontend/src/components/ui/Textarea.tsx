@@ -30,8 +30,8 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     const helperId = `${inputId}-helper`;
 
     const borderStyle = error
-      ? "border-red-400 focus:border-red-600 focus:ring-red-500"
-      : "border-zinc-300 dark:border-zinc-700 focus:border-emerald-700 focus:ring-emerald-700";
+      ? "border-red-400 focus:border-red-600 focus:ring-red-500/20"
+      : "border-slate-300/80 dark:border-zinc-700/80 focus:border-emerald-700 focus:ring-emerald-700/20";
 
     return (
       <div className="w-full space-y-1.5">
@@ -52,7 +52,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           disabled={disabled}
           aria-invalid={Boolean(error)}
           aria-describedby={error ? errorId : helperText ? helperId : undefined}
-          className={`w-full rounded-lg border bg-white dark:bg-zinc-900 px-3.5 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 transition-colors focus:outline-none focus:ring-1 disabled:bg-zinc-100 dark:disabled:bg-zinc-800 disabled:opacity-60 leading-relaxed ${borderStyle} ${className}`}
+          className={`w-full rounded-xl border bg-white/85 dark:bg-zinc-900/85 backdrop-blur-xs px-3.5 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 transition-colors focus:outline-none focus:ring-2 disabled:bg-zinc-100 dark:disabled:bg-zinc-800 disabled:opacity-60 leading-relaxed ${borderStyle} ${className}`}
           {...props}
         />
 

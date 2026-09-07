@@ -19,21 +19,21 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
   title: {
-    default: "Bangladesh Citizen Report Platform | একসাথে গড়ি নিরাপদ বাংলাদেশ",
-    template: "%s | Bangladesh Citizen Report Platform",
+    default: "NIRAPOTTA | নিরাপত্তা — Citizen Safety Platform",
+    template: "%s | NIRAPOTTA",
   },
   description:
-    "Citizen-powered platform for reporting civic hazards, safety alerts, missing persons, and infrastructure issues with verifiable evidence across Bangladesh.",
+    "Citizen-powered safety platform for reporting civic hazards, emergency alerts, missing persons, and blood requests with verifiable evidence across Bangladesh.",
   icons: {
     icon: "/brand/logo-icon.jpg",
     apple: "/brand/logo-icon.jpg",
   },
   openGraph: {
-    title: "Bangladesh Citizen Report Platform | একসাথে গড়ি নিরাপদ বাংলাদেশ",
+    title: "NIRAPOTTA | নিরাপত্তা — Citizen Safety Platform",
     description:
-      "Citizen-powered platform for reporting civic hazards, safety alerts, and missing persons with verifiable evidence across Bangladesh.",
+      "Citizen-powered safety platform for reporting civic hazards, emergency alerts, missing persons, and blood requests with verifiable evidence across Bangladesh.",
     url: APP_URL,
-    siteName: "Bangladesh Citizen Report Platform",
+    siteName: "NIRAPOTTA",
     locale: "en_BD",
     type: "website",
     images: [
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
         url: "/brand/logo.jpg",
         width: 1024,
         height: 1024,
-        alt: "Bangladesh Citizen Report Emblem",
+        alt: "NIRAPOTTA Emblem",
       },
     ],
   },

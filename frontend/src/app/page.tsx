@@ -189,12 +189,12 @@ export default function HomePage() {
         {/* Hero Content */}
         <div className="relative z-10 mx-auto max-w-5xl px-4 py-12 sm:py-20 text-center space-y-5">
           {/* Trust Pill */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 backdrop-blur-xs">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 backdrop-blur-xs">
             <span>🛡️</span>
             <span>
               {lang === "bn"
-                ? "যাচাইকৃত নাগরিক রিপোর্টিং নেটওয়ার্ক • বাংলাদেশ"
-                : "Platform-Verified Citizen Reporting • বাংলাদেশ"}
+                ? "নিরাপত্তা — যাচাইকৃত নাগরিক প্ল্যাটফর্ম • বাংলাদেশ"
+                : "NIRAPOTTA — Verified Citizen Safety Platform • বাংলাদেশ"}
             </span>
           </div>
 
@@ -202,7 +202,7 @@ export default function HomePage() {
           <div className="mx-auto h-16 w-16 sm:h-20 sm:w-20 relative rounded-2xl overflow-hidden shadow-xl border-2 border-emerald-500/40 bg-white p-1">
             <Image
               src="/brand/logo-sm.jpg"
-              alt="Bangladesh Citizen Report Emblem"
+              alt="NIRAPOTTA Emblem"
               fill
               className="object-contain p-1"
               priority
@@ -212,14 +212,14 @@ export default function HomePage() {
           {/* Headline */}
           <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-tight max-w-3xl mx-auto leading-tight">
             {lang === "bn"
-              ? "বাংলাদেশ সিটিজেন ইনসিডেন্ট অ্যান্ড সেফটি নেটওয়ার্ক"
-              : "Bangladesh Citizen Incident & Safety Network"}
+              ? "নিরাপত্তা — নাগরিক সুরক্ষা নেটওয়ার্ক"
+              : "NIRAPOTTA — Citizen Safety Network"}
           </h1>
 
           {/* Subtitle */}
           <p className="text-sm sm:text-base text-zinc-300 max-w-2xl mx-auto leading-relaxed">
             {lang === "bn"
-              ? "নাগরিক সমস্যা ও দুর্ঘটনা রিপোর্ট করুন, জরুরি সেবা খুঁজুন এবং গোপনীয়তা বজায় রেখে নিখোঁজদের সন্ধানে তথ্য দিন।"
+              ? "নাগরিক নিরাপত্তা রক্ষা, দ্রুত দুর্ঘটনা রিপোর্ট, জরুরি সেবা ও নিখোঁজ ব্যক্তিদের সন্ধানে একটি নির্ভরযোগ্য জাতীয় প্ল্যাটফর্ম।"
               : "Report civic hazards, track community alerts, find nearby emergency services, and support verified missing person searches with privacy protection across Bangladesh."}
           </p>
 

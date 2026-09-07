@@ -336,23 +336,23 @@ export default function BloodHelpPage() {
             {requests.map((req) => (
               <div
                 key={req.id}
-                className="group rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-2xs hover:border-rose-600 transition flex flex-col justify-between gap-4"
+                className="group rounded-3xl border border-slate-200/80 dark:border-zinc-800/80 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md p-5 shadow-2xs hover:border-rose-500/60 hover:shadow-md transition-all duration-200 flex flex-col justify-between gap-4"
               >
                 {/* Card Top: Blood Badge & Urgency */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="flex items-center justify-center rounded-2xl bg-rose-600 text-white font-black text-base px-3 py-1.5 shadow-2xs">
+                    <span className="flex items-center justify-center rounded-2xl bg-gradient-to-br from-rose-600 to-red-700 text-white font-black text-base px-3.5 py-1.5 shadow-sm shadow-rose-600/30">
                       {req.blood_group}
                     </span>
 
                     <div className="flex items-center gap-1.5">
                       <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold border ${
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border backdrop-blur-xs ${
                           req.urgency === "EMERGENCY"
-                            ? "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200/80 dark:border-rose-900/80"
+                            ? "bg-rose-50/80 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200/80 dark:border-rose-900/80 shadow-2xs shadow-rose-500/20"
                             : req.urgency === "URGENT"
-                            ? "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200/80 dark:border-amber-900/80"
-                            : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700"
+                            ? "bg-amber-50/80 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200/80 dark:border-amber-900/80"
+                            : "bg-zinc-100/80 dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700"
                         }`}
                       >
                         {req.urgency === "EMERGENCY" && (
@@ -361,7 +361,7 @@ export default function BloodHelpPage() {
                         <span>{req.urgency}</span>
                       </span>
 
-                      <span className="rounded-full bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 text-[10px] font-bold text-zinc-500">
+                      <span className="rounded-full bg-zinc-100/80 dark:bg-zinc-800/80 backdrop-blur-xs px-2.5 py-0.5 text-[10px] font-bold text-zinc-500">
                         {req.units_required} {req.units_required === 1 ? "Bag" : "Bags"}
                       </span>
                     </div>

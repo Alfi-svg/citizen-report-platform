@@ -105,19 +105,19 @@ export default function RegisterPage() {
       </div>
 
       {/* Register Card */}
-      <div className="relative z-10 w-full max-w-md space-y-6 bg-white dark:bg-zinc-900 p-5 sm:p-8 rounded-3xl shadow-xl border border-zinc-200 dark:border-zinc-800">
+      <div className="relative z-10 w-full max-w-md space-y-6 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl p-5 sm:p-8 rounded-3xl shadow-2xl border border-white/40 dark:border-white/10">
         <div className="text-center">
           <div className="mx-auto h-16 w-16 relative rounded-2xl overflow-hidden shadow-md border border-emerald-700/30 mb-3">
             <Image
               src="/brand/logo-sm.jpg"
-              alt="Bangladesh Citizen Report Emblem"
+              alt="NIRAPOTTA Emblem"
               fill
               className="object-cover"
               priority
             />
           </div>
           <h1 className="text-2xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">
-            Create a Citizen Account
+            Create your Nirapotta Account
           </h1>
           <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
             Join the civic network to submit incident reports, track resolutions, and endorse alerts.

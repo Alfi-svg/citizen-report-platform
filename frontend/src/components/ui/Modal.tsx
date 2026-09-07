@@ -64,17 +64,17 @@ export const Modal: React.FC<ModalProps> = ({
       <div
         onClick={onClose}
         aria-hidden="true"
-        className="fixed inset-0 bg-zinc-950/60 backdrop-blur-xs transition-opacity"
+        className="fixed inset-0 bg-zinc-950/60 backdrop-blur-md transition-opacity"
       />
 
       {/* Modal Dialog Card */}
       <div
         ref={modalRef}
-        className={`relative w-full ${maxWidthStyles[maxWidth]} rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xl overflow-hidden z-10 animate-in fade-in zoom-in-95 duration-150`}
+        className={`relative w-full ${maxWidthStyles[maxWidth]} rounded-3xl border border-white/40 dark:border-white/10 bg-white/92 dark:bg-zinc-900/92 backdrop-blur-xl shadow-2xl overflow-hidden z-10 animate-in fade-in zoom-in-95 duration-200`}
       >
         {/* Header */}
         {(title || description) && (
-          <div className="p-4 sm:p-5 border-b border-zinc-100 dark:border-zinc-800 flex items-start justify-between gap-4">
+          <div className="p-4 sm:p-5 border-b border-slate-100/80 dark:border-zinc-800/80 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-sm flex items-start justify-between gap-4">
             <div>
               {title && (
                 <h2 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
@@ -92,7 +92,7 @@ export const Modal: React.FC<ModalProps> = ({
               type="button"
               onClick={onClose}
               aria-label="Close modal"
-              className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+              className="p-1.5 rounded-xl text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -106,7 +106,7 @@ export const Modal: React.FC<ModalProps> = ({
 
         {/* Footer Actions */}
         {footer && (
-          <div className="p-4 sm:p-5 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-end gap-2.5 bg-zinc-50/50 dark:bg-zinc-900/50">
+          <div className="p-4 sm:p-5 border-t border-slate-100/80 dark:border-zinc-800/80 flex items-center justify-end gap-2.5 bg-slate-50/70 dark:bg-zinc-900/70 backdrop-blur-sm">
             {footer}
           </div>
         )}
