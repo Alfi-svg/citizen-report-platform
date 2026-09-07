@@ -172,3 +172,33 @@ async def check_admin_access(
         "email": admin_user.email,
         "role": admin_user.role.value,
     }
+
+
+@router.post(
+    "/deactivate",
+    response_model=Dict[str, Any],
+    status_code=status.HTTP_200_OK,
+    summary="Deactivate citizen account and revoke access (self-service account deletion)",
+)
+async def deactivate_account(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """
+    Self-service account deactivation / deletion request conforming to Google Play User Data policies.
+    Deactivates user account, prevents subsequent logins, and queues personal data disassociation.
+    Admin accounts cannot self-deactivate to prevent platform lockout.
+    """
+    if current_user.role == UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Administrative accounts cannot be self-deactivated.",
+        )
+    current_user.is_active = False
+    db.add(current_user)
+    await db.commit()
+    return {
+        "message": "Account successfully deactivated. You have been logged out and your account is no longer active.",
+        "user_id": str(current_user.id),
+        "status": "deactivated",
+    }

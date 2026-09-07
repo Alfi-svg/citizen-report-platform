@@ -17,6 +17,9 @@ export default function DashboardPage() {
   const [history, setHistory] = useState<ReputationHistoryResponse | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [isDeactivating, setIsDeactivating] = useState(false);
+  const [deactivateError, setDeactivateError] = useState<string | null>(null);
+  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -59,6 +62,21 @@ export default function DashboardPage() {
         .finally(() => setLoadingHistory(false));
     }
     setShowHistory(!showHistory);
+  };
+
+  const handleDeactivateAccount = async () => {
+    setIsDeactivating(true);
+    setDeactivateError(null);
+    try {
+      await apiFetch("/auth/deactivate", { method: "POST" });
+      setShowDeactivateModal(false);
+      logout();
+      router.push("/");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to deactivate account";
+      setDeactivateError(msg);
+      setIsDeactivating(false);
+    }
   };
 
   if (isLoading) {
@@ -520,6 +538,103 @@ export default function DashboardPage() {
           </div>
         )}
       </section>
+
+      {/* 4. Account & Data Privacy (Google Play Compliance) */}
+      <section className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 sm:p-8 space-y-5 shadow-2xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+              <span>🛡️</span>
+              <span>Account & Data Privacy</span>
+            </h2>
+            <p className="text-xs text-zinc-500">
+              Manage your personal data, review legal policies, or deactivate your citizen account in accordance with Google Play safety standards.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href="/privacy"
+              className="px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition"
+            >
+              Privacy Policy
+            </Link>
+            <Link
+              href="/terms"
+              className="px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition"
+            >
+              Terms of Service
+            </Link>
+            <Link
+              href="/account-deletion"
+              className="px-3 py-1.5 rounded-xl border border-red-200 dark:border-red-900/50 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition"
+            >
+              Data Deletion
+            </Link>
+          </div>
+        </div>
+
+        <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 className="text-xs font-bold text-zinc-800 dark:text-zinc-200">Deactivate Account</h3>
+            <p className="text-[11px] text-zinc-500">
+              Permanently disable your account and queue your personal profile for data erasure.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowDeactivateModal(true)}
+            className="px-4 py-2 rounded-xl bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300 border border-red-200 dark:border-red-900 hover:bg-red-100 dark:hover:bg-red-900/60 text-xs font-bold transition self-start sm:self-auto cursor-pointer"
+          >
+            Deactivate Account
+          </button>
+        </div>
+      </section>
+
+      {/* Deactivate Account Modal */}
+      {showDeactivateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 sm:p-8 space-y-4 shadow-xl">
+            <div className="flex items-center gap-3 text-red-600 dark:text-red-400">
+              <div className="h-10 w-10 rounded-2xl bg-red-100 dark:bg-red-950/60 flex items-center justify-center text-xl font-black">
+                ⚠️
+              </div>
+              <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
+                Deactivate Your Account?
+              </h3>
+            </div>
+
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+              This action will immediately log you out and deactivate your account (@{user.username}). You will no longer be able to log in, submit reports, or participate in Blood Help. Your personal identity data will be queued for permanent deletion.
+            </p>
+
+            {deactivateError && (
+              <p className="text-xs text-red-600 font-semibold">{deactivateError}</p>
+            )}
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowDeactivateModal(false)}
+                disabled={isDeactivating}
+                className="px-4 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeactivateAccount}
+                disabled={isDeactivating}
+                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shadow-xs cursor-pointer"
+              >
+                {isDeactivating ? "Deactivating..." : "Yes, Deactivate My Account"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

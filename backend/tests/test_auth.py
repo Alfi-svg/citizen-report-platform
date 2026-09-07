@@ -294,3 +294,35 @@ async def test_create_or_update_admin_bootstrap(db_session: AsyncSession, async_
     assert user.full_name == "Upgraded Admin"
 
 
+@pytest.mark.asyncio
+async def test_deactivate_account_success(async_client: AsyncClient, db_session: AsyncSession):
+    # 1. Register a test user
+    reg_payload = {
+        "username": "user_to_deactivate",
+        "email": "deactivate_me@example.com",
+        "password": "Password123!",
+    }
+    reg_res = await async_client.post("/api/v1/auth/register", json=reg_payload)
+    assert reg_res.status_code == 201
+
+    # 2. Login to get token
+    login_payload = {
+        "email_or_username": "user_to_deactivate",
+        "password": "Password123!",
+    }
+    login_res = await async_client.post("/api/v1/auth/login", json=login_payload)
+    assert login_res.status_code == 200
+    token = login_res.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # 3. Request account deactivation
+    deact_res = await async_client.post("/api/v1/auth/deactivate", headers=headers)
+    assert deact_res.status_code == 200
+    assert deact_res.json()["status"] == "deactivated"
+
+    # 4. Attempt to login again (should be rejected with 403)
+    login_again = await async_client.post("/api/v1/auth/login", json=login_payload)
+    assert login_again.status_code == 403
+    assert "deactivated" in login_again.json()["detail"].lower()
+
+

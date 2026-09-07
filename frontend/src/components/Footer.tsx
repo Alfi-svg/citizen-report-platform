@@ -106,6 +106,21 @@ export default function Footer() {
                     {isBn ? "স্বচ্ছতা ড্যাশবোর্ড" : "Transparency"}
                   </Link>
                 </li>
+                <li>
+                  <Link href="/privacy" className="hover:text-emerald-700 dark:hover:text-emerald-400 transition">
+                    {isBn ? "গোপনীয়তা নীতি" : "Privacy Policy"}
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/terms" className="hover:text-emerald-700 dark:hover:text-emerald-400 transition">
+                    {isBn ? "ব্যবহারের শর্তাবলী" : "Terms of Service"}
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/account-deletion" className="hover:text-emerald-700 dark:hover:text-emerald-400 transition">
+                    {isBn ? "অ্যাকাউন্ট মোচন" : "Account Deletion"}
+                  </Link>
+                </li>
               </ul>
             </div>
 
@@ -174,10 +189,24 @@ export default function Footer() {
 
           {/* Subtle Divider */}
           <div className="border-t border-zinc-200/80 dark:border-zinc-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-zinc-500">
-            {/* Bottom Line: Copyright */}
-            <p>
-              © {new Date().getFullYear()} {isBn ? "নিরাপত্তা" : "NIRAPOTTA"}. {isBn ? "সর্বস্বত্ব সংরক্ষিত।" : "All rights reserved."}
-            </p>
+            {/* Bottom Line: Copyright & Legal */}
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-2.5 gap-y-1">
+              <p>
+                © {new Date().getFullYear()} {isBn ? "নিরাপত্তা" : "NIRAPOTTA"}. {isBn ? "সর্বস্বত্ব সংরক্ষিত।" : "All rights reserved."}
+              </p>
+              <span className="hidden sm:inline text-zinc-400">•</span>
+              <Link href="/privacy" className="hover:text-emerald-700 dark:hover:text-emerald-400 hover:underline">
+                {isBn ? "গোপনীয়তা নীতি" : "Privacy Policy"}
+              </Link>
+              <span className="text-zinc-400">•</span>
+              <Link href="/terms" className="hover:text-emerald-700 dark:hover:text-emerald-400 hover:underline">
+                {isBn ? "শর্তাবলী" : "Terms"}
+              </Link>
+              <span className="text-zinc-400">•</span>
+              <Link href="/account-deletion" className="hover:text-emerald-700 dark:hover:text-emerald-400 hover:underline">
+                {isBn ? "অ্যাকাউন্ট মোচন" : "Data Deletion"}
+              </Link>
+            </div>
 
             {/* Clickable Developer Attribution */}
             <div className="flex items-center gap-1 text-center sm:text-right">
