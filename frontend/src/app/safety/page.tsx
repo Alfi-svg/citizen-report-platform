@@ -5,7 +5,12 @@ import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import { AreaReference, NearbyEmergencyServicesResult, NearbyServiceResponse } from "@/lib/types";
 import { translations, Language } from "@/lib/i18n";
-import { captureCurrentLocation } from "@/lib/location";
+import {
+  captureCurrentLocation,
+  openNativeAppSettings,
+  openNativeLocationSettings,
+  LocationError,
+} from "@/lib/location";
 import EmergencyCallModal from "@/components/EmergencyCallModal";
 
 export default function SafetyCenterPage() {
@@ -33,6 +38,7 @@ export default function SafetyCenterPage() {
   const [result, setResult] = useState<NearbyEmergencyServicesResult | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [geoError, setGeoError] = useState<string | null>(null);
+  const [locErrorInfo, setLocErrorInfo] = useState<LocationError | null>(null);
   const [permissionDenied, setPermissionDenied] = useState<boolean>(false);
   const [activeLocationName, setActiveLocationName] = useState<string>("");
   const [selectedServiceFilter, setSelectedServiceFilter] = useState<string>("ALL");
@@ -44,7 +50,7 @@ export default function SafetyCenterPage() {
 
   const handleInitiateEmergencyCall = (number: string = "999", title?: string) => {
     setEmergencyModalTarget(number);
-    setEmergencyModalTitle(title || "");
+    setEmergencyModalTitle(title || (number === "999" ? "National Emergency Services (999)" : "Emergency Helpline"));
     setEmergencyModalOpen(true);
   };
 
@@ -90,6 +96,7 @@ export default function SafetyCenterPage() {
     setLoading(true);
     setGeoError(null);
     setPermissionDenied(false);
+    setLocErrorInfo(null);
 
     const { coordinates, error: locError } = await captureCurrentLocation({
       enableHighAccuracy: true,
@@ -98,12 +105,11 @@ export default function SafetyCenterPage() {
 
     if (locError) {
       setLoading(false);
-      if (locError.code === "PERMISSION_DENIED") {
-        setPermissionDenied(true);
-        setGeoError(t.permission_denied_desc);
-      } else {
-        setGeoError(locError.message);
-      }
+      setLocErrorInfo(locError);
+      setPermissionDenied(
+        locError.code === "PERMISSION_DENIED" || locError.code === "PERMANENTLY_DENIED"
+      );
+      setGeoError(lang === "bn" ? locError.messageBn : locError.message);
       return;
     }
 
@@ -397,20 +403,57 @@ export default function SafetyCenterPage() {
 
         {/* Location Permission Denied / Error State */}
         {geoError && (
-          <div className="rounded-2xl bg-amber-50 dark:bg-amber-950/40 p-3.5 border border-amber-200 dark:border-amber-900 text-xs text-amber-900 dark:text-amber-200 space-y-2 animate-in fade-in duration-200">
-            <div className="flex items-start justify-between gap-3">
-              <div className="space-y-1">
-                <p className="font-bold flex items-center gap-1.5">
-                  <span>⚠️</span>
-                  <span>{permissionDenied ? t.permission_denied_title : (lang === "bn" ? "অবস্থান শনাক্তকরণ সতর্কতা" : "Location Access Notice")}</span>
-                </p>
-                <p className="text-[11px] leading-relaxed text-amber-800 dark:text-amber-300">{geoError}</p>
-              </div>
+          <div className="rounded-2xl bg-amber-50 dark:bg-amber-950/40 p-4 border border-amber-200 dark:border-amber-900 text-xs text-amber-900 dark:text-amber-200 space-y-3 animate-in fade-in duration-200 shadow-xs">
+            <div className="space-y-1">
+              <p className="font-bold flex items-center gap-1.5 text-xs sm:text-sm text-amber-950 dark:text-amber-100">
+                <span>⚠️</span>
+                <span>
+                  {locErrorInfo?.code === "SERVICES_DISABLED"
+                    ? (lang === "bn" ? t.services_disabled_title : "Device Location Turned Off")
+                    : permissionDenied
+                    ? t.permission_denied_title
+                    : (lang === "bn" ? "অবস্থান শনাক্তকরণ সতর্কতা" : "Location Access Notice")}
+                </span>
+              </p>
+              <p className="text-[11px] sm:text-xs leading-relaxed text-amber-800 dark:text-amber-300">
+                {geoError}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-amber-200/60 dark:border-amber-900/60">
+              {locErrorInfo?.canOpenSettings && locErrorInfo.code === "SERVICES_DISABLED" && (
+                <button
+                  type="button"
+                  onClick={() => openNativeLocationSettings()}
+                  className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-amber-600 text-white hover:bg-amber-700 active:scale-95 transition cursor-pointer min-h-[36px] flex items-center gap-1.5"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span>{lang === "bn" ? "লোকেশন সেটিংস" : "Location Settings"}</span>
+                </button>
+              )}
+
+              {locErrorInfo?.canOpenSettings && locErrorInfo.code !== "SERVICES_DISABLED" && (
+                <button
+                  type="button"
+                  onClick={() => openNativeAppSettings()}
+                  className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-amber-600 text-white hover:bg-amber-700 active:scale-95 transition cursor-pointer min-h-[36px] flex items-center gap-1.5"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span>{lang === "bn" ? "অ্যাপ সেটিংস খুলুন" : "Open App Settings"}</span>
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={handleUseCurrentLocation}
                 disabled={loading}
-                className="shrink-0 px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-600/15 hover:bg-amber-600/25 active:scale-95 text-amber-900 dark:text-amber-200 border border-amber-500/30 transition-all cursor-pointer"
+                className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-amber-600/20 hover:bg-amber-600/30 active:scale-95 text-amber-950 dark:text-amber-100 border border-amber-500/40 transition cursor-pointer min-h-[36px]"
               >
                 {lang === "bn" ? "পুনরায় চেষ্টা" : "Retry"}
               </button>

@@ -7,7 +7,13 @@ import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
 import { Category, Report } from "@/lib/types";
 import EvidenceUploader, { SelectedFileItem } from "@/components/EvidenceUploader";
-import { captureCurrentLocation, approximateCoordinates, suggestNearestArea } from "@/lib/location";
+import {
+  captureCurrentLocation,
+  approximateCoordinates,
+  suggestNearestArea,
+  openNativeAppSettings,
+  openNativeLocationSettings,
+} from "@/lib/location";
 import ReportLocationMap from "@/components/ReportLocationMap";
 import { useBackClose } from "@/lib/useBackClose";
 import { registerBackHandler, BackPriority } from "@/lib/backButton";
@@ -32,7 +38,11 @@ export default function CreateReportPage() {
   });
 
   const [isLocating, setIsLocating] = useState(false);
-  const [locationNotice, setLocationNotice] = useState<{ type: "info" | "warning"; message: string } | null>(null);
+  const [locationNotice, setLocationNotice] = useState<{
+    type: "info" | "warning";
+    message: string;
+    action?: "app_settings" | "location_settings";
+  } | null>(null);
 
   const [selectedFiles, setSelectedFiles] = useState<SelectedFileItem[]>([]);
   const [isReviewMode, setIsReviewMode] = useState(false);
@@ -102,6 +112,11 @@ export default function CreateReportPage() {
       setLocationNotice({
         type: "warning",
         message: locError.message,
+        action: locError.canOpenSettings
+          ? locError.code === "SERVICES_DISABLED"
+            ? "location_settings"
+            : "app_settings"
+          : undefined,
       });
       return;
     }
@@ -494,23 +509,44 @@ export default function CreateReportPage() {
               {/* Location Notice / Error */}
               {locationNotice && (
                 <div
-                  className={`flex items-start justify-between gap-2 rounded-xl p-2.5 text-[11px] ${
+                  className={`flex items-center justify-between gap-2.5 rounded-xl p-2.5 text-[11px] ${
                     locationNotice.type === "warning"
                       ? "bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-800 dark:text-amber-200"
                       : "bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-200"
                   }`}
                 >
-                  <div className="flex items-start gap-1.5">
-                    <span>{locationNotice.type === "warning" ? "⚠️" : "ℹ️"}</span>
-                    <span>{locationNotice.message}</span>
+                  <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                    <span className="shrink-0">{locationNotice.type === "warning" ? "⚠️" : "ℹ️"}</span>
+                    <span className="break-words leading-relaxed">{locationNotice.message}</span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setLocationNotice(null)}
-                    className="text-zinc-400 hover:text-zinc-700 font-bold ml-1"
-                  >
-                    ✕
-                  </button>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {locationNotice.action === "app_settings" && (
+                      <button
+                        type="button"
+                        onClick={() => openNativeAppSettings()}
+                        className="px-2 py-1 text-[10px] font-bold rounded-lg bg-amber-600 text-white hover:bg-amber-700 active:scale-95 transition cursor-pointer"
+                      >
+                        Settings
+                      </button>
+                    )}
+                    {locationNotice.action === "location_settings" && (
+                      <button
+                        type="button"
+                        onClick={() => openNativeLocationSettings()}
+                        className="px-2 py-1 text-[10px] font-bold rounded-lg bg-amber-600 text-white hover:bg-amber-700 active:scale-95 transition cursor-pointer"
+                      >
+                        GPS Settings
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setLocationNotice(null)}
+                      className="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 font-bold p-1 min-h-[24px] min-w-[24px] flex items-center justify-center cursor-pointer"
+                      aria-label="Dismiss notice"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

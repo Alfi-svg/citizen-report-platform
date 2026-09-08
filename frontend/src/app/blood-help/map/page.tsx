@@ -11,7 +11,11 @@ import {
 } from "@/lib/types";
 import { translations, Language } from "@/lib/i18n";
 import { useAuth } from "@/context/AuthContext";
-import { captureCurrentLocation } from "@/lib/location";
+import {
+  captureCurrentLocation,
+  openNativeAppSettings,
+  openNativeLocationSettings,
+} from "@/lib/location";
 import { useBackClose } from "@/lib/useBackClose";
 
 const BLOOD_GROUPS: BloodGroup[] = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
@@ -62,7 +66,10 @@ export default function BloodHelpMapPage() {
   const [selectedUrgency, setSelectedUrgency] = useState<string>("ALL");
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [locating, setLocating] = useState(false);
-  const [locationNotice, setLocationNotice] = useState<string | null>(null);
+  const [locationNotice, setLocationNotice] = useState<{
+    message: string;
+    action?: "app_settings" | "location_settings";
+  } | null>(null);
 
   // Response Modal ("I Can Help")
   const [isResponseModalOpen, setIsResponseModalOpen] = useState(false);
@@ -263,7 +270,21 @@ export default function BloodHelpMapPage() {
     setLocating(false);
 
     if (result.error) {
-      setLocationNotice(result.error.message);
+      const isPermanent = result.error.code === "PERMANENTLY_DENIED";
+      const isServicesDisabled = result.error.code === "SERVICES_DISABLED";
+
+      let action: "app_settings" | "location_settings" | undefined;
+      if (isPermanent && result.error.canOpenSettings) {
+        action = "app_settings";
+      } else if (isServicesDisabled && result.error.canOpenSettings) {
+        action = "location_settings";
+      }
+
+      const msg = lang === "bn" ? result.error.messageBn : result.error.message;
+      setLocationNotice({
+        message: msg,
+        action,
+      });
       return;
     }
 
@@ -457,14 +478,39 @@ export default function BloodHelpMapPage() {
 
         {/* Non-intrusive Location Notice if denied or error */}
         {locationNotice && (
-          <div className="rounded-xl bg-amber-50 dark:bg-amber-950/40 p-2 border border-amber-200 dark:border-amber-900 text-[11px] text-amber-800 dark:text-amber-200 flex items-center justify-between">
-            <span>ℹ️ {locationNotice}</span>
-            <button
-              onClick={() => setLocationNotice(null)}
-              className="text-amber-600 font-bold ml-2 cursor-pointer"
-            >
-              ✕
-            </button>
+          <div className="rounded-xl bg-amber-50 dark:bg-amber-950/40 p-2.5 border border-amber-200 dark:border-amber-900 text-[11px] text-amber-800 dark:text-amber-200 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+              <span className="shrink-0">⚠️</span>
+              <span className="break-words leading-relaxed">{typeof locationNotice === "string" ? locationNotice : locationNotice.message}</span>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              {typeof locationNotice !== "string" && locationNotice.action === "app_settings" && (
+                <button
+                  type="button"
+                  onClick={() => openNativeAppSettings()}
+                  className="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-amber-600 text-white hover:bg-amber-700 active:scale-95 transition cursor-pointer"
+                >
+                  {lang === "bn" ? "সেটিংস" : "Settings"}
+                </button>
+              )}
+              {typeof locationNotice !== "string" && locationNotice.action === "location_settings" && (
+                <button
+                  type="button"
+                  onClick={() => openNativeLocationSettings()}
+                  className="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-amber-600 text-white hover:bg-amber-700 active:scale-95 transition cursor-pointer"
+                >
+                  {lang === "bn" ? "GPS সেটিংস" : "GPS Settings"}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setLocationNotice(null)}
+                className="text-amber-600 font-bold ml-1 cursor-pointer p-1"
+                aria-label="Dismiss notice"
+              >
+                ✕
+              </button>
+            </div>
           </div>
         )}
 

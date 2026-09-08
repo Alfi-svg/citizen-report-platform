@@ -10,7 +10,11 @@ import {
   CategoryResponse,
 } from "@/lib/types";
 import { translations, Language } from "@/lib/i18n";
-import { captureCurrentLocation } from "@/lib/location";
+import {
+  captureCurrentLocation,
+  openNativeAppSettings,
+  openNativeLocationSettings,
+} from "@/lib/location";
 import { useBackClose } from "@/lib/useBackClose";
 import { isAppActive } from "@/lib/appLifecycle";
 
@@ -24,7 +28,7 @@ export default function SafetyMapPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Filters & State
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [viewMode, setViewMode] = useState<"ALL" | "CLUSTERS" | "MISSING">("ALL");
   const [search, setSearch] = useState<string>("");
   const [dateFilter, setDateFilter] = useState<string>("");
@@ -36,7 +40,10 @@ export default function SafetyMapPage() {
 
   // Locate Me state
   const [locating, setLocating] = useState<boolean>(false);
-  const [locationNotice, setLocationNotice] = useState<string | null>(null);
+  const [locationNotice, setLocationNotice] = useState<{
+    message: string;
+    action?: "app_settings" | "location_settings";
+  } | null>(null);
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -326,20 +333,22 @@ export default function SafetyMapPage() {
     setLocating(false);
 
     if (locError || !coordinates) {
-      if (locError?.code === "PERMISSION_DENIED") {
-        setLocationNotice(
-          locError.isPermanent
-            ? (lang === "bn" ? "অবস্থান অনুমতি প্রত্যাখ্যাত। অনুগ্রহ করে অ্যাপ সেটিংসে অনুমতি সক্রিয় করুন।" : "Location permission denied. Please allow location access in your device settings.")
-            : (lang === "bn" ? "অবস্থান অনুমতি প্রত্যাখ্যাত।" : "Location permission was denied.")
-        );
-      } else if (locError?.code === "SERVICES_DISABLED") {
-        setLocationNotice(
-          lang === "bn" ? "অনুগ্রহ করে ডিভাইসের লোকেশন / GPS সেবা চালু করুন।" : "Please enable location/GPS services on your device."
-        );
-      } else {
-        setLocationNotice(locError?.message || (lang === "bn" ? "অবস্থান সনাক্ত করা সম্ভব হয়নি।" : "Could not determine location."));
+      const isPermanent = locError?.code === "PERMANENTLY_DENIED";
+      const isServicesDisabled = locError?.code === "SERVICES_DISABLED";
+
+      let action: "app_settings" | "location_settings" | undefined;
+      if (isPermanent && locError?.canOpenSettings) {
+        action = "app_settings";
+      } else if (isServicesDisabled && locError?.canOpenSettings) {
+        action = "location_settings";
       }
-      setTimeout(() => setLocationNotice(null), 6000);
+
+      const msg = lang === "bn" ? locError?.messageBn : locError?.message;
+      setLocationNotice({
+        message: msg || (lang === "bn" ? "অবস্থান শনাক্ত করা সম্ভব হয়নি।" : "Could not determine location."),
+        action,
+      });
+      setTimeout(() => setLocationNotice(null), 8000);
       return;
     }
 
@@ -704,17 +713,39 @@ export default function SafetyMapPage() {
 
           {/* Location Notice Banner */}
           {locationNotice && (
-            <div className="absolute top-4 left-4 right-4 sm:left-auto sm:right-4 z-30 max-w-sm bg-amber-50 dark:bg-amber-950/90 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 rounded-2xl p-3 text-xs shadow-xl flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <span>⚠️</span>
-                <span>{locationNotice}</span>
+            <div className="absolute top-4 left-4 right-4 sm:left-auto sm:right-4 z-30 max-w-sm bg-amber-50 dark:bg-amber-950/90 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 rounded-2xl p-3 text-xs shadow-xl flex items-center justify-between gap-2.5 animate-in fade-in duration-150">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <span className="shrink-0">⚠️</span>
+                <span className="leading-snug break-words">{locationNotice.message}</span>
               </div>
-              <button
-                onClick={() => setLocationNotice(null)}
-                className="text-amber-600 hover:text-amber-800 text-xs font-bold"
-              >
-                ✕
-              </button>
+              <div className="flex items-center gap-1.5 shrink-0">
+                {locationNotice.action === "app_settings" && (
+                  <button
+                    type="button"
+                    onClick={() => openNativeAppSettings()}
+                    className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-amber-600 text-white hover:bg-amber-700 active:scale-95 transition cursor-pointer"
+                  >
+                    {lang === "bn" ? "সেটিংস" : "Settings"}
+                  </button>
+                )}
+                {locationNotice.action === "location_settings" && (
+                  <button
+                    type="button"
+                    onClick={() => openNativeLocationSettings()}
+                    className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-amber-600 text-white hover:bg-amber-700 active:scale-95 transition cursor-pointer"
+                  >
+                    {lang === "bn" ? "GPS সেটিংস" : "GPS Settings"}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setLocationNotice(null)}
+                  className="text-amber-700 dark:text-amber-300 hover:text-amber-900 dark:hover:text-amber-100 p-1 font-bold min-h-[28px] min-w-[28px] flex items-center justify-center cursor-pointer"
+                  aria-label="Dismiss notice"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
           )}
 

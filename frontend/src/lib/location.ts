@@ -6,10 +6,11 @@
  * - Falls back to standard browser navigator.geolocation on web
  * - Zero continuous tracking, zero background GPS, zero location history
  * - Automatic 3-decimal (~110m) privacy approximation
+ * - Platform-aware error handling for Android & Web
  */
 
-import { Capacitor } from "@capacitor/core";
-import { Geolocation, Position, PermissionStatus } from "@capacitor/geolocation";
+import { Capacitor, registerPlugin } from "@capacitor/core";
+import { Geolocation, Position } from "@capacitor/geolocation";
 
 export interface LocationCoordinates {
   latitude: number;
@@ -21,7 +22,9 @@ export interface LocationCoordinates {
 }
 
 export type LocationErrorCode =
+  | "NOT_REQUESTED"
   | "PERMISSION_DENIED"
+  | "PERMANENTLY_DENIED"
   | "SERVICES_DISABLED"
   | "TIMEOUT"
   | "POSITION_UNAVAILABLE"
@@ -30,7 +33,47 @@ export type LocationErrorCode =
 export interface LocationError {
   code: LocationErrorCode;
   message: string;
+  messageBn: string;
   isPermanent?: boolean;
+  isServicesDisabled?: boolean;
+  canOpenSettings?: boolean;
+}
+
+interface NativeSettingsPluginInterface {
+  openAppSettings(): Promise<void>;
+  openLocationSettings(): Promise<void>;
+}
+
+const NativeSettings = registerPlugin<NativeSettingsPluginInterface>("NativeSettings");
+
+/**
+ * Open native Android App Info settings screen where user can grant permissions.
+ */
+export async function openNativeAppSettings(): Promise<boolean> {
+  if (Capacitor.isNativePlatform()) {
+    try {
+      await NativeSettings.openAppSettings();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  return false;
+}
+
+/**
+ * Open native Android Location Source settings screen where user can toggle GPS on.
+ */
+export async function openNativeLocationSettings(): Promise<boolean> {
+  if (Capacitor.isNativePlatform()) {
+    try {
+      await NativeSettings.openLocationSettings();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  return false;
 }
 
 // Major Bangladesh reference points for fast, zero-network local approximation
@@ -105,13 +148,15 @@ export function suggestNearestArea(lat: number, lng: number): string | undefined
 /**
  * Checks current location permission without triggering a prompt.
  */
-export async function checkLocationPermission(): Promise<PermissionStatus["location"]> {
+export async function checkLocationPermission(): Promise<"granted" | "denied" | "prompt"> {
   if (Capacitor.isNativePlatform()) {
     try {
       const status = await Geolocation.checkPermissions();
-      return status.location;
+      if (status.location === "granted") return "granted";
+      if (status.location === "denied") return "denied";
+      return "prompt";
     } catch {
-      return "denied";
+      return "prompt";
     }
   }
 
@@ -119,7 +164,9 @@ export async function checkLocationPermission(): Promise<PermissionStatus["locat
   if (typeof navigator !== "undefined" && navigator.permissions) {
     try {
       const status = await navigator.permissions.query({ name: "geolocation" as PermissionName });
-      return status.state as PermissionStatus["location"];
+      if (status.state === "granted") return "granted";
+      if (status.state === "denied") return "denied";
+      return "prompt";
     } catch {
       return "prompt";
     }
@@ -144,18 +191,36 @@ export async function captureCurrentLocation(options?: {
     try {
       let permStatus = await Geolocation.checkPermissions();
 
+      if (permStatus.location === "denied") {
+        return {
+          error: {
+            code: "PERMANENTLY_DENIED",
+            message: "Location access is blocked for Nirapotta. Tap 'Open Settings', select Permissions > Location, and allow access.",
+            messageBn: "নিরাপত্তা অ্যাপে লোকেশন অনুমতি বন্ধ করা আছে। 'সেটিংস খুলুন'-এ ট্যাপ করে পারমিশন থেকে লোকেশন চালু করুন।",
+            isPermanent: true,
+            canOpenSettings: true,
+          },
+        };
+      }
+
       if (permStatus.location !== "granted") {
         // Request permissions on any ungranted state ('prompt', 'prompt-with-rationale', etc.)
         permStatus = await Geolocation.requestPermissions({ permissions: ["location"] });
       }
 
       if (permStatus.location !== "granted") {
+        const isPermanent = permStatus.location === "denied";
         return {
           error: {
-            code: "PERMISSION_DENIED",
-            message:
-              "Location permission was denied. You can manually enter your incident location below, or enable Location in your device App Settings.",
-            isPermanent: permStatus.location === "denied",
+            code: isPermanent ? "PERMANENTLY_DENIED" : "PERMISSION_DENIED",
+            message: isPermanent
+              ? "Location access is blocked for Nirapotta. Tap 'Open Settings', select Permissions > Location, and allow access."
+              : "Location permission is required to locate nearby emergency units. Tap 'Allow Location' to grant permission, or choose your area manually.",
+            messageBn: isPermanent
+              ? "নিরাপত্তা অ্যাপে লোকেশন অনুমতি বন্ধ করা আছে। 'সেটিংস খুলুন'-এ ট্যাপ করে পারমিশন থেকে লোকেশন চালু করুন।"
+              : "কাছাকাছি সেবা পেতে লোকেশন অনুমতি প্রয়োজন। পুনরায় চেষ্টা করতে 'অনুমতি দিন'-এ ট্যাপ করুন অথবা সরাসরি এলাকা নির্বাচন করুন।",
+            isPermanent,
+            canOpenSettings: isPermanent,
           },
         };
       }
@@ -188,12 +253,19 @@ export async function captureCurrentLocation(options?: {
       };
     } catch (err: unknown) {
       const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
-      if (msg.includes("location disabled") || msg.includes("location service") || msg.includes("disabled") || msg.includes("provider")) {
+      if (
+        msg.includes("location disabled") ||
+        msg.includes("location service") ||
+        msg.includes("disabled") ||
+        msg.includes("provider")
+      ) {
         return {
           error: {
             code: "SERVICES_DISABLED",
-            message:
-              "Location services are disabled on your device. Please turn on Location in Quick Settings or type your location manually.",
+            message: "Device Location (GPS) is turned off. Please turn on Location in Quick Settings or tap 'Location Settings'.",
+            messageBn: "ডিভাইসের লোকেশন (GPS) সেবা বন্ধ রয়েছে। কুইক সেটিংস বা 'লোকেশন সেটিংস' থেকে লোকেশন অন করুন।",
+            isServicesDisabled: true,
+            canOpenSettings: true,
           },
         };
       }
@@ -201,16 +273,26 @@ export async function captureCurrentLocation(options?: {
         return {
           error: {
             code: "TIMEOUT",
-            message:
-              "Location request timed out. Please try again with clear sky view or enter your location manually.",
+            message: "Location request timed out. Please try again with clear sky view or select your area manually.",
+            messageBn: "অবস্থান শনাক্তকরণে সময় বেশি লেগেছে। অনুগ্রহ করে পুনরায় চেষ্টা করুন অথবা সরাসরি এলাকা নির্বাচন করুন।",
+          },
+        };
+      }
+      if (msg.includes("denied") || msg.includes("permission")) {
+        return {
+          error: {
+            code: "PERMISSION_DENIED",
+            message: "Location permission is required to locate nearby emergency units. Tap 'Allow Location' to grant permission, or choose your area manually.",
+            messageBn: "কাছাকাছি সেবা পেতে লোকেশন অনুমতি প্রয়োজন। পুনরায় চেষ্টা করতে 'অনুমতি দিন'-এ ট্যাপ করুন অথবা সরাসরি এলাকা নির্বাচন করুন।",
+            canOpenSettings: true,
           },
         };
       }
       return {
         error: {
           code: "POSITION_UNAVAILABLE",
-          message:
-            "Unable to retrieve current location. Please enter your location manually.",
+          message: "Unable to detect GPS position at this moment. Please check your device signal or select your area manually.",
+          messageBn: "এই মুহূর্তে জিপিএস অবস্থান নির্ণয় করা সম্ভব হয়নি। অনুগ্রহ করে পুনরায় চেষ্টা করুন অথবা সরাসরি এলাকা নির্বাচন করুন।",
         },
       };
     }
@@ -221,7 +303,8 @@ export async function captureCurrentLocation(options?: {
     return {
       error: {
         code: "UNSUPPORTED",
-        message: "Geolocation is not supported by your browser. Please type your location manually.",
+        message: "Geolocation is not supported by your browser. Please select your area manually.",
+        messageBn: "আপনার ব্রাউজারে জিপিএস সমর্থিত নয়। অনুগ্রহ করে সরাসরি এলাকা নির্বাচন করুন।",
       },
     };
   }
@@ -244,29 +327,41 @@ export async function captureCurrentLocation(options?: {
           },
         });
       },
-      (err) => {
+      async (err) => {
         if (err.code === err.PERMISSION_DENIED) {
+          let isPermanent = false;
+          if (typeof navigator !== "undefined" && navigator.permissions) {
+            try {
+              const status = await navigator.permissions.query({ name: "geolocation" as PermissionName });
+              isPermanent = status.state === "denied";
+            } catch {}
+          }
           resolve({
             error: {
-              code: "PERMISSION_DENIED",
-              message:
-                "Location permission was denied. You can manually enter your incident location below.",
+              code: isPermanent ? "PERMANENTLY_DENIED" : "PERMISSION_DENIED",
+              message: isPermanent
+                ? "Location access is blocked in your browser. Click the lock icon in your address bar to allow location, or choose your area manually below."
+                : "Location permission was denied. Tap 'Allow Location' to retry, or select your area manually below.",
+              messageBn: isPermanent
+                ? "ব্রাউজারে লোকেশন পারমিশন ব্লক করা আছে। অ্যাড্রেস বারের সাইট সেটিংসে গিয়ে লোকেশন অনুমতি দিন অথবা নিচে থেকে এলাকা নির্বাচন করুন।"
+                : "লোকেশন অনুমতি দেওয়া হয়নি। সেবা খুঁজতে লোকেশন অনুমতি দিন অথবা নিচে থেকে এলাকা নির্বাচন করুন।",
+              isPermanent,
             },
           });
         } else if (err.code === err.TIMEOUT) {
           resolve({
             error: {
               code: "TIMEOUT",
-              message:
-                "Location request timed out. Please try again or enter your location manually.",
+              message: "Location request timed out. Please try again or select your area manually.",
+              messageBn: "অবস্থান শনাক্তকরণে সময় বেশি লেগেছে। অনুগ্রহ করে পুনরায় চেষ্টা করুন অথবা সরাসরি এলাকা নির্বাচন করুন।",
             },
           });
         } else {
           resolve({
             error: {
               code: "POSITION_UNAVAILABLE",
-              message:
-                "Unable to retrieve GPS coordinates. Please enter your location manually.",
+              message: "Unable to detect GPS position at this moment. Please check your signal or select your area manually.",
+              messageBn: "এই মুহূর্তে জিপিএস অবস্থান নির্ণয় করা সম্ভব হয়নি। অনুগ্রহ করে পুনরায় চেষ্টা করুন অথবা এলাকা নির্বাচন করুন।",
             },
           });
         }
@@ -279,3 +374,4 @@ export async function captureCurrentLocation(options?: {
     );
   });
 }
+
