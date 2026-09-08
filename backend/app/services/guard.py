@@ -246,8 +246,11 @@ async def start_emergency_session(
     now_utc = datetime.now(timezone.utc)
 
     if last_session and last_session.created_at:
-        # Check delta
-        delta = (now_utc - last_session.created_at).total_seconds()
+        # Check delta — normalize to UTC if naive (SQLite / legacy rows)
+        last_created = last_session.created_at
+        if last_created.tzinfo is None:
+            last_created = last_created.replace(tzinfo=timezone.utc)
+        delta = (now_utc - last_created).total_seconds()
         if delta < 10.0:
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,

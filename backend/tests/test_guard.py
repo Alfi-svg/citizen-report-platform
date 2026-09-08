@@ -319,3 +319,47 @@ class TestGuardSystem:
         rep_res = await async_client.get("/api/v1/reputation/me", headers=headers_sender)
         assert rep_res.status_code == 200
         assert rep_res.json()["impact_points"] == 0
+
+    @pytest.mark.asyncio
+    async def test_cooldown_does_not_crash_with_naive_datetime(
+        self, async_client: AsyncClient, db_session: AsyncSession, user_a
+    ):
+        """Regression test: cooldown check must not raise TypeError when
+        EmergencySession.created_at is timezone-naive (e.g. SQLite legacy rows)."""
+        from datetime import datetime, timezone
+        from sqlalchemy import select
+        from app.models.guard import EmergencySession
+
+        user, token = user_a
+        headers = {"Authorization": f"Bearer {token}"}
+
+        # First session
+        res1 = await async_client.post(
+            "/api/v1/guard/session/start",
+            json={"message": "First alert", "is_test": True},
+            headers=headers,
+        )
+        assert res1.status_code == 201
+        session_id = res1.json()["id"]
+
+        # Cancel it
+        await async_client.post(
+            f"/api/v1/guard/session/{session_id}/cancel",
+            headers=headers,
+        )
+
+        # Manually backdating created_at to a timezone-naive value (simulates SQLite)
+        stmt = select(EmergencySession).where(EmergencySession.id == session_id)
+        result = await db_session.execute(stmt)
+        session_obj = result.scalar_one_or_none()
+        if session_obj:
+            session_obj.created_at = datetime(2000, 1, 1, 0, 0, 0)  # naive, far past
+            await db_session.commit()
+
+        # Second session must succeed (cooldown expired long ago)
+        res2 = await async_client.post(
+            "/api/v1/guard/session/start",
+            json={"message": "Second alert after naive datetime", "is_test": True},
+            headers=headers,
+        )
+        assert res2.status_code == 201, f"Expected 201 but got {res2.status_code}: {res2.text}"
