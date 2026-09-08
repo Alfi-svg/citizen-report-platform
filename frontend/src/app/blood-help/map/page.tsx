@@ -200,32 +200,36 @@ export default function BloodHelpMapPage() {
       const isEmergency = req.urgency === "EMERGENCY";
       const isUrgent = req.urgency === "URGENT";
 
-      const dotColor = isEmergency ? "#e11d48" : isUrgent ? "#d97706" : "#475569";
+      const dotColor = isEmergency ? "#e11d48" : isUrgent ? "#d97706" : "#64748b";
+      const ringColor = isEmergency ? "rgba(225, 29, 72, 0.25)" : isUrgent ? "rgba(217, 119, 6, 0.25)" : "rgba(100, 116, 139, 0.2)";
 
-      // Mobile-accessible touch target (38x38px outer container)
+      // Mobile-accessible touch target (42x42px hit box) with crisp vector blood droplet & bold typography
       const bloodIcon = L.divIcon({
         className: "custom-blood-marker",
-        html: `<div style="width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+        html: `<div style="width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
           <div style="
             display: flex;
             align-items: center;
-            gap: 2px;
-            background: white;
-            color: #18181b;
-            padding: 3px 6px;
+            gap: 4px;
+            background: #ffffff;
+            color: #0f172a;
+            padding: 4px 8px;
             border-radius: 9999px;
             border: 2px solid ${dotColor};
-            box-shadow: 0 3px 6px rgba(0,0,0,0.25);
-            font-size: 11px;
+            box-shadow: 0 0 0 3px ${ringColor}, 0 4px 10px rgba(0, 0, 0, 0.2);
+            font-size: 12px;
             font-weight: 900;
             line-height: 1;
           ">
-            <span style="font-size: 12px;">🩸</span>
-            <span>${req.blood_group}</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="${dotColor}">
+              <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+            </svg>
+            <span style="font-family: inherit; letter-spacing: -0.3px;">${req.blood_group}</span>
+            <span style="width: 6px; height: 6px; border-radius: 50%; background: ${dotColor};"></span>
           </div>
         </div>`,
-        iconSize: [38, 38],
-        iconAnchor: [19, 19],
+        iconSize: [42, 42],
+        iconAnchor: [21, 21],
       });
 
       const marker = L.marker([req.approximate_latitude, req.approximate_longitude], {
@@ -360,6 +364,15 @@ export default function BloodHelpMapPage() {
     }
   };
 
+  const clearAllFilters = () => {
+    setSelectedGroup("ALL");
+    setSelectedDistrict("All Districts");
+    setSelectedUrgency("ALL");
+    setUserCoords(null);
+  };
+
+  const hasActiveFilters = selectedGroup !== "ALL" || selectedDistrict !== "All Districts" || selectedUrgency !== "ALL" || userCoords !== null;
+
   return (
     <div className="relative w-full h-[calc(100vh-3.5rem)] md:h-[calc(100vh-4rem)] flex flex-col bg-zinc-100 dark:bg-zinc-950 overflow-hidden">
       {/* ========================================================= */}
@@ -367,14 +380,16 @@ export default function BloodHelpMapPage() {
       {/* ========================================================= */}
       <div className="z-20 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 px-3 py-2.5 sm:px-6 shadow-xs space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-rose-600 text-white text-sm shadow-2xs">
-              🩸
-            </span>
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-600 text-white shadow-2xs">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+              </svg>
+            </div>
             <div>
               <h1 className="text-xs sm:text-sm font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
                 <span>{lang === "bn" ? t.blood_map_title : "Blood Request Map"}</span>
-                <span className="rounded-full bg-rose-50 dark:bg-rose-950/60 px-2 py-0.2 text-[10px] text-rose-700 dark:text-rose-400 font-bold border border-rose-200/60 dark:border-rose-900/60">
+                <span className="rounded-full bg-rose-50 dark:bg-rose-950/60 px-2 py-0.5 text-[10px] text-rose-700 dark:text-rose-400 font-bold border border-rose-200/60 dark:border-rose-900/60">
                   {total}
                 </span>
               </h1>
@@ -392,7 +407,17 @@ export default function BloodHelpMapPage() {
               disabled={locating}
               className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2.5 py-1.5 text-xs font-bold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-750 transition cursor-pointer shadow-2xs disabled:opacity-60"
             >
-              <span>{locating ? "⏳" : "📍"}</span>
+              {locating ? (
+                <div className="h-3 w-3 animate-spin rounded-full border-2 border-rose-600 border-t-transparent" />
+              ) : (
+                <svg className="w-3.5 h-3.5 text-rose-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <circle cx="12" cy="12" r="7" />
+                  <polyline points="12 1 12 5" />
+                  <polyline points="12 19 12 23" />
+                  <polyline points="1 12 5 12" />
+                  <polyline points="19 12 23 12" />
+                </svg>
+              )}
               <span className="hidden xs:inline">{lang === "bn" ? "আমার কাছে" : "Near Me"}</span>
             </button>
 
@@ -401,9 +426,44 @@ export default function BloodHelpMapPage() {
               href="/blood-help"
               className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 text-xs font-bold transition shadow-2xs"
             >
-              <span>📋</span>
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="8" y1="6" x2="21" y2="6" />
+                <line x1="8" y1="12" x2="21" y2="12" />
+                <line x1="8" y1="18" x2="21" y2="18" />
+                <line x1="3" y1="6" x2="3.01" y2="6" />
+                <line x1="3" y1="12" x2="3.01" y2="12" />
+                <line x1="3" y1="18" x2="3.01" y2="18" />
+              </svg>
               <span className="hidden xs:inline">{lang === "bn" ? "তালিকা ভিউ" : "List View"}</span>
             </Link>
+
+            {/* Bilingual Switcher */}
+            <div className="inline-flex rounded-xl bg-zinc-100 dark:bg-zinc-800 p-0.5 border border-zinc-200 dark:border-zinc-700">
+              <button
+                type="button"
+                onClick={() => {
+                  setLang("en");
+                  if (typeof window !== "undefined") localStorage.setItem("app_lang", "en");
+                }}
+                className={`px-2 py-0.5 text-[11px] font-bold rounded-lg transition cursor-pointer ${
+                  lang === "en" ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-2xs" : "text-zinc-500"
+                }`}
+              >
+                EN
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setLang("bn");
+                  if (typeof window !== "undefined") localStorage.setItem("app_lang", "bn");
+                }}
+                className={`px-2 py-0.5 text-[11px] font-bold rounded-lg transition cursor-pointer ${
+                  lang === "bn" ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white shadow-2xs" : "text-zinc-500"
+                }`}
+              >
+                বাং
+              </button>
+            </div>
           </div>
         </div>
 
@@ -442,7 +502,7 @@ export default function BloodHelpMapPage() {
           <select
             value={selectedDistrict}
             onChange={(e) => setSelectedDistrict(e.target.value)}
-            className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2 py-1 text-[11px] text-zinc-800 dark:text-zinc-200 shrink-0 focus:outline-none focus:ring-1 focus:ring-rose-500"
+            className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2.5 py-1 text-[11px] text-zinc-800 dark:text-zinc-200 shrink-0 focus:outline-none focus:ring-1 focus:ring-rose-500 cursor-pointer"
           >
             {BD_DISTRICTS.map((d) => (
               <option key={d} value={d}>
@@ -455,13 +515,24 @@ export default function BloodHelpMapPage() {
           <select
             value={selectedUrgency}
             onChange={(e) => setSelectedUrgency(e.target.value)}
-            className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2 py-1 text-[11px] text-zinc-800 dark:text-zinc-200 shrink-0 focus:outline-none focus:ring-1 focus:ring-rose-500"
+            className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2.5 py-1 text-[11px] text-zinc-800 dark:text-zinc-200 shrink-0 focus:outline-none focus:ring-1 focus:ring-rose-500 cursor-pointer"
           >
             <option value="ALL">All Urgencies</option>
             <option value="EMERGENCY">🚨 Emergency</option>
             <option value="URGENT">⚠️ Urgent</option>
-            <option value="NORMAL">ℹ️ Normal</option>
+            <option value="NORMAL">Normal</option>
           </select>
+
+          {/* Clear Filters button */}
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={clearAllFilters}
+              className="rounded-lg bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 px-2 py-1 text-[10px] font-bold text-zinc-700 dark:text-zinc-200 shrink-0 transition cursor-pointer"
+            >
+              ✕ Reset
+            </button>
+          )}
         </div>
 
         {error && (
@@ -536,21 +607,37 @@ export default function BloodHelpMapPage() {
         {/* Loading Spinner Overlay */}
         {loading && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-full px-4 py-1.5 border border-zinc-200 dark:border-zinc-800 shadow-md text-xs font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-rose-600 animate-ping" />
+            <span className="h-2 w-2 rounded-full bg-rose-600 animate-pulse" />
             <span>Loading blood requests...</span>
           </div>
         )}
 
         {/* Empty State Overlay */}
         {!loading && requests.length === 0 && (
-          <div className="absolute top-6 left-1/2 -translate-x-1/2 z-30 max-w-xs bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl p-4 border border-zinc-200 dark:border-zinc-800 shadow-lg text-center space-y-1">
-            <span className="text-xl">🕊️</span>
+          <div className="absolute top-6 left-1/2 -translate-x-1/2 z-30 max-w-xs bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl p-4 border border-zinc-200 dark:border-zinc-800 shadow-lg text-center space-y-2">
+            <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mx-auto text-zinc-400">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M8 12h8" />
+              </svg>
+            </div>
             <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-              No matching blood requests
+              {lang === "bn" ? "কোনো রক্তের আবেদন নেই" : "No matching blood requests"}
             </h3>
-            <p className="text-[10px] text-zinc-500">
-              No active blood requests match your selected filters. Try choosing &quot;All Districts&quot; or &quot;All Groups&quot;.
+            <p className="text-[10px] text-zinc-500 leading-snug">
+              {lang === "bn"
+                ? "নির্বাচিত ফিল্টারে কোনো আবেদন পাওয়া যায়নি। ফিল্টার রিসেট করে দেখুন।"
+                : "No active blood requests match your selected filters. Try choosing 'All Districts' or 'All Groups'."}
             </p>
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={clearAllFilters}
+                className="mt-1 px-3 py-1 text-[11px] font-bold bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition cursor-pointer"
+              >
+                {lang === "bn" ? "ফিল্টার মুছুন" : "Clear Filters"}
+              </button>
+            )}
           </div>
         )}
 
@@ -558,11 +645,11 @@ export default function BloodHelpMapPage() {
         {/* 3. Selected Marker Bottom Sheet / Responsive Card */}
         {/* ========================================================= */}
         {selectedPoint && (
-          <div className="absolute bottom-16 sm:bottom-auto sm:top-4 left-3 right-3 sm:left-auto sm:right-4 z-30 sm:max-w-sm sm:w-85 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl p-4 border border-zinc-200 dark:border-zinc-800 shadow-2xl space-y-3">
+          <div className="absolute bottom-20 sm:bottom-auto sm:top-4 left-3 right-3 sm:left-auto sm:right-4 z-30 sm:max-w-sm sm:w-85 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-3xl p-4.5 border border-zinc-200 dark:border-zinc-800 shadow-2xl space-y-3 animate-in fade-in slide-in-from-bottom-3 duration-200">
             {/* Header: Blood Group, Urgency & Close Button */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="flex items-center justify-center rounded-xl bg-rose-600 text-white font-black text-sm px-2.5 py-1 shadow-2xs">
+                <span className="flex items-center justify-center rounded-xl bg-rose-600 text-white font-black text-sm px-3 py-1 shadow-2xs">
                   {selectedPoint.blood_group}
                 </span>
 
@@ -575,9 +662,15 @@ export default function BloodHelpMapPage() {
                       : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700"
                   }`}
                 >
-                  {selectedPoint.urgency === "EMERGENCY" && (
-                    <span className="h-1.5 w-1.5 rounded-full bg-rose-600 animate-pulse" />
-                  )}
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${
+                      selectedPoint.urgency === "EMERGENCY"
+                        ? "bg-rose-600"
+                        : selectedPoint.urgency === "URGENT"
+                        ? "bg-amber-600"
+                        : "bg-zinc-500"
+                    }`}
+                  />
                   <span>{selectedPoint.urgency}</span>
                 </span>
 
@@ -588,7 +681,7 @@ export default function BloodHelpMapPage() {
 
               <button
                 onClick={() => setSelectedPoint(null)}
-                className="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs font-bold min-h-[36px] min-w-[36px] flex items-center justify-center cursor-pointer rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+                className="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs font-bold h-9 w-9 flex items-center justify-center cursor-pointer rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
                 aria-label="Close details"
               >
                 ✕
@@ -610,7 +703,9 @@ export default function BloodHelpMapPage() {
                 )}
               </p>
               <span className="inline-flex items-center gap-1 text-[10px] text-zinc-400 mt-0.5">
-                <span>🛡️</span>
+                <svg className="w-3 h-3 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
                 <span>Approximate location (~110m privacy buffer)</span>
               </span>
             </div>
@@ -637,16 +732,19 @@ export default function BloodHelpMapPage() {
               <button
                 type="button"
                 onClick={() => setIsResponseModalOpen(true)}
-                className="flex-1 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold py-2 px-3 transition shadow-xs cursor-pointer text-center"
+                className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold py-2.5 px-3 transition shadow-xs cursor-pointer text-center"
               >
-                ❤️ I Can Help
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                </svg>
+                <span>{lang === "bn" ? "আমি সাহায্য করতে পারি" : "I Can Help"}</span>
               </button>
 
               <Link
                 href={`/blood-help/${selectedPoint.id}`}
-                className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-750 text-zinc-800 dark:text-zinc-200 text-xs font-bold py-2 px-3 transition shadow-2xs text-center"
+                className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-750 text-zinc-800 dark:text-zinc-200 text-xs font-bold py-2.5 px-3.5 transition shadow-2xs text-center"
               >
-                Details →
+                {lang === "bn" ? "বিস্তারিত →" : "Details →"}
               </Link>
             </div>
           </div>
@@ -660,10 +758,12 @@ export default function BloodHelpMapPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
           <div className="w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 p-6 shadow-2xl border border-zinc-200 dark:border-zinc-800 space-y-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-600 text-white text-sm">
-                  ❤️
-                </span>
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-600 text-white text-sm shadow-2xs">
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                  </svg>
+                </div>
                 <div>
                   <h3 className="text-sm font-black text-zinc-900 dark:text-zinc-100">
                     Respond to Blood Request
@@ -709,8 +809,12 @@ export default function BloodHelpMapPage() {
                 />
               </div>
 
-              <div className="p-3 rounded-xl bg-rose-50/60 dark:bg-rose-950/20 border border-rose-200/60 dark:border-rose-900/60 text-[10px] text-rose-800 dark:text-rose-300">
-                🔒 Blood donations are 100% voluntary. Never pay money for blood donations.
+              <div className="p-3 rounded-xl bg-rose-50/60 dark:bg-rose-950/20 border border-rose-200/60 dark:border-rose-900/60 text-[10px] text-rose-800 dark:text-rose-300 flex items-center gap-2">
+                <svg className="w-4 h-4 shrink-0 text-rose-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+                <span>Blood donations are 100% voluntary. Never pay money for blood donations.</span>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2">
@@ -736,3 +840,4 @@ export default function BloodHelpMapPage() {
     </div>
   );
 }
+

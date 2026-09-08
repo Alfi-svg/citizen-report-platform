@@ -83,14 +83,14 @@ export default function ReportLocationMap({
         circleRef.current = circle;
       }
 
-      // Marker Icon with 32x32px hit area
+      // Marker Icon with 38x38px hit area and high-contrast ring
       const pinIcon = L.divIcon({
         className: "custom-preview-pin",
-        html: `<div style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-          <div style="background: #059669; width: 18px; height: 18px; border-radius: 50%; border: 3px solid white; box-shadow: 0 3px 6px rgba(0,0,0,0.35);"></div>
+        html: `<div style="width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+          <div style="background: #059669; width: 18px; height: 18px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.25), 0 3px 8px rgba(0,0,0,0.35);"></div>
         </div>`,
-        iconSize: [32, 32],
-        iconAnchor: [16, 16],
+        iconSize: [38, 38],
+        iconAnchor: [19, 19],
       });
 
       const marker = L.marker([latitude, longitude], {
@@ -173,8 +173,11 @@ export default function ReportLocationMap({
       </div>
 
       <div className="flex items-center justify-between text-[10px] text-zinc-500 dark:text-zinc-400 px-1">
-        <span className="inline-flex items-center gap-1">
-          <span>🔒</span>
+        <span className="inline-flex items-center gap-1.5">
+          <svg className="w-3 h-3 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
           <span>~110m privacy grid applied</span>
         </span>
         {interactive && (
