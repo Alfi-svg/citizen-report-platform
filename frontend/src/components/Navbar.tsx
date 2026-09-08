@@ -463,7 +463,7 @@ export default function Navbar() {
           />
 
           {/* Drawer Panel */}
-          <div className="relative w-4/5 max-w-sm bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl h-full shadow-2xl flex flex-col justify-between overflow-y-auto border-r border-slate-200/80 dark:border-zinc-800/80 z-10 animate-in slide-in-from-left duration-200">
+          <div className="relative w-4/5 max-w-sm bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl h-full shadow-2xl flex flex-col justify-between overflow-y-auto border-r border-slate-200/80 dark:border-zinc-800/80 z-20 animate-in slide-in-from-left duration-200">
             {/* Drawer Header */}
             <div>
               <div className="p-4 border-b border-slate-100/80 dark:border-zinc-800/80 flex items-center justify-between">

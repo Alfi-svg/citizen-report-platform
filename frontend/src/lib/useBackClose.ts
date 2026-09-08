@@ -72,16 +72,19 @@ export function useBackClose(
     return () => {
       window.removeEventListener("popstate", handlePopState);
 
-      // If the overlay is closed via UI and NOT from popstate,
-      // and user is still on the same page, step back in history to clean up.
+      // If the overlay is closed via UI (close button, backdrop, link click)
+      // and NOT from a popstate event, clean up the pushed history state using
+      // replaceState instead of history.back(). Using back() would cancel any
+      // navigation that was just triggered by clicking a drawer/modal link.
       if (
         pushedRef.current &&
         !isHandlingPopRef.current &&
-        window.location.pathname === initialPath &&
         window.history.state?.modalOverlay === id
       ) {
         pushedRef.current = false;
-        window.history.back();
+        // Replace current state to remove the overlay marker — does NOT navigate back.
+        const { modalOverlay: _removed, ...cleanState } = window.history.state || {};
+        window.history.replaceState(cleanState, "");
       }
     };
   }, [isOpen, onClose, id, priority]);
