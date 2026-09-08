@@ -7,6 +7,7 @@ import { apiFetch } from "@/lib/api";
 import { translations, Language } from "@/lib/i18n";
 import EmergencyCallModal from "@/components/EmergencyCallModal";
 import { captureCurrentLocation } from "@/lib/location";
+import { useBackClose } from "@/lib/useBackClose";
 
 interface TrustedContactItem {
   id: string;
@@ -180,16 +181,40 @@ export default function GuardPage() {
     if (timerRef.current) clearInterval(timerRef.current);
     setCountdownModalOpen(false);
     setIsTestMode(false);
+    setTriggering(false);
   };
 
+  // Android Hardware Back & History Pop Support for Guard Modals
+  useBackClose(countdownModalOpen, handleCancelCountdown, "guardCountdownModal");
+  useBackClose(safeModalOpen, () => setSafeModalOpen(false), "guardSafeModal");
+  useBackClose(contactModalOpen, () => setContactModalOpen(false), "guardContactModal");
+  useBackClose(settingsModalOpen, () => setSettingsModalOpen(false), "guardSettingsModal");
+
+  // Keyboard Escape key support
+  useEffect(() => {
+    if (!countdownModalOpen && !safeModalOpen && !contactModalOpen && !settingsModalOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (countdownModalOpen) handleCancelCountdown();
+        if (safeModalOpen) setSafeModalOpen(false);
+        if (contactModalOpen) setContactModalOpen(false);
+        if (settingsModalOpen) setSettingsModalOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [countdownModalOpen, safeModalOpen, contactModalOpen, settingsModalOpen]);
+
   const handleImmediateSend = () => {
+    if (triggering) return;
     if (timerRef.current) clearInterval(timerRef.current);
     handleDispatchEmergency(isTestMode);
   };
 
   const handleDispatchEmergency = async (testMode: boolean) => {
-    setCountdownModalOpen(false);
+    if (triggering) return;
     setTriggering(true);
+    setCountdownModalOpen(false);
     setError(null);
 
     let lat: number | undefined = undefined;
@@ -478,29 +503,43 @@ export default function GuardPage() {
           </div>
 
           {/* Delivery Breakdown for Recipients */}
-          <div className="pt-2 border-t border-red-900/50">
-            <h3 className="text-xs font-bold text-zinc-400 mb-2">
-              {lang === "bn" ? "সদস্যদের কাছে নোটিফিকেশন স্ট্যাটাস:" : "Recipient Delivery Status:"}
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="pt-2 border-t border-red-900/50 space-y-2">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-zinc-300">
+                {lang === "bn" ? "সদস্যদের কাছে নোটিফিকেশন স্ট্যাটাস:" : "Recipient Delivery Status:"}
+              </h3>
+              <span className="text-[10px] text-zinc-400">
+                {lang === "bn" ? "সরাসরি গেটওয়ে দ্বারা যাচাইকৃত" : "Direct Gateway Status"}
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {activeSession.recipients.map((rec) => (
                 <div
                   key={rec.id}
-                  className="flex items-center justify-between p-3 rounded-xl bg-zinc-900/80 border border-zinc-800 text-xs"
+                  className="p-3 rounded-xl bg-zinc-900/90 border border-zinc-800 text-xs space-y-1"
                 >
-                  <div>
-                    <span className="font-bold text-zinc-200">{rec.recipient_name}</span>
-                    <span className="text-zinc-500 ml-2 text-[11px]">{rec.recipient_phone}</span>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="font-bold text-zinc-200">{rec.recipient_name}</span>
+                      <span className="text-zinc-500 ml-2 text-[11px] font-mono">{rec.recipient_phone}</span>
+                    </div>
+                    <div className="flex items-center gap-1 font-bold text-[11px]">
+                      {rec.delivery_status === "DELIVERED" ? (
+                        <span className="text-emerald-400">✓ {t.guard_status_delivered}</span>
+                      ) : rec.delivery_status === "SENT" ? (
+                        <span className="text-blue-400">✓ {t.guard_status_sent}</span>
+                      ) : rec.delivery_status === "FAILED" ? (
+                        <span className="text-rose-400">✕ {t.guard_status_failed}</span>
+                      ) : (
+                        <span className="text-amber-400">? {t.guard_status_pending}</span>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1 font-bold">
-                    {rec.delivery_status === "DELIVERED" ? (
-                      <span className="text-emerald-400">✓ {t.guard_status_delivered}</span>
-                    ) : rec.delivery_status === "SENT" ? (
-                      <span className="text-blue-400">✓ {t.guard_status_sent}</span>
-                    ) : (
-                      <span className="text-amber-400">? {t.guard_status_pending}</span>
-                    )}
-                  </div>
+                  {rec.delivery_notes && (
+                    <p className="text-[10px] text-zinc-400 italic">
+                      {rec.delivery_notes}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
@@ -599,6 +638,17 @@ export default function GuardPage() {
             </button>
           )}
         </div>
+
+        {contacts.length >= 5 && (
+          <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300 flex items-center gap-2">
+            <span>ℹ️</span>
+            <span>
+              {lang === "bn"
+                ? "সর্বোচ্চ ৫ জন বিশ্বস্ত ব্যক্তি যুক্ত করা হয়েছে। নতুন কাউকে যুক্ত করতে বিদ্যমান কাউকে পরিবর্তন বা মুছুন।"
+                : "Maximum 5 trusted contacts linked. To add someone else, please edit or delete an existing contact."}
+            </span>
+          </div>
+        )}
 
         {contacts.length === 0 ? (
           <div className="p-6 rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-800 text-center space-y-3">
@@ -709,6 +759,11 @@ export default function GuardPage() {
             ))}
           </div>
         )}
+
+        <p className="text-[11px] text-zinc-500 flex items-center gap-1.5 pt-2">
+          <span>🔒</span>
+          <span>{t.guard_privacy_reassurance}</span>
+        </p>
       </section>
 
       {/* =================================================================== */}
@@ -720,17 +775,48 @@ export default function GuardPage() {
           role="alertdialog"
           aria-modal="true"
         >
-          <div className="relative w-full max-w-sm rounded-3xl border-2 border-red-500 bg-zinc-950 p-6 text-center space-y-5 shadow-2xl animate-in zoom-in-95">
-            <div className="h-20 w-20 mx-auto rounded-full bg-red-600/20 border-2 border-red-500 flex items-center justify-center text-4xl font-black text-red-500 animate-bounce">
+          <div
+            className={`relative w-full max-w-sm rounded-3xl border-2 p-6 text-center space-y-5 shadow-2xl animate-in zoom-in-95 ${
+              isTestMode
+                ? "border-indigo-500/70 bg-zinc-950"
+                : "border-red-500 bg-zinc-950 ring-4 ring-red-500/20"
+            }`}
+          >
+            <div
+              className={`h-20 w-20 mx-auto rounded-full flex items-center justify-center text-4xl font-black ${
+                isTestMode
+                  ? "bg-indigo-950/60 border-2 border-indigo-500 text-indigo-400"
+                  : "bg-red-600/20 border-2 border-red-500 text-red-500 animate-bounce"
+              }`}
+            >
               {countdown}
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-1.5">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider mx-auto">
+                {isTestMode ? (
+                  <span className="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full">
+                    🧪 TEST ALERT ONLY
+                  </span>
+                ) : (
+                  <span className="bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded-full">
+                    🚨 EMERGENCY ALERT
+                  </span>
+                )}
+              </div>
               <h3 className="text-lg font-black text-white">
-                {isTestMode ? "🧪 " + t.guard_test_alert_btn : t.guard_confirm_heading}
+                {isTestMode
+                  ? lang === "bn"
+                    ? "টেস্ট অ্যালার্ট নিশ্চিতকরণ"
+                    : "Test Alert Confirmation"
+                  : t.guard_confirm_heading}
               </h3>
-              <p className="text-xs text-zinc-300">
-                {t.guard_confirm_sub}
+              <p className="text-xs text-zinc-300 leading-relaxed">
+                {isTestMode
+                  ? lang === "bn"
+                    ? "এটি শুধুমাত্র টেস্ট নোটিফিকেশন পাঠাবে। কোনো কর্তৃপক্ষকে জানানো হবে না এবং কোনো পয়েন্ট বা স্কোর প্রভাবিত হবে না।"
+                    : "This sends a safe test alert to verify delivery. No real emergency is declared and no Trust Score or Impact Points are generated."
+                  : t.guard_confirm_sub}
               </p>
             </div>
 
@@ -738,7 +824,7 @@ export default function GuardPage() {
               <button
                 type="button"
                 onClick={handleCancelCountdown}
-                className="px-4 py-3 rounded-xl border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold transition min-h-[44px]"
+                className="px-4 py-3.5 rounded-2xl border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold transition min-h-[48px] active:scale-95"
               >
                 {t.guard_cancel_btn}
               </button>
@@ -746,9 +832,20 @@ export default function GuardPage() {
               <button
                 type="button"
                 onClick={handleImmediateSend}
-                className="px-4 py-3 rounded-xl bg-red-600 hover:bg-red-500 active:bg-red-700 text-white text-xs font-black shadow-lg shadow-red-600/40 transition min-h-[44px]"
+                disabled={triggering}
+                className={`px-4 py-3.5 rounded-2xl text-white text-xs font-black shadow-lg transition min-h-[48px] active:scale-95 disabled:opacity-50 ${
+                  isTestMode
+                    ? "bg-indigo-600 hover:bg-indigo-500 shadow-indigo-600/30"
+                    : "bg-red-600 hover:bg-red-500 active:bg-red-700 shadow-red-600/40"
+                }`}
               >
-                {t.guard_send_now_btn}
+                {triggering
+                  ? "..."
+                  : isTestMode
+                  ? lang === "bn"
+                    ? "টেস্ট পাঠান"
+                    : "Send Test Now"
+                  : t.guard_send_now_btn}
               </button>
             </div>
           </div>
@@ -952,18 +1049,29 @@ export default function GuardPage() {
                 </button>
               </div>
 
-              {/* Custom message */}
+              {/* Custom message with character counter */}
               <div>
-                <label className="block text-xs font-bold text-zinc-300 mb-1">
-                  💬 {t.guard_custom_msg_label}
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-zinc-300">
+                    💬 {t.guard_custom_msg_label}
+                  </label>
+                  <span className={`text-[11px] font-mono ${customMsgSetting.length > 140 ? "text-amber-400" : "text-zinc-500"}`}>
+                    {customMsgSetting.length}/160
+                  </span>
+                </div>
                 <textarea
                   value={customMsgSetting}
                   onChange={(e) => setCustomMsgSetting(e.target.value)}
                   placeholder="I need help. Please contact me as soon as possible."
+                  maxLength={160}
                   rows={3}
                   className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-3.5 py-2.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
+                <p className="text-[10px] text-zinc-400 mt-1">
+                  {lang === "bn"
+                    ? "ফাঁকা রাখলে ডিফল্ট বার্তা পাঠানো হবে: \"আমার সাহায্য দরকার। অনুগ্রহ করে আমার সাথে যত দ্রুত সম্ভব যোগাযোগ করুন।\""
+                    : "Leave blank to send default: \"I need help. Please contact me as soon as possible.\""}
+                </p>
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-2">

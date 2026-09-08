@@ -267,6 +267,14 @@ export const translations = {
     guard_test_alert_desc: "Send a test notification to verify your Guard setup. Test alerts do not affect Trust Score.",
     guard_history_title: "Emergency History",
     guard_history_empty: "No past emergency alerts recorded.",
+    guard_privacy_reassurance: "Emergency history is strictly private and never published to your public profile, feed, or reputation score.",
+    blood_flow_title: "Donation Progress",
+    blood_step_request: "1. Request Active",
+    blood_step_offer: "2. Donor Offered",
+    blood_step_donated: "3. Donated",
+    blood_step_verified: "4. Verified",
+    blood_points_awarded_label: "Verified Community Contribution (+50 Impact Points)",
+    blood_dispute_neutral_msg: "Verification is unresolved and currently under administrative review. No points are awarded while disputed.",
   },
   bn: {
     // Navigation & Entry
@@ -534,5 +542,13 @@ export const translations = {
     guard_test_alert_desc: "গার্ড সেটআপ পরীক্ষা করার জন্য একটি টেস্ট নোটিফিকেশন পাঠান। টেস্ট অ্যালার্টে ট্রাস্ট স্কোরে প্রভাব পড়ে না।",
     guard_history_title: "জরুরি ইতিহাসের রেকর্ড",
     guard_history_empty: "পূর্ববর্তী কোনো জরুরি অ্যালার্টের রেকর্ড নেই।",
+    guard_privacy_reassurance: "জরুরি ইতিহাস সম্পূর্ণ ব্যক্তিগত ও গোপনীয়। এটি কখনোই আপনার পাবলিক প্রোফাইল, ফিড বা কমিউনিটি স্কোরে প্রদর্শিত হবে না।",
+    blood_flow_title: "রক্তদানের অগ্রগতির ধাপ",
+    blood_step_request: "১. আবেদন সক্রিয়",
+    blood_step_offer: "২. দাতা ইচ্ছুক",
+    blood_step_donated: "৩. রক্ত দান সম্পন্ন",
+    blood_step_verified: "৪. যাচাইকরণ",
+    blood_points_awarded_label: "যাচাইকৃত কমিউনিটি অবদান (+৫০ ইম্প্যাক্ট পয়েন্ট)",
+    blood_dispute_neutral_msg: "যাচাইকরণ এখনো অমীমাংসিত এবং অ্যাডমিনের পর্যালোচনাধীন রয়েছে। বিরোধ চলাকালীন কোনো পয়েন্ট যুক্ত হয় না।",
   },
 };

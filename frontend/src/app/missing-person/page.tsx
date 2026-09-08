@@ -57,26 +57,30 @@ export default function MissingPersonsFeedPage() {
     switch (status) {
       case "ALERT_ACTIVE":
         return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-red-600 px-3 py-1 text-[11px] font-black text-white shadow-xs animate-pulse">
-            🚨 {t.status_active}
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200/80 dark:border-rose-900/80 px-3 py-1 text-[11px] font-bold shadow-2xs">
+            <span className="h-2 w-2 rounded-full bg-rose-600 shrink-0" />
+            <span>{t.status_active}</span>
           </span>
         );
       case "FOUND":
         return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-3 py-1 text-[11px] font-black text-white shadow-xs">
-            ✅ {t.status_found}
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-900/80 px-3 py-1 text-[11px] font-bold shadow-2xs">
+            <span className="h-2 w-2 rounded-full bg-emerald-600 shrink-0" />
+            <span>{t.status_found}</span>
           </span>
         );
       case "EXPIRED":
         return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-zinc-200 dark:bg-zinc-800 px-3 py-1 text-[11px] font-bold text-zinc-700 dark:text-zinc-300">
-            ⏳ {t.status_expired}
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-3 py-1 text-[11px] font-bold text-zinc-700 dark:text-zinc-300 shadow-2xs">
+            <span className="h-2 w-2 rounded-full bg-zinc-400 shrink-0" />
+            <span>{t.status_expired}</span>
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-950 px-3 py-1 text-[11px] font-bold text-amber-800 dark:text-amber-300">
-            🔍 {t.status_pending}
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-900 px-3 py-1 text-[11px] font-bold shadow-2xs">
+            <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0" />
+            <span>{t.status_pending}</span>
           </span>
         );
     }
@@ -108,7 +112,7 @@ export default function MissingPersonsFeedPage() {
             className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/60 px-3 py-2 text-xs font-bold text-red-800 dark:text-red-300 hover:bg-red-100 transition shadow-xs shrink-0"
             title="Refresh Live Alerts"
           >
-            <span className="h-2 w-2 rounded-full bg-red-500 animate-ping" />
+            <span className="h-2 w-2 rounded-full bg-red-500" />
             <span>{lang === "bn" ? "লাইভ আপডেট" : "Live Sync"}</span>
           </button>
 

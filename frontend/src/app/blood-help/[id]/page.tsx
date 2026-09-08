@@ -352,6 +352,104 @@ export default function BloodRequestDetailPage() {
           </div>
         </div>
 
+        {/* Donation Lifecycle Progress Bar */}
+        <div className="p-4 sm:p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/80 dark:border-zinc-700/80 space-y-3">
+          <div className="flex items-center justify-between text-xs font-bold text-zinc-700 dark:text-zinc-300">
+            <span className="flex items-center gap-1.5">
+              <span>🩸</span>
+              <span>Donation Workflow Progress</span>
+            </span>
+            <span className="text-[11px] font-normal text-zinc-500">
+              Community volunteer donation & verification
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-xs">
+            {/* Step 1 */}
+            <div className="flex items-center gap-2 p-2.5 rounded-xl bg-rose-50/80 dark:bg-rose-950/40 border border-rose-200/60 dark:border-rose-900/60 text-rose-800 dark:text-rose-300">
+              <span className="h-5 w-5 rounded-full bg-rose-600 text-white flex items-center justify-center font-bold text-[10px] shrink-0">1</span>
+              <div>
+                <span className="font-bold block text-[11px]">Request Posted</span>
+                <span className="text-[10px] text-zinc-500 block">Needs Blood</span>
+              </div>
+            </div>
+
+            {/* Step 2 */}
+            <div className={`flex items-center gap-2 p-2.5 rounded-xl border ${
+              responses.length > 0 || request.status === "RESPONDED" || hasRespondedLocally
+                ? "bg-blue-50/80 dark:bg-blue-950/40 border-blue-200/60 dark:border-blue-900/60 text-blue-800 dark:text-blue-300"
+                : "bg-zinc-100/50 dark:bg-zinc-800/20 border-zinc-200 dark:border-zinc-800 text-zinc-400"
+            }`}>
+              <span className={`h-5 w-5 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 ${
+                responses.length > 0 || request.status === "RESPONDED" || hasRespondedLocally
+                  ? "bg-blue-600 text-white"
+                  : "bg-zinc-300 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300"
+              }`}>2</span>
+              <div>
+                <span className="font-bold block text-[11px]">Donor Offered</span>
+                <span className="text-[10px] text-zinc-500 block">{responses.length > 0 ? `${responses.length} Responded` : "Awaiting Donors"}</span>
+              </div>
+            </div>
+
+            {/* Step 3 */}
+            <div className={`flex items-center gap-2 p-2.5 rounded-xl border ${
+              donations.length > 0
+                ? "bg-amber-50/80 dark:bg-amber-950/40 border-amber-200/60 dark:border-amber-900/60 text-amber-800 dark:text-amber-300"
+                : "bg-zinc-100/50 dark:bg-zinc-800/20 border-zinc-200 dark:border-zinc-800 text-zinc-400"
+            }`}>
+              <span className={`h-5 w-5 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 ${
+                donations.length > 0
+                  ? "bg-amber-600 text-white"
+                  : "bg-zinc-300 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300"
+              }`}>3</span>
+              <div>
+                <span className="font-bold block text-[11px]">Blood Donated</span>
+                <span className="text-[10px] text-zinc-500 block">{donations.length > 0 ? "Claimed" : "Hospital visit"}</span>
+              </div>
+            </div>
+
+            {/* Step 4 */}
+            <div className={`flex items-center gap-2 p-2.5 rounded-xl border ${
+              donations.some(d => d.status === "VERIFIED") || request.status === "FULFILLED"
+                ? "bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-200/60 dark:border-emerald-900/60 text-emerald-800 dark:text-emerald-300"
+                : "bg-zinc-100/50 dark:bg-zinc-800/20 border-zinc-200 dark:border-zinc-800 text-zinc-400"
+            }`}>
+              <span className={`h-5 w-5 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 ${
+                donations.some(d => d.status === "VERIFIED") || request.status === "FULFILLED"
+                  ? "bg-emerald-600 text-white"
+                  : "bg-zinc-300 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300"
+              }`}>4</span>
+              <div>
+                <span className="font-bold block text-[11px]">Verified (+50 pts)</span>
+                <span className="text-[10px] text-zinc-500 block">{donations.some(d => d.status === "VERIFIED") ? "Completed" : "Recipient confirms"}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Next Steps Guidance Card */}
+        <div className="p-3.5 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-900/40 text-xs flex items-start gap-2.5">
+          <span className="text-base leading-none">💡</span>
+          <div className="space-y-0.5">
+            <span className="font-bold text-blue-900 dark:text-blue-200 block">
+              What happens next?
+            </span>
+            <p className="text-[11px] text-blue-800/90 dark:text-blue-300 leading-relaxed">
+              {request.status === "FULFILLED"
+                ? "This blood request has been fulfilled. Thank you to everyone who stepped forward to save a life."
+                : user && donations.find(d => d.donor_id === user.id)?.status === "VERIFIED"
+                ? "Your donation has been verified by the recipient. +50 Community Impact Points and +5 Trust Score have been awarded to your account."
+                : user && donations.find(d => d.donor_id === user.id)?.status === "PENDING_CONFIRMATION"
+                ? "You claimed your blood donation. The recipient has been prompted to confirm receipt. Once verified, +50 Impact Points will be credited."
+                : user && donations.find(d => d.donor_id === user.id)?.status === "DISPUTED"
+                ? "Verification of this claim is unresolved and currently undergoing platform administrator review. No reputation or points are altered while under dispute."
+                : hasRespondedLocally
+                ? "Your response has been sent. Please communicate directly with the requester to confirm donation time and hospital logistics. After donating, click 'I Donated Blood'."
+                : "Tapping 'I Can Help' sends your willingness to donate and contact information to the patient's family. There is no commercial exchange — this is 100% voluntary."}
+            </p>
+          </div>
+        </div>
+
         {/* Hospital & Location Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/80 dark:border-zinc-700/80 text-xs">
           <div>
@@ -586,10 +684,21 @@ export default function BloodRequestDetailPage() {
                         </div>
                       )}
 
-                      {d.status === "DISPUTED" && d.dispute_reason && (
-                        <p className="text-[11px] text-rose-600 dark:text-rose-400">
-                          Dispute Reason: &ldquo;{d.dispute_reason}&rdquo; (Under admin review)
-                        </p>
+                      {d.status === "DISPUTED" && (
+                        <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 p-2.5 rounded-xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 text-xs text-amber-800 dark:text-amber-300 space-y-1">
+                          <span className="font-bold flex items-center gap-1.5 text-[11px]">
+                            <span>⚖️</span>
+                            <span>Claim Verification Unresolved</span>
+                          </span>
+                          <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
+                            Verification is currently unresolved and under administrative review. No points are awarded while disputed.
+                          </p>
+                          {d.dispute_reason && (
+                            <p className="text-[11px] text-zinc-500 italic">
+                              Note: &ldquo;{d.dispute_reason}&rdquo;
+                            </p>
+                          )}
+                        </div>
                       )}
                     </div>
                   ))}
@@ -633,7 +742,7 @@ export default function BloodRequestDetailPage() {
                           : myDonation.status === "VERIFIED"
                           ? "Verified! You earned +50 Community Impact Points and +5 Trust Score."
                           : myDonation.status === "DISPUTED"
-                          ? `Recipient disputed: "${myDonation.dispute_reason}". Under admin review.`
+                          ? `Verification is currently unresolved and undergoing neutral administrator review (${myDonation.dispute_reason || "unresolved"}). No points or scores are affected while under review.`
                           : "Status: " + myDonation.status}
                       </p>
                       {myDonation.donor_rating && (

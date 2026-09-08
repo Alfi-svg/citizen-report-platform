@@ -241,7 +241,7 @@ export default function MissingPersonDetailPage() {
                 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400"
                 : "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
             }`}>
-              <span className={`h-2 w-2 rounded-full ${alert.status === "ALERT_ACTIVE" ? "bg-red-500 animate-ping" : "bg-emerald-500"}`} />
+              <span className={`h-2 w-2 rounded-full ${alert.status === "ALERT_ACTIVE" ? "bg-red-500" : "bg-emerald-500"}`} />
               {alert.status === "ALERT_ACTIVE" ? t.status_active : alert.status === "FOUND" ? t.status_found : alert.status}
             </span>
           </div>
