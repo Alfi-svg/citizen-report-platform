@@ -686,7 +686,7 @@ export default function GuardPage() {
                   <button
                     type="button"
                     onClick={() => openEditContactModal(c)}
-                    className="p-2 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition min-h-[36px] min-w-[36px] flex items-center justify-center"
+                    className="p-2 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
                     title="Edit contact"
                   >
                     ✏️
@@ -694,7 +694,7 @@ export default function GuardPage() {
                   <button
                     type="button"
                     onClick={() => handleDeleteContact(c.id)}
-                    className="p-2 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-950/40 transition min-h-[36px] min-w-[36px] flex items-center justify-center"
+                    className="p-2 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-950/40 transition min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
                     title="Delete contact"
                   >
                     🗑️

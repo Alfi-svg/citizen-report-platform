@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">NIRAPOTTA</string>
-    <string name="title_activity_main">NIRAPOTTA</string>
+    <string name="app_name">Nirapotta</string>
+    <string name="title_activity_main">Nirapotta</string>
     <string name="package_name">com.bangladeshcitizenreport.app</string>
     <string name="custom_url_scheme">com.bangladeshcitizenreport.app</string>
 </resources>
