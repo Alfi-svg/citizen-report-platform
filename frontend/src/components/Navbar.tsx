@@ -191,24 +191,24 @@ export default function Navbar() {
             {/* Official Logo & Platform Identity */}
             <Link
               href="/"
-              className="flex items-center gap-2.5 group rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
+              className="flex items-center gap-2 group rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
             >
-              <div className="relative h-8 w-8 sm:h-10 sm:w-10 rounded-lg sm:rounded-xl overflow-hidden shadow-2xs border border-emerald-700/20 group-hover:scale-105 transition shrink-0">
+              <div className="relative h-8 w-8 rounded-lg overflow-hidden shadow-sm border border-emerald-700/20 group-hover:scale-105 transition shrink-0 flex items-center justify-center bg-white">
                 <Image
                   src="/brand/logo-sm.jpg"
                   alt="NIRAPOTTA Emblem"
-                  width={40}
-                  height={40}
-                  className="object-cover h-full w-full"
+                  width={32}
+                  height={32}
+                  className="object-contain w-full h-full"
                   priority
                 />
               </div>
-              <div className="flex flex-col min-w-0">
-                <span className="text-xs sm:text-base font-black tracking-tight text-zinc-900 dark:text-zinc-100 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition leading-tight truncate max-w-[130px] sm:max-w-none">
+              <div className="flex flex-col min-w-0 justify-center">
+                <span className="text-sm font-black tracking-tight text-zinc-900 dark:text-zinc-100 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition leading-none whitespace-nowrap">
                   {lang === "bn" ? "নিরাপত্তা" : "NIRAPOTTA"}
                 </span>
-                <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium hidden sm:inline leading-none">
-                  {lang === "bn" ? "নাগরিক নিরাপত্তা প্ল্যাটফর্ম" : "Citizen Safety Platform"}
+                <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium leading-none mt-0.5 hidden lg:block whitespace-nowrap">
+                  {lang === "bn" ? "নাগরিক প্ল্যাটফর্ম" : "Citizen Safety Platform"}
                 </span>
               </div>
             </Link>
@@ -229,7 +229,7 @@ export default function Navbar() {
                   key={item.label}
                   href={item.href}
                   aria-current={isActive ? "page" : undefined}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors duration-150 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 ${
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors duration-150 flex items-center gap-1.5 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 ${
                     isActive
                       ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold"
                       : item.isHelp
