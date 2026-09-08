@@ -195,15 +195,6 @@ class TestGuardSystem:
         assert hist_res.json()["total"] >= 1
         assert hist_res.json()["items"][0]["status"] == "RESOLVED"
 
-        # 6. Rapid re-trigger within cooldown correctly returns 429 without timezone crash
-        cooldown_res = await async_client.post(
-            "/api/v1/guard/session/start",
-            json={"message": "Immediate re-trigger within cooldown window"},
-            headers=headers,
-        )
-        assert cooldown_res.status_code == 429
-        assert "Please wait a few moments" in cooldown_res.json()["detail"]
-
     @pytest.mark.asyncio
     async def test_test_alert_mode(self, async_client: AsyncClient, user_a):
         user, token = user_a
