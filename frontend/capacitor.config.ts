@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'Nirapotta',
   webDir: 'public',
   server: {
-    url: process.env.CAPACITOR_SERVER_URL || 'https://frontend-ten-delta-a5irgspmf7.vercel.app',
+    url: process.env.CAPACITOR_SERVER_URL || 'https://nirapotta-citizen-platform.vercel.app',
     cleartext: Boolean(process.env.CAPACITOR_SERVER_URL && process.env.CAPACITOR_SERVER_URL.startsWith('http://')),
     androidScheme: 'https',
   },
