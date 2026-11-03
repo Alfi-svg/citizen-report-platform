@@ -20,6 +20,8 @@ class AccidentHistoryItem(BaseModel):
     report_id: uuid.UUID
     title: str
     location_text: str
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     distance_km: Optional[float] = None
     incident_date: Optional[datetime] = None
     created_at: datetime
@@ -32,6 +34,8 @@ class NearbySafetyAlert(BaseModel):
     report_id: uuid.UUID
     title: str
     location_text: str
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     distance_meters: int
     distance_text: str
     incident_date_text: str
@@ -77,6 +81,20 @@ class RoadSafetyIntelligenceResponse(BaseModel):
     nearby_alerts: List[NearbySafetyAlert]
     explanation: RoadSafetyExplanation
     hotspots: List[RoadSafetyHotspotItem]
+
+
+class RouteRiskEvaluationRequest(BaseModel):
+    waypoints: List[List[float]] = Field(..., description="List of [latitude, longitude] pairs along route")
+    lang: str = "en"
+
+
+class RouteRiskEvaluationResponse(BaseModel):
+    route_risk_level: RoadSafetyRiskLevel
+    route_risk_score: float
+    total_hazards_count: int
+    hazards_along_route: List[NearbySafetyAlert]
+    high_risk_corridors_crossed: List[RoadSafetyHotspotItem]
+    safety_advisory: str
 
 
 # ---------------------------------------------------------------------------

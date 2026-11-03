@@ -375,3 +375,179 @@ export async function captureCurrentLocation(options?: {
   });
 }
 
+export interface LivePosition {
+  latitude: number;
+  longitude: number;
+  accuracy: number;
+  heading: number | null; // 0-360 degrees
+  speed: number | null; // Speed in km/h
+  timestamp: number;
+}
+
+export interface LiveWatchOptions {
+  enableHighAccuracy?: boolean;
+  timeoutMs?: number;
+  maximumAgeMs?: number;
+}
+
+export function calculateBearingDegrees(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const y = Math.sin(dLon) * Math.cos((lat2 * Math.PI) / 180);
+  const x =
+    Math.cos((lat1 * Math.PI) / 180) * Math.sin((lat2 * Math.PI) / 180) -
+    Math.sin((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.cos(dLon);
+  const brng = (Math.atan2(y, x) * 180) / Math.PI;
+  return (brng + 360) % 360;
+}
+
+/**
+ * Opt-in Live Location Watcher for 3D Driving Mode.
+ * Returns an unwatch/stop cleanup function. Never persists tracking data.
+ */
+export function watchLiveLocation(
+  onPosition: (pos: LivePosition) => void,
+  onError: (err: LocationError) => void,
+  options?: LiveWatchOptions
+): () => void {
+  let isCancelled = false;
+  let lastPos: { lat: number; lng: number } | null = null;
+  let nativeWatchId: string | null = null;
+  let webWatchId: number | null = null;
+
+  const enableHighAccuracy = options?.enableHighAccuracy ?? true;
+  const timeoutMs = options?.timeoutMs ?? 10000;
+  const maximumAgeMs = options?.maximumAgeMs ?? 1000;
+
+  const processCoords = (coords: {
+    latitude: number;
+    longitude: number;
+    accuracy?: number;
+    heading?: number | null;
+    speed?: number | null;
+  }) => {
+    if (isCancelled) return;
+    let heading = coords.heading ?? null;
+
+    // Derive heading from consecutive GPS fixes if hardware compass is null
+    if (heading === null && lastPos) {
+      const dist = haversineDistanceKm(lastPos.lat, lastPos.lng, coords.latitude, coords.longitude);
+      if (dist >= 0.003) {
+        // Moved at least 3 meters
+        heading = calculateBearingDegrees(lastPos.lat, lastPos.lng, coords.latitude, coords.longitude);
+      }
+    }
+    lastPos = { lat: coords.latitude, lng: coords.longitude };
+
+    // Convert m/s to km/h if speed is reported
+    const speedKmH = coords.speed !== null && coords.speed !== undefined && coords.speed >= 0
+      ? Math.round(coords.speed * 3.6)
+      : null;
+
+    onPosition({
+      latitude: coords.latitude,
+      longitude: coords.longitude,
+      accuracy: coords.accuracy || 10,
+      heading,
+      speed: speedKmH,
+      timestamp: Date.now(),
+    });
+  };
+
+  // 1. Native Capacitor Platform
+  if (Capacitor.isNativePlatform()) {
+    (async () => {
+      try {
+        const permStatus = await Geolocation.requestPermissions();
+        if (permStatus.location === "denied") {
+          onError({
+            code: "PERMISSION_DENIED",
+            message: "Location permission denied for live driving map.",
+            messageBn: "লাইভ ড্রাইভিং ম্যাপের জন্য লোকেশন অনুমতি প্রয়োজন।",
+          });
+          return;
+        }
+
+        const id = await Geolocation.watchPosition(
+          { enableHighAccuracy, timeout: timeoutMs, maximumAge: maximumAgeMs },
+          (position, err) => {
+            if (isCancelled) return;
+            if (err) {
+              onError({
+                code: "POSITION_UNAVAILABLE",
+                message: err.message || "GPS signal unavailable.",
+                messageBn: "জিপিএস সংকেত পাওয়া যায়নি।",
+              });
+              return;
+            }
+            if (position?.coords) {
+              processCoords(position.coords);
+            }
+          }
+        );
+        nativeWatchId = id;
+      } catch (err: unknown) {
+        if (!isCancelled) {
+          onError({
+            code: "SERVICES_DISABLED",
+            message: err instanceof Error ? err.message : "Location services error.",
+            messageBn: "লোকেশন সার্ভিস সংক্রান্ত ত্রুটি।",
+          });
+        }
+      }
+    })();
+
+    return () => {
+      isCancelled = true;
+      if (nativeWatchId) {
+        Geolocation.clearWatch({ id: nativeWatchId }).catch(() => {});
+      }
+    };
+  }
+
+  // 2. Web Geolocation API
+  if (typeof navigator !== "undefined" && navigator.geolocation) {
+    webWatchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        if (isCancelled) return;
+        processCoords(pos.coords);
+      },
+      (err) => {
+        if (isCancelled) return;
+        if (err.code === err.PERMISSION_DENIED) {
+          onError({
+            code: "PERMISSION_DENIED",
+            message: "Location access denied. Please allow GPS access in your browser.",
+            messageBn: "ব্রাউজারে লোকেশন অনুমতি দেওয়া হয়নি।",
+          });
+        } else {
+          onError({
+            code: "POSITION_UNAVAILABLE",
+            message: "GPS position temporarily unavailable.",
+            messageBn: "জিপিএস অবস্থান শনাক্ত করা যাচ্ছে না।",
+          });
+        }
+      },
+      {
+        enableHighAccuracy,
+        timeout: timeoutMs,
+        maximumAge: maximumAgeMs,
+      }
+    );
+
+    return () => {
+      isCancelled = true;
+      if (webWatchId !== null) {
+        navigator.geolocation.clearWatch(webWatchId);
+      }
+    };
+  }
+
+  onError({
+    code: "UNSUPPORTED",
+    message: "Geolocation is not supported by your browser.",
+    messageBn: "আপনার ডিভাইসে জিপিএস ট্র্যাকিং সমর্থিত নয়।",
+  });
+  return () => {};
+}
+
+

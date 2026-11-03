@@ -7,6 +7,8 @@ from app.api.deps import get_optional_current_user, get_current_active_admin
 from app.models.user import User
 from app.schemas.ai_features import (
     RoadSafetyIntelligenceResponse,
+    RouteRiskEvaluationRequest,
+    RouteRiskEvaluationResponse,
     EmergencyAssistantRequest,
     EmergencyAssistantResponse,
     ActionPlannerRequest,
@@ -56,6 +58,26 @@ async def get_road_safety_intelligence(
         radius_km=radius_km,
         area_name=area_name,
         lang=lang,
+    )
+
+
+@router.post(
+    "/safety/road-intelligence/route-risk",
+    response_model=RouteRiskEvaluationResponse,
+    summary="Evaluate road safety hazards and accident risks along a planned driving route",
+)
+async def evaluate_driving_route_risk(
+    request: RouteRiskEvaluationRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Evaluates real database road incident hazards along the provided route waypoints,
+    detects intersection with known regional corridors, and calculates a deterministic route safety score.
+    """
+    return await road_safety_service.evaluate_route_safety(
+        db=db,
+        waypoints=request.waypoints,
+        lang=request.lang,
     )
 
 

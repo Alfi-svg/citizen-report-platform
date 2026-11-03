@@ -529,6 +529,15 @@ export default function SafetyMapPage() {
             <span>{lang === "bn" ? "সড়ক ইন্টেলিজেন্স" : "Road Safety AI"}</span>
           </Link>
 
+          {/* 3D Live Map (Uber Mode) Link */}
+          <Link
+            href="/safety/road-intelligence/live-map"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-600/40 bg-cyan-50 dark:bg-cyan-950/60 px-3.5 py-2 text-xs font-bold text-cyan-700 dark:text-cyan-300 shadow-2xs hover:bg-cyan-100 dark:hover:bg-cyan-900/50 transition cursor-pointer"
+          >
+            <span>🚘</span>
+            <span>{lang === "bn" ? "৩ডি লাইভ ম্যাপ" : "3D Live Map"}</span>
+          </Link>
+
           {/* View Mode Toggle: Map vs List */}
           <button
             onClick={() => setIsListView(!isListView)}

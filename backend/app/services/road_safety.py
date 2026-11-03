@@ -14,6 +14,7 @@ from app.schemas.ai_features import (
     RoadSafetyMetrics,
     RoadSafetyHotspotItem,
     RoadSafetyIntelligenceResponse,
+    RouteRiskEvaluationResponse,
 )
 from app.services.ai_client import call_ai_json
 
@@ -133,6 +134,8 @@ async def analyze_road_safety(
                 report_id=r.id,
                 title=r.title,
                 location_text=r.location_text,
+                latitude=r.latitude,
+                longitude=r.longitude,
                 distance_km=round(dist, 2),
                 incident_date=r.incident_date,
                 created_at=r.created_at,
@@ -154,6 +157,8 @@ async def analyze_road_safety(
                     report_id=r.id,
                     title=r.title,
                     location_text=r.location_text,
+                    latitude=r.latitude,
+                    longitude=r.longitude,
                     distance_meters=dist_m,
                     distance_text=dist_text,
                     incident_date_text=time_text,
@@ -409,4 +414,179 @@ Language: {'Bangla (বাংলা)' if is_bn else 'English'}
         contributing_factors=factors,
         precautions=precautions,
         data_source="Nirapotta Deterministic Risk Engine & Database",
+    )
+
+
+async def evaluate_route_safety(
+    db: AsyncSession,
+    waypoints: List[List[float]],
+    lang: str = "en",
+) -> RouteRiskEvaluationResponse:
+    """
+    Evaluates road accident risks and high-risk corridor crossings along a route's waypoints.
+    Strictly grounded in database incident records.
+    """
+    is_bn = (lang == "bn")
+    now = datetime.now(timezone.utc)
+
+    if not waypoints or len(waypoints) < 2:
+        return RouteRiskEvaluationResponse(
+            route_risk_level=RoadSafetyRiskLevel.LOW,
+            route_risk_score=0.0,
+            total_hazards_count=0,
+            hazards_along_route=[],
+            high_risk_corridors_crossed=[],
+            safety_advisory=(
+                "রুট ট্র্যাকিং এর জন্য পর্যাপ্ত পয়েন্ট পাওয়া যায়নি।"
+                if is_bn else
+                "Insufficient route waypoints provided for safety risk analysis."
+            ),
+        )
+
+    # Subsample waypoints if very dense (e.g. max 100 points) for fast Euclidean/Haversine matching
+    sampled_points = waypoints
+    if len(waypoints) > 100:
+        step = max(1, len(waypoints) // 80)
+        sampled_points = waypoints[::step]
+        if sampled_points[-1] != waypoints[-1]:
+            sampled_points.append(waypoints[-1])
+
+    # 1. Fetch candidate reports with coordinates
+    stmt = (
+        select(Report)
+        .where(
+            and_(
+                Report.latitude.isnot(None),
+                Report.longitude.isnot(None),
+                Report.status.in_([ReportStatus.APPROVED, ReportStatus.SUBMITTED, ReportStatus.UNDER_REVIEW]),
+            )
+        )
+        .order_by(Report.created_at.desc())
+    )
+    result = await db.execute(stmt)
+    all_reports = result.scalars().all()
+
+    # 2. Find hazards along route (within 0.5 km of any sampled waypoint)
+    hazards: List[NearbySafetyAlert] = []
+    recent_30d_count = 0
+
+    for rep in all_reports:
+        if rep.latitude is None or rep.longitude is None:
+            continue
+        if not is_road_incident(rep):
+            continue
+
+        # Find minimum distance to route
+        min_dist = float("inf")
+        for pt in sampled_points:
+            lat_pt, lng_pt = pt[0], pt[1]
+            d = calculate_haversine_distance(lat_pt, lng_pt, rep.latitude, rep.longitude)
+            if d < min_dist:
+                min_dist = d
+            if min_dist <= 0.5:
+                break
+
+        if min_dist <= 0.5:
+            # Check recency
+            r_time = rep.incident_date or rep.created_at
+            if r_time.tzinfo is None:
+                r_time = r_time.replace(tzinfo=timezone.utc)
+            diff_days = (now - r_time).total_seconds() / 86400.0
+            if diff_days <= 30.0:
+                recent_30d_count += 1
+
+            dist_m = int(min_dist * 1000)
+            dist_text = f"{dist_m}m from route" if dist_m < 1000 else f"{round(min_dist, 1)}km from route"
+            time_text = f"{int(diff_days)}d ago" if diff_days >= 1.0 else "Today"
+
+            hazards.append(
+                NearbySafetyAlert(
+                    id=str(rep.id),
+                    report_id=rep.id,
+                    title=rep.title,
+                    location_text=rep.location_text,
+                    latitude=rep.latitude,
+                    longitude=rep.longitude,
+                    distance_meters=dist_m,
+                    distance_text=dist_text,
+                    incident_date_text=time_text,
+                    alert_reason=f"Verified incident {dist_text} ({time_text})",
+                    report_url=f"/reports/{rep.id}",
+                )
+            )
+
+    # 3. Check high-risk regional corridors crossed within 1.5 km of route
+    corridors_crossed: List[RoadSafetyHotspotItem] = []
+    for anchor in BD_ACCIDENT_PRONE_CORRIDORS:
+        min_anchor_dist = min(
+            calculate_haversine_distance(pt[0], pt[1], anchor["lat"], anchor["lng"])
+            for pt in sampled_points
+        )
+        if min_anchor_dist <= 1.5:  # Route passes through or within 1.5km of this corridor
+            anchor_accidents = [
+                rep for rep in all_reports
+                if rep.latitude is not None
+                and rep.longitude is not None
+                and calculate_haversine_distance(anchor["lat"], anchor["lng"], rep.latitude, rep.longitude) <= 3.0
+                and is_road_incident(rep)
+            ]
+            count = len(anchor_accidents)
+            corridor_recent_30d = sum(
+                1 for rep in anchor_accidents
+                if (now - (rep.incident_date or rep.created_at).replace(
+                    tzinfo=timezone.utc if (rep.incident_date or rep.created_at).tzinfo is None else (rep.incident_date or rep.created_at).tzinfo
+                )).total_seconds() <= 30.0 * 86400.0
+            )
+            risk = RoadSafetyRiskLevel.HIGH if count >= 4 else (RoadSafetyRiskLevel.MODERATE if count >= 2 else RoadSafetyRiskLevel.LOW)
+            corridors_crossed.append(
+                RoadSafetyHotspotItem(
+                    area_name=anchor["name"],
+                    latitude=anchor["lat"],
+                    longitude=anchor["lng"],
+                    accident_count=count,
+                    risk_level=risk,
+                    recent_count_30d=corridor_recent_30d,
+                )
+            )
+
+    # 4. Deterministic Route Risk Score (0 - 100)
+    hazard_pts = min(40.0, len(hazards) * 10.0)
+    recent_pts = min(30.0, recent_30d_count * 10.0)
+    high_risk_corridor_count = sum(1 for c in corridors_crossed if c.risk_level in (RoadSafetyRiskLevel.HIGH, RoadSafetyRiskLevel.CRITICAL))
+    corridor_pts = min(30.0, high_risk_corridor_count * 15.0)
+
+    route_score = round(min(100.0, hazard_pts + recent_pts + corridor_pts), 1)
+
+    if route_score >= 70.0:
+        route_level = RoadSafetyRiskLevel.CRITICAL
+    elif route_score >= 45.0:
+        route_level = RoadSafetyRiskLevel.HIGH
+    elif route_score >= 20.0:
+        route_level = RoadSafetyRiskLevel.MODERATE
+    else:
+        route_level = RoadSafetyRiskLevel.LOW
+
+    # 5. Safety advisory message
+    if is_bn:
+        if route_level in (RoadSafetyRiskLevel.HIGH, RoadSafetyRiskLevel.CRITICAL):
+            advisory = f"সতর্কতা: রুটের মধ্যে {len(hazards)}টি রেকর্ডকৃত সড়ক ঝুঁকি এবং {len(corridors_crossed)}টি করিডোর রয়েছে। সতর্কভাবে গতিসীমা বজায় রাখুন।"
+        elif route_level == RoadSafetyRiskLevel.MODERATE:
+            advisory = f"রুটের ঝুঁকি মাঝারি (স্কোর {route_score}/১০০)। রুটের আশপাশে {len(hazards)}টি ঐতিহাসিক রিপোর্ট রয়েছে। সাধারণ ট্রাফিক সতর্কতা বজায় রাখুন।"
+        else:
+            advisory = "রুটটি তুলনামূলক নিরাপদ। রুটের ওপর কোনো সক্রিয় বা ঘন ঘন দুর্ঘটনার রেকর্ড নেই।"
+    else:
+        if route_level in (RoadSafetyRiskLevel.HIGH, RoadSafetyRiskLevel.CRITICAL):
+            advisory = f"Caution: Route passes near {len(hazards)} recorded road hazard(s) and {len(corridors_crossed)} high-traffic corridor(s). Reduce speed and maintain safe distance."
+        elif route_level == RoadSafetyRiskLevel.MODERATE:
+            advisory = f"Route Risk is Moderate (Score: {route_score}/100). {len(hazards)} historical incident(s) recorded nearby. Standard driving vigilance recommended."
+        else:
+            advisory = "Clear route conditions. No repeated or severe road hazard clusters detected along this path."
+
+    return RouteRiskEvaluationResponse(
+        route_risk_level=route_level,
+        route_risk_score=route_score,
+        total_hazards_count=len(hazards),
+        hazards_along_route=hazards[:10],
+        high_risk_corridors_crossed=corridors_crossed,
+        safety_advisory=advisory,
     )

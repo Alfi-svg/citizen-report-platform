@@ -123,6 +123,11 @@ async def test_road_safety_intelligence_with_accidents(
     assert data["risk_level"] in ["Moderate", "High", "Critical"]
     assert len(data["nearby_alerts"]) >= 1
     assert data["nearby_alerts"][0]["distance_meters"] > 0
+    assert data["nearby_alerts"][0]["latitude"] is not None
+    assert data["nearby_alerts"][0]["longitude"] is not None
+    assert len(data["history"]) >= 3
+    assert data["history"][0]["latitude"] is not None
+    assert data["history"][0]["longitude"] is not None
     assert "explanation" in data
     assert len(data["explanation"]["contributing_factors"]) >= 1
     assert len(data["explanation"]["precautions"]) >= 1
@@ -469,4 +474,62 @@ async def test_blood_assistant_zero_results_no_fabrication(
     assert data["total_donors_found"] == 0
     assert len(data["donors"]) == 0
     assert "No registered AB- donors currently available" in data["explanation"]
+
+
+@pytest.mark.asyncio
+async def test_evaluate_driving_route_risk(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+    sample_categories,
+    sample_user,
+):
+    """Verifies that route risk evaluation accurately identifies real database accident reports along route waypoints."""
+    pub_cat = next(c for c in sample_categories if c.slug == "public-safety")
+    now = datetime.now(timezone.utc)
+
+    # Seed an accident report near Mirpur Road (lat: 23.7806, lng: 90.3522)
+    rep = Report(
+        id=uuid.uuid4(),
+        user_id=sample_user.id,
+        category_id=pub_cat.id,
+        title="Bus Crash on Mirpur Road near Gabtoli",
+        description="Head on crash blocking 2 lanes.",
+        location_text="Gabtoli, Mirpur Road, Dhaka",
+        latitude=23.7810,
+        longitude=90.3525,
+        status=ReportStatus.APPROVED,
+        incident_date=now - timedelta(days=2),
+    )
+    db_session.add(rep)
+    await db_session.commit()
+
+    # Route passing directly through Gabtoli (within 100 meters)
+    route_waypoints = [
+        [23.7750, 90.3500],
+        [23.7810, 90.3524],  # ~10 meters from accident
+        [23.7880, 90.3550],
+    ]
+
+    res = await async_client.post(
+        "/api/v1/safety/road-intelligence/route-risk",
+        json={"waypoints": route_waypoints, "lang": "en"},
+    )
+    assert res.status_code == 200, res.text
+    data = res.json()
+
+    assert data["total_hazards_count"] >= 1
+    assert len(data["hazards_along_route"]) >= 1
+    assert data["hazards_along_route"][0]["latitude"] is not None
+    assert data["hazards_along_route"][0]["longitude"] is not None
+    assert "Mirpur Road" in data["hazards_along_route"][0]["title"] or "Crash" in data["hazards_along_route"][0]["title"]
+    assert "safety_advisory" in data
+
+    # Test short/empty route
+    res_short = await async_client.post(
+        "/api/v1/safety/road-intelligence/route-risk",
+        json={"waypoints": [[23.0, 90.0]], "lang": "en"},
+    )
+    assert res_short.status_code == 200
+    assert res_short.json()["route_risk_level"] == "Low"
+
 

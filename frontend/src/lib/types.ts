@@ -1142,6 +1142,8 @@ export interface AccidentHistoryItem {
   report_id: string;
   title: string;
   location_text: string;
+  latitude?: number | null;
+  longitude?: number | null;
   distance_km?: number | null;
   incident_date?: string | null;
   created_at: string;
@@ -1154,6 +1156,8 @@ export interface NearbySafetyAlert {
   report_id: string;
   title: string;
   location_text: string;
+  latitude?: number | null;
+  longitude?: number | null;
   distance_meters: number;
   distance_text: string;
   incident_date_text: string;
@@ -1199,6 +1203,20 @@ export interface RoadSafetyIntelligenceResponse {
   nearby_alerts: NearbySafetyAlert[];
   explanation: RoadSafetyExplanation;
   hotspots: RoadSafetyHotspotItem[];
+}
+
+export interface RouteRiskEvaluationRequest {
+  waypoints: number[][]; // [[lat, lng], ...]
+  lang?: string;
+}
+
+export interface RouteRiskEvaluationResponse {
+  route_risk_level: RoadSafetyRiskLevel;
+  route_risk_score: number;
+  total_hazards_count: number;
+  hazards_along_route: NearbySafetyAlert[];
+  high_risk_corridors_crossed: RoadSafetyHotspotItem[];
+  safety_advisory: string;
 }
 
 export interface ChatMessage {

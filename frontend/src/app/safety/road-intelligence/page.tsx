@@ -151,6 +151,17 @@ export default function RoadSafetyIntelligencePage() {
                 <span>🚨</span>
                 <span>{isBn ? "জরুরি প্রটোকল (৯৯৯)" : "Action Protocol (999)"}</span>
               </button>
+
+              <Link
+                href={`/safety/road-intelligence/live-map?lat=${latitude}&lng=${longitude}&area=${encodeURIComponent(areaName)}`}
+                className="px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 active:scale-95 text-white rounded-xl font-black text-xs sm:text-sm shadow-lg transition flex items-center gap-2 ring-2 ring-cyan-400/40"
+              >
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                </span>
+                <span>{isBn ? "৩ডি লাইভ ম্যাপ (Uber Mode)" : "3D Live Map (Uber Mode)"}</span>
+              </Link>
             </div>
           </div>
 
@@ -180,6 +191,33 @@ export default function RoadSafetyIntelligencePage() {
 
       {/* Main Analysis Container */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+        {/* Uber-Style 3D Live Map Feature Banner */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-zinc-900 via-slate-900 to-zinc-950 border border-cyan-500/30 p-5 sm:p-6 shadow-xl">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="space-y-1.5 max-w-xl">
+              <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-cyan-950/80 text-cyan-300 border border-cyan-500/40">
+                <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                <span>{isBn ? "নতুন ৩ডি লাইভ নেভিগেশন ম্যাপ" : "New 3D Live Navigation Map"}</span>
+              </div>
+              <h2 className="text-base sm:text-lg font-black text-white">
+                {isBn ? "উবার-স্টাইল ৩ডি রিয়েল-টাইম ড্রাইভিং ও ঝুঁকি ম্যাপ" : "Uber-Style 3D Real-Time Driving & Road Safety Map"}
+              </h2>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                {isBn
+                  ? "চলন্ত অবস্থায় লাইভ জিপিএস ট্র্যাকিং, ৩ডি ভবনের ভিউ, রুট ঝুঁকি মূল্যায়ন এবং উচ্চ-ঝুঁকিপূর্ণ দুর্ঘটনা পয়েন্টে পৌঁছানোর আগেই সতর্কবার্তা পান।"
+                  : "Live GPS motion tracking, 3D building perspective, road hazard route assessment, and automatic proximity warnings when approaching accident hotspots."}
+              </p>
+            </div>
+            <Link
+              href={`/safety/road-intelligence/live-map?lat=${latitude}&lng=${longitude}&area=${encodeURIComponent(areaName)}`}
+              className="px-5 py-3 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black text-xs sm:text-sm shadow-xl shadow-cyan-900/30 transition active:scale-95 flex items-center justify-center gap-2 shrink-0"
+            >
+              <span>🚘</span>
+              <span>{isBn ? "লাইভ ৩ডি ম্যাপ খুলুন →" : "Open 3D Live Map →"}</span>
+            </Link>
+          </div>
+        </div>
+
         {/* Radius Selector & Coordinate Bar */}
         <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-xs sm:text-sm">
