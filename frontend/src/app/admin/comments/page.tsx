@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
 import { AdminComment, CommentStatus } from "@/lib/types";
 import AdminNav from "@/components/AdminNav";
+import { MessageSquare } from "lucide-react";
 
 export default function AdminCommentsPage() {
   const router = useRouter();
@@ -104,7 +105,8 @@ export default function AdminCommentsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-              <span>💬 Community Comments Moderation / মন্তব্য নিয়ন্ত্রণ</span>
+              <MessageSquare className="h-6 w-6 text-indigo-600" />
+              <span>Community Comments Moderation / মন্তব্য নিয়ন্ত্রণ</span>
               <span className="rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs px-2.5 py-0.5 font-bold">
                 {comments.length}
               </span>

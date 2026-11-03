@@ -13,6 +13,7 @@ import {
   dismissPushPrompt,
   PushStatus,
 } from "@/lib/pushNotifications";
+import { X } from "lucide-react";
 
 interface NotifBadgeConfig {
   bg: string;
@@ -300,7 +301,7 @@ export default function NotificationsPage() {
             className="text-emerald-700 dark:text-emerald-400 hover:text-emerald-900 font-bold px-2 py-1 min-h-[36px] flex items-center cursor-pointer"
             aria-label="Close message"
           >
-            ✕
+            <X className="h-4 w-4" />
           </button>
         </div>
       )}

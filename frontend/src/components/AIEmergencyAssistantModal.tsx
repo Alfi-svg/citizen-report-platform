@@ -1,6 +1,20 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import {
+  Bot,
+  AlertTriangle,
+  Zap,
+  MapPin,
+  HeartPulse,
+  Check,
+  CarFront,
+  Flame,
+  Send,
+  X,
+  PhoneCall,
+  Loader2,
+} from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import {
   ChatMessage,
@@ -102,7 +116,7 @@ export default function AIEmergencyAssistantModal({
       setConversationId(res.conversation_id);
 
       const aiMsgContent = res.follow_up_question
-        ? `${res.reply}\n\n👉 ${res.follow_up_question}`
+        ? `${res.reply}\n\n${res.follow_up_question}`
         : res.reply;
 
       setMessages((prev) => [...prev, { role: "assistant", content: aiMsgContent }]);
@@ -136,8 +150,8 @@ export default function AIEmergencyAssistantModal({
         {/* Top Header */}
         <div className="px-5 py-3.5 bg-gradient-to-r from-blue-700 to-indigo-800 text-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="h-9 w-9 rounded-xl bg-white/20 flex items-center justify-center text-lg">
-              🤖
+            <div className="h-9 w-9 rounded-xl bg-white/20 flex items-center justify-center">
+              <Bot className="h-5 w-5 text-white" aria-hidden="true" />
             </div>
             <div>
               <h3 className="text-sm sm:text-base font-bold leading-tight flex items-center gap-1.5">
@@ -155,10 +169,10 @@ export default function AIEmergencyAssistantModal({
           <div className="flex items-center gap-2">
             <a
               href="tel:999"
-              className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm"
+              className="px-2.5 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs"
               title="National Emergency 999"
             >
-              <span>🚨</span>
+              <PhoneCall className="h-3.5 w-3.5" aria-hidden="true" />
               <span>999</span>
             </a>
             <button
@@ -226,8 +240,9 @@ export default function AIEmergencyAssistantModal({
           {/* Action plan summary chips if available */}
           {currentResponse?.action_plan_summary && currentResponse.action_plan_summary.length > 0 && (
             <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 rounded-xl space-y-1.5 text-xs text-amber-900 dark:text-amber-200">
-              <span className="font-bold block text-[11px] uppercase tracking-wider text-amber-700 dark:text-amber-400">
-                ⚡ {isBn ? "তাৎক্ষণিক করণীয় পদক্ষেপ:" : "Immediate Safety Steps:"}
+              <span className="font-bold flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                <Zap className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+                <span>{isBn ? "তাৎক্ষণিক করণীয় পদক্ষেপ:" : "Immediate Safety Steps:"}</span>
               </span>
               <ul className="space-y-1 pl-4 list-disc">
                 {currentResponse.action_plan_summary.map((step, i) => (
@@ -257,10 +272,14 @@ export default function AIEmergencyAssistantModal({
                   {currentResponse.draft_report.description}
                 </p>
                 <div className="mt-2 text-xs flex flex-wrap items-center gap-2 text-zinc-500 dark:text-zinc-400">
-                  <span>📍 {currentResponse.draft_report.location_text}</span>
+                  <span className="flex items-center gap-1">
+                    <MapPin className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+                    <span>{currentResponse.draft_report.location_text}</span>
+                  </span>
                   {currentResponse.draft_report.injuries_reported && (
-                    <span className="text-red-600 dark:text-red-400 font-semibold">
-                      🩹 {currentResponse.draft_report.injuries_reported}
+                    <span className="text-red-600 dark:text-red-400 font-semibold flex items-center gap-1">
+                      <HeartPulse className="h-3.5 w-3.5" aria-hidden="true" />
+                      <span>{currentResponse.draft_report.injuries_reported}</span>
                     </span>
                   )}
                 </div>
@@ -274,9 +293,9 @@ export default function AIEmergencyAssistantModal({
                 </span>
                 <button
                   onClick={handleApply}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow transition flex items-center gap-1.5 shrink-0"
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 shrink-0"
                 >
-                  <span>✓</span>
+                  <Check className="h-3.5 w-3.5" aria-hidden="true" />
                   <span>{isBn ? "রিপোর্টে প্রয়োগ করুন" : "Apply to Report"}</span>
                 </button>
               </div>
@@ -294,16 +313,18 @@ export default function AIEmergencyAssistantModal({
               <button
                 type="button"
                 onClick={() => handleSendMessage(isBn ? "মিরপুরে বাস ও রিকশা সংঘর্ষ হয়েছে, দুজন আহত" : "Bus and rickshaw collision near Mirpur, two injured")}
-                className="px-2.5 py-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-600 dark:text-zinc-300 hover:border-blue-500 text-[11px] transition"
+                className="px-2.5 py-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-600 dark:text-zinc-300 hover:border-blue-500 text-[11px] transition flex items-center gap-1"
               >
-                {isBn ? "🚗 মিরপুরে বাস সংঘর্ষ" : "🚗 Bus collision near Mirpur"}
+                <CarFront className="h-3 w-3 text-slate-400" aria-hidden="true" />
+                <span>{isBn ? "মিরপুরে বাস সংঘর্ষ" : "Bus collision near Mirpur"}</span>
               </button>
               <button
                 type="button"
                 onClick={() => handleSendMessage(isBn ? "ধানমন্ডিতে বৈদ্যুতিক তারে আগুন লেগেছে" : "Electrical wire caught fire near Dhanmondi")}
-                className="px-2.5 py-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-600 dark:text-zinc-300 hover:border-blue-500 text-[11px] transition"
+                className="px-2.5 py-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-600 dark:text-zinc-300 hover:border-blue-500 text-[11px] transition flex items-center gap-1"
               >
-                {isBn ? "🔥 ধানমন্ডিতে বৈদ্যুতিক আগুন" : "🔥 Electrical fire in Dhanmondi"}
+                <Flame className="h-3 w-3 text-slate-400" aria-hidden="true" />
+                <span>{isBn ? "ধানমন্ডিতে বৈদ্যুতিক আগুন" : "Electrical fire in Dhanmondi"}</span>
               </button>
             </div>
           )}

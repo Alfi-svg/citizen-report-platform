@@ -8,6 +8,7 @@ import {
   AdminMissingPersonAlertResponse,
   AdminMissingPersonAlertPagination,
 } from "@/lib/types";
+import { Siren, Eye, CheckCircle2, X, User, AlertTriangle, Trash2, ShieldAlert } from "lucide-react";
 
 export default function AdminMissingPersonPage() {
   const [data, setData] = useState<AdminMissingPersonAlertPagination | null>(null);
@@ -133,14 +134,15 @@ export default function AdminMissingPersonPage() {
             href="/missing-person/create"
             className="rounded-xl bg-red-600 hover:bg-red-500 px-4 py-2.5 text-xs font-bold text-white transition shadow-sm shrink-0 flex items-center gap-1.5"
           >
-            <span>🚨</span>
+            <Siren className="h-3.5 w-3.5" />
             <span>+ Add Missing Person Alert</span>
           </Link>
           <Link
             href="/admin/missing-person/sightings"
-            className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 transition shrink-0"
+            className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 transition shrink-0 inline-flex items-center gap-1.5"
           >
-            👁️ Sightings Queue →
+            <Eye className="h-3.5 w-3.5" />
+            <span>Sightings Queue →</span>
           </Link>
         </div>
       </div>
@@ -182,8 +184,13 @@ export default function AdminMissingPersonPage() {
       {/* Directory Table */}
       {actionSuccess && (
         <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/40 p-4 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-200 flex items-center justify-between">
-          <span>✅ {actionSuccess}</span>
-          <button onClick={() => setActionSuccess(null)} className="text-emerald-600 hover:text-emerald-800 font-bold ml-2">✕</button>
+          <span className="flex items-center gap-1.5">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            <span>{actionSuccess}</span>
+          </span>
+          <button onClick={() => setActionSuccess(null)} className="text-emerald-600 hover:text-emerald-800 font-bold ml-2">
+            <X className="h-4 w-4" />
+          </button>
         </div>
       )}
 
@@ -227,8 +234,8 @@ export default function AdminMissingPersonPage() {
                             className="h-10 w-10 rounded-xl object-cover border border-zinc-200 shrink-0"
                           />
                         ) : (
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-100 dark:bg-zinc-800 text-lg shrink-0">
-                            👤
+                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-500 shrink-0">
+                            <User className="h-5 w-5 text-zinc-500" />
                           </div>
                         )}
                         <div>
@@ -263,9 +270,10 @@ export default function AdminMissingPersonPage() {
                     <td className="p-3.5">
                       <Link
                         href={`/admin/missing-person/sightings?alert_id=${alert.id}`}
-                        className="font-bold text-blue-600 hover:underline flex items-center gap-1"
+                        className="font-bold text-blue-600 hover:underline flex items-center gap-1.5"
                       >
-                        <span>👁️ {alert.total_sightings_count}</span>
+                        <Eye className="h-3.5 w-3.5" />
+                        <span>{alert.total_sightings_count}</span>
                         {alert.pending_sightings_count > 0 && (
                           <span className="rounded-full bg-red-600 text-white text-[9px] px-1 py-0.2">
                             {alert.pending_sightings_count} pending
@@ -276,8 +284,9 @@ export default function AdminMissingPersonPage() {
 
                     <td className="p-3.5">
                       {alert.duplicate_candidates_count > 0 ? (
-                        <span className="inline-flex rounded-md bg-amber-100 text-amber-800 px-2 py-0.5 text-[10px] font-bold">
-                          ⚠️ {alert.duplicate_candidates_count} possible
+                        <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 text-amber-800 px-2 py-0.5 text-[10px] font-bold">
+                          <AlertTriangle className="h-3 w-3" />
+                          <span>{alert.duplicate_candidates_count} possible</span>
                         </span>
                       ) : (
                         <span className="text-zinc-400 text-[11px]">None</span>
@@ -393,23 +402,37 @@ export default function AdminMissingPersonPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs overflow-y-auto">
           <div className="w-full max-w-lg rounded-3xl bg-white dark:bg-zinc-900 p-6 shadow-2xl border border-zinc-200 dark:border-zinc-800 space-y-4 my-8">
             <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
-              <h3 className="text-base font-extrabold text-zinc-900 dark:text-zinc-100">
-                {modalType === "ACTIVATE"
-                  ? "🚨 Activate Missing Person Alert"
-                  : modalType === "FOUND"
-                  ? "✅ Mark Missing Person as FOUND"
-                  : modalType === "DELETE"
-                  ? "🗑️ Permanently Delete Missing Person Record"
-                  : "🛑 Remove Alert from Public News Feed & Platform"}
+              <h3 className="text-base font-extrabold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                {modalType === "ACTIVATE" ? (
+                  <>
+                    <Siren className="h-5 w-5 text-red-600" />
+                    <span>Activate Missing Person Alert</span>
+                  </>
+                ) : modalType === "FOUND" ? (
+                  <>
+                    <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                    <span>Mark Missing Person as FOUND</span>
+                  </>
+                ) : modalType === "DELETE" ? (
+                  <>
+                    <Trash2 className="h-5 w-5 text-red-600" />
+                    <span>Permanently Delete Missing Person Record</span>
+                  </>
+                ) : (
+                  <>
+                    <ShieldAlert className="h-5 w-5 text-amber-600" />
+                    <span>Remove Alert from Public News Feed & Platform</span>
+                  </>
+                )}
               </h3>
               <button
                 onClick={() => {
                   setModalType(null);
                   setActiveModalAlert(null);
                 }}
-                className="text-zinc-400 hover:text-zinc-600 text-lg font-bold"
+                className="text-zinc-400 hover:text-zinc-600"
               >
-                ✕
+                <X className="h-5 w-5" />
               </button>
             </div>
 
@@ -430,8 +453,11 @@ export default function AdminMissingPersonPage() {
               {modalType === "ACTIVATE" && (
                 <>
                   <div className="rounded-2xl bg-amber-50 dark:bg-amber-950/40 p-3.5 border border-amber-200 dark:border-amber-900/60 text-amber-900 dark:text-amber-200">
-                    <strong>⚠️ CONFIRMATION REQUIRED:</strong>
-                    <p className="text-[11px] mt-1">
+                    <strong className="flex items-center gap-1.5 mb-1">
+                      <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
+                      <span>CONFIRMATION REQUIRED:</span>
+                    </strong>
+                    <p className="text-[11px]">
                       MISSING PERSON ALERT WILL BE VISIBLE TO ELIGIBLE USERS AND NOTIFICATIONS WILL BE DISPATCHED TO OPTED-IN USERS WITHIN THE SELECTED RADIUS.
                     </p>
                   </div>
@@ -473,8 +499,11 @@ export default function AdminMissingPersonPage() {
 
               {(modalType === "DEACTIVATE" || modalType === "CLOSE") && (
                 <div className="rounded-2xl bg-amber-50 dark:bg-amber-950/40 p-3.5 border border-amber-200 dark:border-amber-900/60 text-amber-900 dark:text-amber-200">
-                  <strong>⚠️ Public Feed & Platform Removal:</strong>
-                  <p className="text-[11px] mt-1">
+                  <strong className="flex items-center gap-1.5 mb-1">
+                    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
+                    <span>Public Feed & Platform Removal:</span>
+                  </strong>
+                  <p className="text-[11px]">
                     This will close the alert and archive the underlying report. It will immediately stop public display across the Public News Feed, the Missing Persons directory, and the Safety Map. Direct public URL access will return 404. All internal history, sightings, and evidence will remain safely preserved in the Admin Console.
                   </p>
                 </div>
@@ -482,8 +511,11 @@ export default function AdminMissingPersonPage() {
 
               {modalType === "DELETE" && (
                 <div className="rounded-2xl bg-red-50 dark:bg-red-950/40 p-3.5 border border-red-200 dark:border-red-900/60 text-red-900 dark:text-red-200">
-                  <strong>⚠️ PERMANENT DELETION WARNING:</strong>
-                  <p className="text-[11px] mt-1">
+                  <strong className="flex items-center gap-1.5 mb-1">
+                    <AlertTriangle className="h-4 w-4 text-red-600 shrink-0" />
+                    <span>PERMANENT DELETION WARNING:</span>
+                  </strong>
+                  <p className="text-[11px]">
                     This will permanently delete this missing person alert, biographical profile, sightings, and associated citizen report from the database. This action CANNOT be undone.
                   </p>
                 </div>

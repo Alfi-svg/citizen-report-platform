@@ -10,6 +10,7 @@ import {
   SuggestedRelatedReportResponse,
 } from "@/lib/types";
 import { useBackClose } from "@/lib/useBackClose";
+import { Layers, X, Search, MapPin } from "lucide-react";
 
 export default function AdminClustersPage() {
   const [data, setData] = useState<IncidentClusterListResponse | null>(null);
@@ -263,8 +264,9 @@ export default function AdminClustersPage() {
                     </td>
 
                     <td className="p-3.5">
-                      <span className="font-bold text-amber-600 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-md text-[11px]">
-                        🔶 {cluster.member_count} reports
+                      <span className="font-bold text-amber-600 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-md text-[11px] inline-flex items-center gap-1">
+                        <Layers className="h-3 w-3" />
+                        <span>{cluster.member_count} reports</span>
                       </span>
                     </td>
 
@@ -323,9 +325,9 @@ export default function AdminClustersPage() {
               </h3>
               <button
                 onClick={() => setIsCreateModalOpen(false)}
-                className="text-zinc-400 hover:text-zinc-600 text-lg font-bold"
+                className="text-zinc-400 hover:text-zinc-600"
               >
-                ✕
+                <X className="h-5 w-5" />
               </button>
             </div>
 
@@ -466,8 +468,9 @@ export default function AdminClustersPage() {
           <div className="w-full max-w-2xl rounded-3xl bg-white dark:bg-zinc-900 p-6 shadow-2xl border border-zinc-200 dark:border-zinc-800 space-y-4 my-8 max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
               <div>
-                <h3 className="text-base font-extrabold text-zinc-900 dark:text-zinc-100">
-                  🔶 {activeCluster.title}
+                <h3 className="text-base font-extrabold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                  <Layers className="h-4 w-4 text-amber-600" />
+                  <span>{activeCluster.title}</span>
                 </h3>
                 <p className="text-xs text-zinc-500">
                   {activeCluster.area} • {activeCluster.category_name || "General"}
@@ -475,9 +478,9 @@ export default function AdminClustersPage() {
               </div>
               <button
                 onClick={() => setActiveCluster(null)}
-                className="text-zinc-400 hover:text-zinc-600 text-lg font-bold"
+                className="text-zinc-400 hover:text-zinc-600"
               >
-                ✕
+                <X className="h-5 w-5" />
               </button>
             </div>
 
@@ -559,8 +562,9 @@ export default function AdminClustersPage() {
             {/* Suggestions Inspector */}
             {inspectingReportId && suggestedReports.length > 0 && (
               <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
-                <h4 className="text-xs font-bold text-blue-600">
-                  🔍 Algorithmic Similar Report Candidates ({suggestedReports.length})
+                <h4 className="text-xs font-bold text-blue-600 flex items-center gap-1.5">
+                  <Search className="h-3.5 w-3.5" />
+                  <span>Algorithmic Similar Report Candidates ({suggestedReports.length})</span>
                 </h4>
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {suggestedReports.map((cand) => (
@@ -570,8 +574,9 @@ export default function AdminClustersPage() {
                     >
                       <div>
                         <div className="font-bold text-zinc-900 dark:text-zinc-100">{cand.title}</div>
-                        <div className="text-[10px] text-zinc-500">
-                          📍 {cand.location_text} • Total Score: <strong className="text-blue-600">{cand.similarity.total_score} pts</strong> (Geo: {cand.similarity.geo_score}, Time: {cand.similarity.time_score}, Cat: {cand.similarity.category_score}, Text: {cand.similarity.text_score})
+                        <div className="text-[10px] text-zinc-500 flex items-center gap-1 mt-0.5">
+                          <MapPin className="h-2.5 w-2.5 shrink-0" />
+                          <span>{cand.location_text} • Total Score: <strong className="text-blue-600">{cand.similarity.total_score} pts</strong> (Geo: {cand.similarity.geo_score}, Time: {cand.similarity.time_score}, Cat: {cand.similarity.category_score}, Text: {cand.similarity.text_score})</span>
                         </div>
                       </div>
                       <button

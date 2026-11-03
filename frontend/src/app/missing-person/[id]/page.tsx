@@ -8,6 +8,7 @@ import { PublicMissingPersonAlertResponse, PublicMissingPersonSightingResponse }
 import { translations, Language } from "@/lib/i18n";
 import { useBackClose } from "@/lib/useBackClose";
 import { captureCurrentLocation } from "@/lib/location";
+import { AlertTriangle, Info, User, MapPin, Clock, Eye, Shield, Camera, X, Check } from "lucide-react";
 
 export default function MissingPersonDetailPage() {
   const router = useRouter();
@@ -143,7 +144,9 @@ export default function MissingPersonDetailPage() {
   if (error || !alert) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-12 text-center space-y-4">
-        <div className="text-4xl">⚠️</div>
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 mx-auto">
+          <AlertTriangle className="h-6 w-6" />
+        </div>
         <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
           {error || "Missing person alert not found"}
         </h2>
@@ -205,7 +208,7 @@ export default function MissingPersonDetailPage() {
         <div className="rounded-3xl bg-blue-50 dark:bg-blue-950/40 p-5 border border-blue-200 dark:border-blue-900/60 shadow-xs flex items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="text-xs font-extrabold text-blue-900 dark:text-blue-200 flex items-center gap-1.5 uppercase tracking-wider">
-              <span>ℹ️</span>
+              <Info className="h-4 w-4" />
               <span>{alert.status === "FOUND" ? t.status_found : t.alert_no_longer_active}</span>
             </div>
             <p className="text-xs text-blue-800 dark:text-blue-300">
@@ -225,8 +228,8 @@ export default function MissingPersonDetailPage() {
         {/* Status Banner */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100 dark:border-zinc-800 pb-4">
           <div className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-red-600 text-white text-base font-bold shadow-xs">
-              🚨
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-red-600 text-white shadow-xs">
+              <AlertTriangle className="h-4 w-4" />
             </span>
             <span className="text-xs font-black tracking-wider uppercase text-red-600 dark:text-red-400">
               {t.missing_person_badge}
@@ -260,7 +263,7 @@ export default function MissingPersonDetailPage() {
                 />
               ) : (
                 <div className="text-center p-4 text-zinc-400">
-                  <span className="text-5xl block mb-2">👤</span>
+                  <User className="h-12 w-12 mx-auto mb-2 text-zinc-300 dark:text-zinc-600" />
                   <span className="text-xs font-semibold">No Photo Provided</span>
                 </div>
               )}
@@ -305,7 +308,7 @@ export default function MissingPersonDetailPage() {
             {/* Location & Time Last Seen */}
             <div className="space-y-2 rounded-2xl bg-red-50/50 dark:bg-red-950/20 p-4 border border-red-100 dark:border-red-900/30 text-xs">
               <div className="flex items-start gap-2">
-                <span className="text-red-600 font-bold">📍</span>
+                <MapPin className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
                 <div>
                   <span className="font-semibold text-zinc-500">{t.last_seen_near}: </span>
                   <span className="font-bold text-zinc-900 dark:text-zinc-100">
@@ -316,7 +319,7 @@ export default function MissingPersonDetailPage() {
 
               {profile.last_seen_time && (
                 <div className="flex items-center gap-2">
-                  <span className="text-red-600 font-bold">🕒</span>
+                  <Clock className="h-4 w-4 text-red-600 shrink-0" />
                   <div>
                     <span className="font-semibold text-zinc-500">{t.last_seen_time}: </span>
                     <span className="font-bold text-zinc-900 dark:text-zinc-100">
@@ -373,7 +376,7 @@ export default function MissingPersonDetailPage() {
               }}
               className="inline-flex items-center justify-center gap-2 rounded-2xl bg-red-600 hover:bg-red-500 px-8 py-4 text-sm font-black text-white shadow-md transition active:scale-95 shrink-0"
             >
-              <span>👁️</span>
+              <Eye className="h-4 w-4" />
               <span>{t.i_saw_this_person}</span>
             </button>
           </div>
@@ -384,7 +387,7 @@ export default function MissingPersonDetailPage() {
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-            <span>🛡️</span> {t.sightings_timeline_title} ({alert.approved_sightings.length})
+            <Shield className="h-5 w-5 text-red-600" /> {t.sightings_timeline_title} ({alert.approved_sightings.length})
           </h2>
           <span className="text-xs font-semibold text-zinc-400">
             {lang === "bn" ? "যাচাইকৃত দেখার তথ্য" : "Platform-Reviewed Sightings"}
@@ -414,7 +417,7 @@ export default function MissingPersonDetailPage() {
                       </span>
                     </div>
                     <span className="font-bold text-red-600 dark:text-red-400 flex items-center gap-1">
-                      <span>📍</span> Reported near {sighting.approximate_location}
+                      <MapPin className="h-3.5 w-3.5" /> Reported near {sighting.approximate_location}
                     </span>
                   </div>
 
@@ -445,7 +448,7 @@ export default function MissingPersonDetailPage() {
                         rel="noreferrer"
                         className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:underline"
                       >
-                        <span>📷</span>
+                        <Camera className="h-3.5 w-3.5" />
                         <span>{lang === "bn" ? "প্রমাণের ছবি দেখুন" : "View Sighting Photo"} →</span>
                       </a>
                     </div>
@@ -463,19 +466,21 @@ export default function MissingPersonDetailPage() {
           <div className="w-full max-w-lg rounded-3xl bg-white dark:bg-zinc-900 p-4 sm:p-6 shadow-2xl border border-zinc-200 dark:border-zinc-800 space-y-4 my-8 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
               <h3 className="text-base font-extrabold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                <span>👁️</span> {t.submit_sighting}
+                <Eye className="h-4 w-4" /> {t.submit_sighting}
               </h3>
               <button
                 onClick={() => setIsSightingModalOpen(false)}
                 className="text-zinc-400 hover:text-zinc-600 text-lg font-bold"
               >
-                ✕
+                <X className="h-5 w-5" />
               </button>
             </div>
 
             {sightingSuccess ? (
               <div className="rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 p-6 text-center space-y-3">
-                <div className="text-3xl">✅</div>
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400">
+                  <Check className="h-6 w-6" />
+                </div>
                 <h4 className="text-sm font-bold text-emerald-800 dark:text-emerald-300">
                   {lang === "bn" ? "আপনার তথ্যটি সফলভাবে জমা হয়েছে" : "Sighting Submitted Successfully"}
                 </h4>
@@ -509,7 +514,7 @@ export default function MissingPersonDetailPage() {
                       disabled={isLocating}
                       className="text-[11px] font-bold text-emerald-600 hover:text-emerald-500 flex items-center gap-1"
                     >
-                      <span>📍</span>
+                      <MapPin className="h-3.5 w-3.5" />
                       <span>{isLocating ? "Getting Location..." : "Use Current Location (1-time)"}</span>
                     </button>
                   </div>

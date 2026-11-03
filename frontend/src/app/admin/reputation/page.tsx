@@ -7,6 +7,7 @@ import { apiFetch } from "@/lib/api";
 import { BloodDonationRecord, UserReputation } from "@/lib/types";
 import AdminNav from "@/components/AdminNav";
 import { useBackClose } from "@/lib/useBackClose";
+import { Shield, HeartHandshake, Users, AlertTriangle, Clock, CheckCircle2, XCircle, Award, Star, X } from "lucide-react";
 
 interface AdminUserReputationItem {
   user_id: string;
@@ -180,7 +181,8 @@ export default function AdminReputationPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-            <span>🛡️</span> Reputation & Blood Donation Oversight
+            <Shield className="h-6 w-6 text-indigo-600" />
+            <span>Reputation & Blood Donation Oversight</span>
           </h1>
           <p className="text-xs text-zinc-500">
             Audit Trust Scores, Impact Points, and resolve disputed blood donations
@@ -192,24 +194,26 @@ export default function AdminReputationPage() {
           <button
             type="button"
             onClick={() => setActiveTab("blood")}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer inline-flex items-center gap-1.5 ${
               activeTab === "blood"
                 ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xs"
                 : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
             }`}
           >
-            🩸 Blood Disputes ({bloodTotal})
+            <HeartHandshake className="h-3.5 w-3.5" />
+            <span>Blood Disputes ({bloodTotal})</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveTab("users")}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer inline-flex items-center gap-1.5 ${
               activeTab === "users"
                 ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xs"
                 : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
             }`}
           >
-            👥 User Reputation ({usersTotal})
+            <Users className="h-3.5 w-3.5" />
+            <span>User Reputation ({usersTotal})</span>
           </button>
         </div>
       </div>
@@ -236,21 +240,35 @@ export default function AdminReputationPage() {
                 key={st}
                 type="button"
                 onClick={() => setBloodStatusFilter(st)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold shrink-0 transition cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold shrink-0 transition cursor-pointer inline-flex items-center gap-1.5 ${
                   bloodStatusFilter === st
                     ? "bg-rose-600 text-white shadow-2xs"
                     : "bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800"
                 }`}
               >
-                {st === "DISPUTED"
-                  ? "⚠️ Disputed Claims"
-                  : st === "PENDING_CONFIRMATION"
-                  ? "⏳ Pending Confirmation"
-                  : st === "VERIFIED"
-                  ? "✅ Verified"
-                  : st === "REJECTED"
-                  ? "❌ Rejected"
-                  : "All Records"}
+                {st === "DISPUTED" ? (
+                  <>
+                    <AlertTriangle className="h-3 w-3" />
+                    <span>Disputed Claims</span>
+                  </>
+                ) : st === "PENDING_CONFIRMATION" ? (
+                  <>
+                    <Clock className="h-3 w-3" />
+                    <span>Pending Confirmation</span>
+                  </>
+                ) : st === "VERIFIED" ? (
+                  <>
+                    <CheckCircle2 className="h-3 w-3" />
+                    <span>Verified</span>
+                  </>
+                ) : st === "REJECTED" ? (
+                  <>
+                    <XCircle className="h-3 w-3" />
+                    <span>Rejected</span>
+                  </>
+                ) : (
+                  <span>All Records</span>
+                )}
               </button>
             ))}
           </div>
@@ -318,8 +336,10 @@ export default function AdminReputationPage() {
                     )}
 
                     {item.donor_rating && (
-                      <p className="text-[11px] text-amber-600 dark:text-amber-400 font-bold">
-                        Donor Rating: ★ {item.donor_rating} / 5
+                      <p className="text-[11px] text-amber-600 dark:text-amber-400 font-bold inline-flex items-center gap-1">
+                        <span>Donor Rating:</span>
+                        <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                        <span>{item.donor_rating} / 5</span>
                         {item.donor_review && ` — "${item.donor_review}"`}
                       </p>
                     )}
@@ -400,8 +420,9 @@ export default function AdminReputationPage() {
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
                         {item.role}
                       </span>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300">
-                        🏅 {item.reputation.badge}
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 inline-flex items-center gap-1">
+                        <Award className="h-3 w-3" />
+                        <span>{item.reputation.badge}</span>
                       </span>
                     </div>
 
@@ -433,8 +454,15 @@ export default function AdminReputationPage() {
                       </div>
                       <div>
                         Help Rating:{" "}
-                        <strong className="text-amber-500">
-                          {item.reputation.help_rating > 0 ? `★ ${item.reputation.help_rating}` : "—"}
+                        <strong className="text-amber-500 inline-flex items-center gap-0.5">
+                          {item.reputation.help_rating > 0 ? (
+                            <>
+                              <Star className="h-3 w-3 fill-amber-400 text-amber-400 inline" />
+                              <span>{item.reputation.help_rating}</span>
+                            </>
+                          ) : (
+                            "—"
+                          )}
                         </strong>
                       </div>
                     </div>
@@ -479,7 +507,7 @@ export default function AdminReputationPage() {
                 onClick={() => setSelectedDonation(null)}
                 className="rounded-xl p-1.5 text-zinc-400 hover:text-zinc-600"
               >
-                ✕
+                <X className="h-5 w-5" />
               </button>
             </div>
 
@@ -607,7 +635,7 @@ export default function AdminReputationPage() {
                 onClick={() => setAdjustTargetUser(null)}
                 className="rounded-xl p-1.5 text-zinc-400 hover:text-zinc-600"
               >
-                ✕
+                <X className="h-5 w-5" />
               </button>
             </div>
 

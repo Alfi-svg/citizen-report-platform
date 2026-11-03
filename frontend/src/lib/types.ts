@@ -1310,6 +1310,79 @@ export interface BloodAssistantResponse {
   create_request_url: string;
 }
 
+export type HelmetDetectionStatus =
+  | "VERIFIED"
+  | "HELMET_NOT_DETECTED"
+  | "HELMET_NOT_WORN"
+  | "PERSON_NOT_DETECTED"
+  | "UNCERTAIN"
+  | "ERROR";
+
+export interface HelmetBoundingBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  label: string;
+}
+
+export interface HelmetVerificationResponse {
+  status: HelmetDetectionStatus;
+  is_verified: boolean;
+  person_detected: boolean;
+  helmet_detected: boolean;
+  helmet_worn: boolean;
+  confidence: number;
+  message_en: string;
+  message_bn: string;
+  verification_token?: string | null;
+  expires_at?: string | null;
+  bounding_boxes: HelmetBoundingBox[];
+}
+
+export interface StartSafeRideRequest {
+  verification_token: string;
+  destination_text?: string | null;
+  start_latitude?: number | null;
+  start_longitude?: number | null;
+}
+
+export interface StartSafeRideResponse {
+  ride_id: string;
+  status: "ACTIVE" | "COMPLETED";
+  helmet_verified: boolean;
+  started_at: string;
+  start_latitude?: number | null;
+  start_longitude?: number | null;
+  destination_text?: string | null;
+}
+
+export interface StopSafeRideRequest {
+  ride_id: string;
+  end_latitude?: number | null;
+  end_longitude?: number | null;
+}
+
+export interface StopSafeRideResponse {
+  ride_id: string;
+  status: "COMPLETED";
+  duration_seconds: number;
+  message: string;
+}
+
+export interface ActiveSafeRideState {
+  ride_id: string;
+  started_at: string;
+  destination_text?: string | null;
+  start_latitude?: number | null;
+  start_longitude?: number | null;
+  current_latitude?: number | null;
+  current_longitude?: number | null;
+  speed_kmh?: number | null;
+  helmet_verified: boolean;
+  active: boolean;
+}
+
 
 
 

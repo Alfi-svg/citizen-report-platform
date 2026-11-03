@@ -17,6 +17,7 @@ import PublicReportCard from "@/components/PublicReportCard";
 import { StatusBadge } from "@/components/ui";
 import EmergencyCallModal from "@/components/EmergencyCallModal";
 import { Capacitor } from "@capacitor/core";
+import { Check, Bike } from "lucide-react";
 
 export default function HomePage() {
   const { isAuthenticated, user } = useAuth();
@@ -561,6 +562,23 @@ export default function HomePage() {
               </p>
             </div>
           </Link>
+
+          <Link
+            href="/safety/safe-ride"
+            className="group rounded-2xl border border-cyan-200 dark:border-cyan-900/60 bg-gradient-to-br from-cyan-50/50 to-white dark:from-cyan-950/20 dark:to-zinc-900 p-3.5 sm:p-4 hover:border-cyan-500/80 transition shadow-2xs flex flex-col justify-between"
+          >
+            <div>
+              <div className="h-9 w-9 rounded-xl bg-cyan-600 text-white flex items-center justify-center mb-2 group-hover:scale-105 transition shadow-2xs">
+                <Bike className="h-5 w-5" />
+              </div>
+              <h2 className="font-bold text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 leading-tight">
+                {lang === "bn" ? "নিরাপদ রাইড" : "Safe Ride"}
+              </h2>
+              <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1 leading-snug">
+                {lang === "bn" ? "এআই হেলমেট ও স্পিড।" : "AI helmet & live ride."}
+              </p>
+            </div>
+          </Link>
         </section>
 
         {/* =================================================================== */}
@@ -909,8 +927,9 @@ export default function HomePage() {
               <p className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">
                 {kpis ? kpis.total_reviewed_reports.toLocaleString() : "—"}
               </p>
-              <p className="text-[10px] text-emerald-600 font-medium pt-0.5">
-                ✓ 100% Verified by Moderation
+              <p className="text-[10px] text-emerald-600 font-medium pt-0.5 flex items-center gap-1">
+                <Check className="h-3 w-3" />
+                <span>100% Verified by Moderation</span>
               </p>
             </div>
 

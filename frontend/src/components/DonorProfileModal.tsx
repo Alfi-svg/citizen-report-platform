@@ -6,6 +6,7 @@ import { BloodDonorProfile, BloodGroup, DonorAvailability } from "@/lib/types";
 import { useAuth } from "@/context/AuthContext";
 import { useBackClose } from "@/lib/useBackClose";
 import Link from "next/link";
+import { Droplet, X, ShieldCheck } from "lucide-react";
 
 interface DonorProfileModalProps {
   isOpen: boolean;
@@ -151,7 +152,7 @@ export default function DonorProfileModal({
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 border border-rose-200/60 dark:border-rose-900/60 text-xl font-bold">
-              🩸
+              <Droplet className="h-5 w-5 text-rose-600" />
             </span>
             <div>
               <h2 className="text-lg font-black text-zinc-900 dark:text-zinc-100 tracking-tight">
@@ -167,7 +168,7 @@ export default function DonorProfileModal({
             onClick={onClose}
             className="rounded-xl p-2 text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer"
           >
-            ✕
+            <X className="h-5 w-5" />
           </button>
         </div>
 
@@ -204,8 +205,9 @@ export default function DonorProfileModal({
                   <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 block">
                     Availability Status
                   </span>
-                  <span className={`text-[11px] font-semibold ${availability === "AVAILABLE" ? "text-emerald-600" : "text-zinc-400"}`}>
-                    {availability === "AVAILABLE" ? "🟢 Ready to donate" : "⚪ Currently unavailable"}
+                  <span className={`text-[11px] font-semibold flex items-center gap-1.5 ${availability === "AVAILABLE" ? "text-emerald-600" : "text-zinc-400"}`}>
+                    <span className={`inline-block w-2 h-2 rounded-full ${availability === "AVAILABLE" ? "bg-emerald-500" : "bg-slate-300"}`} />
+                    <span>{availability === "AVAILABLE" ? "Ready to donate" : "Currently unavailable"}</span>
                   </span>
                 </div>
                 <button
@@ -322,7 +324,10 @@ export default function DonorProfileModal({
 
               {/* Privacy Notice */}
               <div className="rounded-2xl border border-blue-200/80 bg-blue-50/50 dark:border-blue-900/60 dark:bg-blue-950/20 p-3.5 text-[11px] text-blue-800 dark:text-blue-300 leading-relaxed">
-                🛡️ <strong>Privacy Protection:</strong> Your phone number and exact coordinates are NEVER published on any open list. Requesters only see your contact details if you explicitly click &ldquo;I Can Help&rdquo; on an active request.
+                <span className="flex items-start gap-2">
+                  <ShieldCheck className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+                  <span><strong>Privacy Protection:</strong> Your phone number and exact coordinates are NEVER published on any open list. Requesters only see your contact details if you explicitly click &ldquo;I Can Help&rdquo; on an active request.</span>
+                </span>
               </div>
 
               {/* Action Buttons */}

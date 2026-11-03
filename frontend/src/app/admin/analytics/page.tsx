@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import AdminNav from "@/components/AdminNav";
 import { apiFetch } from "@/lib/api";
 import { AdminOperationsAnalyticsResponse } from "@/lib/types";
+import { RefreshCw } from "lucide-react";
 
 export default function AdminAnalyticsPage() {
   const [data, setData] = useState<AdminOperationsAnalyticsResponse | null>(null);
@@ -45,9 +46,10 @@ export default function AdminAnalyticsPage() {
 
         <button
           onClick={loadData}
-          className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3.5 py-2 text-xs font-bold text-zinc-700 dark:text-zinc-300 shadow-xs hover:bg-zinc-50 transition shrink-0"
+          className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3.5 py-2 text-xs font-bold text-zinc-700 dark:text-zinc-300 shadow-xs hover:bg-zinc-50 transition shrink-0 inline-flex items-center gap-1.5"
         >
-          🔄 Refresh Metrics
+          <RefreshCw className="h-3.5 w-3.5" />
+          <span>Refresh Metrics</span>
         </button>
       </div>
 

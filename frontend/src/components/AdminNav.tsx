@@ -4,6 +4,21 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import {
+  BarChart3,
+  FileText,
+  Flag,
+  MessageSquare,
+  Droplet,
+  ShieldAlert,
+  Search,
+  Eye,
+  Layers,
+  Users,
+  ShieldCheck,
+  Tag,
+  ArrowLeft,
+} from "lucide-react";
 
 interface AdminNavProps {
   pendingReports?: number;
@@ -15,50 +30,80 @@ export default function AdminNav({ pendingReports, pendingFlags }: AdminNavProps
   const { user } = useAuth();
 
   const links = [
-    { href: "/admin", label: "Overview", bn: "সংক্ষিপ্ত বিবরণ", icon: "📊" },
+    {
+      href: "/admin",
+      label: "Overview",
+      bn: "সংক্ষিপ্ত বিবরণ",
+      icon: <BarChart3 className="h-4 w-4" aria-hidden="true" />,
+    },
     {
       href: "/admin/reports",
       label: "Reports Queue",
       bn: "প্রতিবেদন সারি",
-      icon: "📋",
+      icon: <FileText className="h-4 w-4" aria-hidden="true" />,
       badge: pendingReports,
     },
     {
       href: "/admin/flags",
       label: "Safety Flags",
       bn: "সুরক্ষা ফ্ল্যাগ",
-      icon: "🚩",
+      icon: <Flag className="h-4 w-4" aria-hidden="true" />,
       badge: pendingFlags,
     },
-    { href: "/admin/comments", label: "Comments", bn: "মন্তব্য", icon: "💬" },
+    {
+      href: "/admin/comments",
+      label: "Comments",
+      bn: "মন্তব্য",
+      icon: <MessageSquare className="h-4 w-4" aria-hidden="true" />,
+    },
     {
       href: "/admin/blood-help",
       label: "Blood Help",
       bn: "রক্ত সহায়তা",
-      icon: "🩸",
+      icon: <Droplet className="h-4 w-4" aria-hidden="true" />,
     },
     {
       href: "/admin/emergency-services",
       label: "Safety Directory",
       bn: "জরুরি সেবা",
-      icon: "🚨",
+      icon: <ShieldAlert className="h-4 w-4" aria-hidden="true" />,
     },
     {
       href: "/admin/missing-person",
       label: "Missing Persons",
       bn: "নিখোঁজ ব্যক্তি",
-      icon: "🔍",
+      icon: <Search className="h-4 w-4" aria-hidden="true" />,
     },
     {
       href: "/admin/missing-person/sightings",
       label: "Sightings",
       bn: "তথ্য যাচাই",
-      icon: "👁️",
+      icon: <Eye className="h-4 w-4" aria-hidden="true" />,
     },
-    { href: "/admin/clusters", label: "Clusters", bn: "ক্লাস্টার", icon: "🔶" },
-    { href: "/admin/users", label: "Users", bn: "ব্যবহারকারী", icon: "👥" },
-    { href: "/admin/reputation", label: "Reputation & Blood", bn: "সুনাম ও রক্তদান", icon: "🛡️" },
-    { href: "/admin/categories", label: "Categories", bn: "ক্যাটাগরি", icon: "🏷️" },
+    {
+      href: "/admin/clusters",
+      label: "Clusters",
+      bn: "ক্লাস্টার",
+      icon: <Layers className="h-4 w-4" aria-hidden="true" />,
+    },
+    {
+      href: "/admin/users",
+      label: "Users",
+      bn: "ব্যবহারকারী",
+      icon: <Users className="h-4 w-4" aria-hidden="true" />,
+    },
+    {
+      href: "/admin/reputation",
+      label: "Reputation & Blood",
+      bn: "সুনাম ও রক্তদান",
+      icon: <ShieldCheck className="h-4 w-4" aria-hidden="true" />,
+    },
+    {
+      href: "/admin/categories",
+      label: "Categories",
+      bn: "ক্যাটাগরি",
+      icon: <Tag className="h-4 w-4" aria-hidden="true" />,
+    },
   ];
 
   const isLinkActive = (href: string) => {
@@ -73,16 +118,16 @@ export default function AdminNav({ pendingReports, pendingFlags }: AdminNavProps
   };
 
   return (
-    <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 sticky top-14 sm:top-16 z-40 shadow-2xs">
+    <div className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-14 sm:top-16 z-40 shadow-xs">
       {/* Top Admin Status Strip */}
-      <div className="border-b border-zinc-100 dark:border-zinc-800/80 bg-zinc-50/80 dark:bg-zinc-950/40 px-3 sm:px-6 lg:px-8 py-2">
+      <div className="border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/80 dark:bg-slate-950/40 px-3 sm:px-6 lg:px-8 py-2">
         <div className="mx-auto max-w-7xl flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-500/10 px-2 py-0.5 text-[11px] font-black text-amber-700 dark:text-amber-400 border border-amber-500/30">
+            <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-500/10 px-2 py-0.5 text-[11px] font-bold text-amber-800 dark:text-amber-400 border border-amber-500/30">
               <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
               ADMIN CONSOLE • অ্যাডমিন প্যানেল
             </span>
-            <span className="hidden sm:inline text-xs text-zinc-400 font-medium">
+            <span className="hidden sm:inline text-xs text-slate-400 font-medium">
               NIRAPOTTA Moderation & Oversight
             </span>
           </div>
@@ -90,14 +135,14 @@ export default function AdminNav({ pendingReports, pendingFlags }: AdminNavProps
           <div className="flex items-center gap-3">
             <Link
               href="/"
-              className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:underline"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
             >
-              <span>←</span>
+              <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
               <span>Exit to Public Site</span>
             </Link>
 
             {user && (
-              <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-300 hidden md:inline">
+              <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 hidden md:inline">
                 {user.full_name || user.username}
               </span>
             )}
@@ -118,16 +163,16 @@ export default function AdminNav({ pendingReports, pendingFlags }: AdminNavProps
                 key={link.href}
                 href={link.href}
                 aria-current={isActive ? "page" : undefined}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition whitespace-nowrap select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition whitespace-nowrap select-none focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-amber-500 ${
                   isActive
                     ? "bg-amber-100/80 text-amber-950 dark:bg-amber-950/80 dark:text-amber-200 font-bold"
-                    : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100"
+                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100"
                 }`}
               >
-                <span className="text-xs">{link.icon}</span>
+                <span className="shrink-0">{link.icon}</span>
                 <span>{link.label}</span>
                 {link.badge !== undefined && link.badge > 0 && (
-                  <span className="ml-1 rounded-full bg-red-600 text-white text-[10px] font-black px-1.5 py-0.2 leading-none">
+                  <span className="ml-1 rounded-full bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 leading-none">
                     {link.badge}
                   </span>
                 )}

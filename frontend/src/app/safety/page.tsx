@@ -13,6 +13,7 @@ import {
 } from "@/lib/location";
 import EmergencyCallModal from "@/components/EmergencyCallModal";
 import EmergencyActionPlanModal from "@/components/EmergencyActionPlanModal";
+import { Map, Phone, PhoneCall, Shield, ShieldCheck, FileText, Search, Plus, Bell, MapPin, LocateFixed, AlertTriangle, Check, Lock, Bike, Flag, ExternalLink } from "lucide-react";
 
 export default function SafetyCenterPage() {
   const [lang, setLang] = useState<Language>("en");
@@ -173,7 +174,7 @@ export default function SafetyCenterPage() {
             href="/safety-map"
             className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-750 text-xs font-bold text-zinc-800 dark:text-zinc-200 shadow-2xs transition self-start sm:self-auto shrink-0"
           >
-            <span>🗺️</span>
+            <Map className="h-4 w-4" />
             <span>{lang === "bn" ? "সেফটি ম্যাপ দেখুন" : "Explore Safety Map"}</span>
           </Link>
         </div>
@@ -190,7 +191,8 @@ export default function SafetyCenterPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
             <div className="space-y-1.5 max-w-lg">
               <div className="inline-flex items-center gap-1.5 rounded-full bg-red-900/50 backdrop-blur-xs px-3 py-0.5 text-[11px] font-bold tracking-wider uppercase text-red-100 border border-red-400/20">
-                <span>🇧🇩</span> {lang === "bn" ? t.national_emergency_title : "National Emergency Service"}
+                <Flag className="h-3.5 w-3.5 text-red-200" />
+                <span>{lang === "bn" ? t.national_emergency_title : "National Emergency Service"}</span>
               </div>
               <h3 className="text-3xl sm:text-4xl font-black tracking-tight flex items-center gap-2">
                 <span>999</span>
@@ -208,7 +210,7 @@ export default function SafetyCenterPage() {
               onClick={() => handleInitiateEmergencyCall("999", lang === "bn" ? "জাতীয় জরুরি সেবা — ৯৯৯" : "National Emergency Service — 999")}
               className="inline-flex items-center justify-center gap-2.5 rounded-2xl bg-white px-8 py-4 text-base font-black text-red-600 shadow-xl shadow-red-950/20 hover:bg-red-50 active:scale-95 transition-all text-center w-full sm:w-auto shrink-0 min-h-[52px] cursor-pointer ring-4 ring-white/30"
             >
-              <span className="text-xl">📞</span>
+              <PhoneCall className="h-5 w-5" />
               <span>{t.emergency_call_999}</span>
             </button>
           </div>
@@ -230,7 +232,7 @@ export default function SafetyCenterPage() {
               </span>
             </div>
             <span className="h-8 w-8 rounded-xl bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 flex items-center justify-center font-bold text-sm">
-              📞
+              <Phone className="h-4 w-4" />
             </span>
           </button>
 
@@ -248,7 +250,7 @@ export default function SafetyCenterPage() {
               </span>
             </div>
             <span className="h-8 w-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-sm">
-              📞
+              <Phone className="h-4 w-4" />
             </span>
           </button>
 
@@ -266,20 +268,20 @@ export default function SafetyCenterPage() {
               </span>
             </div>
             <span className="h-8 w-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-sm">
-              📞
+              <Phone className="h-4 w-4" />
             </span>
           </button>
         </div>
       </section>
 
       {/* 3. SAFETY CENTER QUICK LINKS HUB */}
-      <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
         <Link
           href="/safety/road-intelligence"
           className="p-3.5 sm:p-4 rounded-2xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/40 dark:bg-rose-950/20 hover:border-rose-500 transition shadow-2xs flex flex-col justify-between"
         >
           <div className="h-8 w-8 rounded-xl bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 flex items-center justify-center text-base mb-2">
-            🛡️
+            <Shield className="h-4 w-4" />
           </div>
           <div>
             <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1">
@@ -292,13 +294,31 @@ export default function SafetyCenterPage() {
           </div>
         </Link>
 
+        <Link
+          href="/safety/safe-ride"
+          className="p-3.5 sm:p-4 rounded-2xl border border-cyan-200 dark:border-cyan-900/60 bg-cyan-50/40 dark:bg-cyan-950/20 hover:border-cyan-500 transition shadow-2xs flex flex-col justify-between"
+        >
+          <div className="h-8 w-8 rounded-xl bg-cyan-100 dark:bg-cyan-900/60 text-cyan-700 dark:text-cyan-300 flex items-center justify-center text-base mb-2">
+            <Bike className="h-4 w-4" />
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1">
+              <span>{lang === "bn" ? "সেফ রাইড" : "Safe Ride"}</span>
+              <span className="text-[9px] font-black uppercase px-1 py-0.2 rounded-full bg-cyan-600 text-white">AI</span>
+            </h4>
+            <p className="text-[11px] text-zinc-400 mt-0.5 line-clamp-1">
+              {lang === "bn" ? "হেলমেট যাচাই ও ট্র্যাকিং" : "Helmet check & speed HUD"}
+            </p>
+          </div>
+        </Link>
+
         <button
           type="button"
           onClick={() => setActionPlanOpen(true)}
           className="p-3.5 sm:p-4 rounded-2xl border border-red-200 dark:border-red-900/60 bg-red-50/40 dark:bg-red-950/20 hover:border-red-500 transition shadow-2xs flex flex-col justify-between text-left cursor-pointer"
         >
           <div className="h-8 w-8 rounded-xl bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300 flex items-center justify-center text-base mb-2">
-            📋
+            <FileText className="h-4 w-4" />
           </div>
           <div>
             <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1">
@@ -316,7 +336,7 @@ export default function SafetyCenterPage() {
           className="p-3.5 sm:p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-emerald-500 dark:hover:border-emerald-700 transition shadow-2xs flex flex-col justify-between"
         >
           <div className="h-8 w-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-base mb-2">
-            🗺️
+            <Map className="h-4 w-4" />
           </div>
           <div>
             <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
@@ -333,7 +353,7 @@ export default function SafetyCenterPage() {
           className="p-3.5 sm:p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-amber-500 dark:hover:border-amber-700 transition shadow-2xs flex flex-col justify-between"
         >
           <div className="h-8 w-8 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 flex items-center justify-center text-base mb-2">
-            🔍
+            <Search className="h-4 w-4" />
           </div>
           <div>
             <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
@@ -350,7 +370,7 @@ export default function SafetyCenterPage() {
           className="p-3.5 sm:p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-blue-500 dark:hover:border-blue-700 transition shadow-2xs flex flex-col justify-between"
         >
           <div className="h-8 w-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 flex items-center justify-center text-base mb-2">
-            📋
+            <FileText className="h-4 w-4" />
           </div>
           <div>
             <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
@@ -367,7 +387,7 @@ export default function SafetyCenterPage() {
           className="p-3.5 sm:p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-emerald-500 dark:hover:border-emerald-700 transition shadow-2xs flex flex-col justify-between"
         >
           <div className="h-8 w-8 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 flex items-center justify-center text-base mb-2">
-            ➕
+            <Plus className="h-4 w-4" />
           </div>
           <div>
             <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
@@ -381,11 +401,11 @@ export default function SafetyCenterPage() {
 
         <Link
           href="/notifications"
-          className="col-span-2 sm:col-span-3 lg:col-span-6 p-3.5 sm:p-4 rounded-2xl border border-teal-200 dark:border-teal-800/60 bg-teal-50/40 dark:bg-teal-950/20 hover:border-teal-500 transition shadow-2xs flex items-center justify-between"
+          className="col-span-2 sm:col-span-3 lg:col-span-7 p-3.5 sm:p-4 rounded-2xl border border-teal-200 dark:border-teal-800/60 bg-teal-50/40 dark:bg-teal-950/20 hover:border-teal-500 transition shadow-2xs flex items-center justify-between"
         >
           <div className="flex items-center gap-3">
             <div className="h-9 w-9 rounded-xl bg-teal-100 dark:bg-teal-900/60 text-teal-800 dark:text-teal-300 flex items-center justify-center text-lg">
-              🔔
+              <Bell className="h-5 w-5" />
             </div>
             <div>
               <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
@@ -407,7 +427,7 @@ export default function SafetyCenterPage() {
             <h3 className="text-base sm:text-lg font-black text-zinc-900 dark:text-zinc-100 tracking-tight">
               {activeLocationName ? (
                 <span className="flex items-center gap-2">
-                  <span>📍</span>
+                  <MapPin className="h-4 w-4 text-emerald-600" />
                   <span>{lang === "bn" ? "নির্বাচিত এলাকা:" : "Selected Area:"}</span>
                   <strong className="text-emerald-700 dark:text-emerald-400">{activeLocationName}</strong>
                 </span>
@@ -433,7 +453,7 @@ export default function SafetyCenterPage() {
               </>
             ) : (
               <>
-                <span>🎯</span>
+                <LocateFixed className="h-4 w-4" />
                 <span>{t.find_near_me}</span>
               </>
             )}
@@ -445,7 +465,7 @@ export default function SafetyCenterPage() {
           <div className="rounded-2xl bg-amber-50 dark:bg-amber-950/40 p-4 border border-amber-200 dark:border-amber-900 text-xs text-amber-900 dark:text-amber-200 space-y-3 animate-in fade-in duration-200 shadow-xs">
             <div className="space-y-1">
               <p className="font-bold flex items-center gap-1.5 text-xs sm:text-sm text-amber-950 dark:text-amber-100">
-                <span>⚠️</span>
+                <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
                 <span>
                   {locErrorInfo?.code === "SERVICES_DISABLED"
                     ? (lang === "bn" ? t.services_disabled_title : "Device Location Turned Off")
@@ -583,7 +603,7 @@ export default function SafetyCenterPage() {
           {/* Warning Banner if directory has unverified contacts */}
           {result.warning_message && (
             <div className="rounded-2xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 p-4 text-xs font-semibold text-amber-800 dark:text-amber-200 flex items-center gap-3">
-              <span className="text-lg">⚠️</span>
+              <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
               <span>{t.contact_unverified_warning}</span>
             </div>
           )}
@@ -632,20 +652,24 @@ export default function SafetyCenterPage() {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 px-3 py-1 text-xs font-bold text-emerald-800 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-900/60">
-                    <span>🚓</span> {t.nearest_police}
+                    <Shield className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-300" />
+                    <span>{t.nearest_police}</span>
                   </span>
                   {result.nearest_police_station.verification_status === "VERIFIED" ? (
                     <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-950/80 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800 dark:text-emerald-300">
-                      ✓ {t.status_verified}
+                      <Check className="h-3 w-3" />
+                      <span>{t.status_verified}</span>
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-950/80 px-2.5 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-300">
-                      ⚠️ {t.contact_unverified_warning}
+                      <AlertTriangle className="h-3 w-3 text-amber-600" />
+                      <span>{t.contact_unverified_warning}</span>
                     </span>
                   )}
                 </div>
-                <div className="rounded-full bg-zinc-100 dark:bg-zinc-800 px-3 py-1 text-xs font-extrabold text-zinc-900 dark:text-zinc-100">
-                  📍 {result.nearest_police_station.distance_formatted}
+                <div className="rounded-full bg-zinc-100 dark:bg-zinc-800 px-3 py-1 text-xs font-extrabold text-zinc-900 dark:text-zinc-100 flex items-center gap-1">
+                  <MapPin className="h-3 w-3 text-zinc-400" />
+                  <span>{result.nearest_police_station.distance_formatted}</span>
                 </div>
               </div>
 
@@ -670,9 +694,10 @@ export default function SafetyCenterPage() {
                     href={result.nearest_police_station.source_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-emerald-700 dark:text-emerald-400 hover:underline"
+                    className="text-emerald-700 dark:text-emerald-400 hover:underline inline-flex items-center"
+                    title="External Source"
                   >
-                    ↗
+                    <ExternalLink className="h-3 w-3" />
                   </a>
                 )}
                 {result.nearest_police_station.last_verified_at && (
@@ -688,7 +713,7 @@ export default function SafetyCenterPage() {
                   href={`tel:${result.nearest_police_station.phone}`}
                   className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 px-5 py-2.5 text-xs font-bold text-white shadow-2xs transition active:scale-95"
                 >
-                  <span>📞</span>
+                  <Phone className="h-4 w-4" />
                   <span>{t.call_now}: {result.nearest_police_station.phone}</span>
                 </a>
                 <a
@@ -697,7 +722,7 @@ export default function SafetyCenterPage() {
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2.5 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-750 transition"
                 >
-                  <span>🗺️</span>
+                  <Map className="h-4 w-4" />
                   <span>{t.get_directions}</span>
                 </a>
               </div>
@@ -710,20 +735,24 @@ export default function SafetyCenterPage() {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-950/60 px-3 py-1 text-xs font-bold text-blue-800 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/60">
-                    <span>👮‍♂️</span> {t.nearest_police_box}
+                    <ShieldCheck className="h-3.5 w-3.5 text-blue-700 dark:text-blue-300" />
+                    <span>{t.nearest_police_box}</span>
                   </span>
                   {result.nearest_police_box.verification_status === "VERIFIED" ? (
                     <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-950/80 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800 dark:text-emerald-300">
-                      ✓ {t.status_verified}
+                      <Check className="h-3 w-3" />
+                      <span>{t.status_verified}</span>
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-950/80 px-2.5 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-300">
-                      ⚠️ {t.contact_unverified_warning}
+                      <AlertTriangle className="h-3 w-3 text-amber-600" />
+                      <span>{t.contact_unverified_warning}</span>
                     </span>
                   )}
                 </div>
-                <div className="rounded-full bg-zinc-100 dark:bg-zinc-800 px-3 py-1 text-xs font-extrabold text-zinc-900 dark:text-zinc-100">
-                  📍 {result.nearest_police_box.distance_formatted}
+                <div className="rounded-full bg-zinc-100 dark:bg-zinc-800 px-3 py-1 text-xs font-extrabold text-zinc-900 dark:text-zinc-100 flex items-center gap-1">
+                  <MapPin className="h-3 w-3 text-zinc-400" />
+                  <span>{result.nearest_police_box.distance_formatted}</span>
                 </div>
               </div>
 
@@ -748,9 +777,10 @@ export default function SafetyCenterPage() {
                     href={result.nearest_police_box.source_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-600 dark:text-blue-400 hover:underline"
+                    className="text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center"
+                    title="External Source"
                   >
-                    ↗
+                    <ExternalLink className="h-3 w-3" />
                   </a>
                 )}
                 {result.nearest_police_box.last_verified_at && (
@@ -763,7 +793,7 @@ export default function SafetyCenterPage() {
                   href={`tel:${result.nearest_police_box.phone}`}
                   className="inline-flex items-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2 text-xs font-bold text-white shadow-2xs transition active:scale-95"
                 >
-                  <span>📞</span>
+                  <Phone className="h-4 w-4" />
                   <span>{t.call_now}: {result.nearest_police_box.phone}</span>
                 </a>
                 <a
@@ -772,7 +802,7 @@ export default function SafetyCenterPage() {
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-750 transition"
                 >
-                  <span>🗺️</span>
+                  <Map className="h-4 w-4" />
                   <span>{t.get_directions}</span>
                 </a>
               </div>
@@ -794,15 +824,17 @@ export default function SafetyCenterPage() {
                     <div className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-1.5">
                         <span className="font-semibold text-zinc-500 uppercase tracking-wider text-[10px]">
-                          {s.service_type === "POLICE_STATION" ? "🚓 Police" : s.service_type === "POLICE_BOX" ? "👮‍♂️ Police Box" : s.service_type === "FIRE_SERVICE" ? "🚒 Fire" : "🚑 Emergency"}
+                          {s.service_type === "POLICE_STATION" ? "Police Station" : s.service_type === "POLICE_BOX" ? "Police Box" : s.service_type === "FIRE_SERVICE" ? "Fire Service" : "Emergency Unit"}
                         </span>
                         {s.verification_status === "VERIFIED" ? (
-                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 font-bold">
-                            ✓ {t.status_verified}
+                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 font-bold inline-flex items-center gap-1">
+                            <Check className="h-2.5 w-2.5" />
+                            <span>{t.status_verified}</span>
                           </span>
                         ) : (
-                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 font-bold">
-                            ⚠️ {t.status_unverified}
+                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 font-bold inline-flex items-center gap-1">
+                            <AlertTriangle className="h-2.5 w-2.5 text-amber-600" />
+                            <span>{t.status_unverified}</span>
                           </span>
                         )}
                       </div>
@@ -832,7 +864,8 @@ export default function SafetyCenterPage() {
                         href={`tel:${s.phone}`}
                         className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:underline"
                       >
-                        <span>📞</span> {s.phone}
+                        <Phone className="h-3.5 w-3.5" />
+                        <span>{s.phone}</span>
                       </a>
                       <a
                         href={s.directions_url}
@@ -858,7 +891,7 @@ export default function SafetyCenterPage() {
       {/* 7. SAFETY INFORMATION & PRIVACY BEST PRACTICES */}
       <section className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 p-6 sm:p-8 space-y-4 text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
         <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-          <span>🛡️</span>
+          <Shield className="h-4 w-4 text-emerald-600" />
           <span>{lang === "bn" ? "নাগরিক সুরক্ষা ও প্ল্যাটফর্ম নির্দেশিকা" : "Civic Safety & Platform Guidelines"}</span>
         </h3>
         <p>
@@ -868,8 +901,9 @@ export default function SafetyCenterPage() {
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-[11px]">
           <div className="p-3 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700">
-            <strong className="text-zinc-900 dark:text-zinc-100 block mb-1">
-              🔒 {lang === "bn" ? "প্রাইভেসি নিশ্চয়তা" : "Zero-Tracking Guarantee"}
+            <strong className="text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5 mb-1">
+              <Lock className="h-3.5 w-3.5 text-zinc-600 dark:text-zinc-300" />
+              <span>{lang === "bn" ? "প্রাইভেসি নিশ্চয়তা" : "Zero-Tracking Guarantee"}</span>
             </strong>
             <span>
               {lang === "bn"
@@ -878,8 +912,9 @@ export default function SafetyCenterPage() {
             </span>
           </div>
           <div className="p-3 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700">
-            <strong className="text-zinc-900 dark:text-zinc-100 block mb-1">
-              ⚠️ {lang === "bn" ? "তাত্ক্ষণিক বিপদ" : "Immediate Danger"}
+            <strong className="text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5 mb-1">
+              <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
+              <span>{lang === "bn" ? "তাত্ক্ষণিক বিপদ" : "Immediate Danger"}</span>
             </strong>
             <span>
               {lang === "bn"

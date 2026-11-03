@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
 import { AdminReportPagination, Category, ReportStatus } from "@/lib/types";
+import { Search, MapPin } from "lucide-react";
 
 const STATUS_BADGES: Record<
   ReportStatus,
@@ -226,7 +227,7 @@ export default function AdminReportsQueuePage() {
       ) : !data || data.items.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700 p-12 text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-400">
-            🔍
+            <Search className="h-6 w-6 text-zinc-400" />
           </div>
           <h3 className="mt-4 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
             No incident reports found
@@ -267,7 +268,10 @@ export default function AdminReportsQueuePage() {
                         {report.category?.name || "Incident"}
                       </td>
                       <td className="py-3.5 px-4 text-zinc-600 dark:text-zinc-400 max-w-[160px] truncate">
-                        📍 {report.location_text}
+                        <span className="inline-flex items-center gap-1">
+                          <MapPin className="h-3 w-3 shrink-0" />
+                          <span className="truncate">{report.location_text}</span>
+                        </span>
                       </td>
                       <td className="py-3.5 px-4">
                         {report.is_anonymous ? (

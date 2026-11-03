@@ -8,6 +8,7 @@ import { BloodGroup, BloodUrgency, PublicBloodRequest } from "@/lib/types";
 import { useAuth } from "@/context/AuthContext";
 import { useBackClose } from "@/lib/useBackClose";
 import { registerBackHandler, BackPriority } from "@/lib/backButton";
+import { Lock, AlertTriangle, Shield, Droplets } from "lucide-react";
 
 const BLOOD_GROUPS: BloodGroup[] = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
@@ -63,7 +64,9 @@ export default function CreateBloodRequestPage() {
   if (!isAuthenticated) {
     return (
       <div className="mx-auto max-w-xl px-4 py-16 text-center space-y-4">
-        <span className="text-4xl">🔒</span>
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-500 mx-auto">
+          <Lock className="h-6 w-6" />
+        </div>
         <h1 className="text-xl font-black text-zinc-900 dark:text-zinc-100">
           Sign In Required to Request Blood
         </h1>
@@ -140,7 +143,7 @@ export default function CreateBloodRequestPage() {
       <div className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 sm:p-10 shadow-2xs space-y-6">
         <div className="space-y-1">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200/60 dark:border-rose-900/60">
-            <span>🚨</span>
+            <AlertTriangle className="h-3.5 w-3.5" />
             <span>Emergency Blood Request</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">
@@ -207,9 +210,9 @@ export default function CreateBloodRequestPage() {
                 onChange={(e) => setUrgency(e.target.value as BloodUrgency)}
                 className="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-rose-600 font-bold"
               >
-                <option value="EMERGENCY">🚨 Emergency (Immediate Need / Operation)</option>
-                <option value="URGENT">⚠️ Urgent (Needed within 24 hours)</option>
-                <option value="NORMAL">ℹ️ Normal (Scheduled in advance)</option>
+                <option value="EMERGENCY">Emergency (Immediate Need / Operation)</option>
+                <option value="URGENT">Urgent (Needed within 24 hours)</option>
+                <option value="NORMAL">Normal (Scheduled in advance)</option>
               </select>
             </div>
           </div>
@@ -350,8 +353,9 @@ export default function CreateBloodRequestPage() {
           </div>
 
           {/* Privacy Protection Notice */}
-          <div className="rounded-2xl border border-blue-200/80 bg-blue-50/50 dark:border-blue-900/60 dark:bg-blue-950/20 p-4 text-xs text-blue-800 dark:text-blue-300 leading-relaxed">
-            🛡️ <strong>Privacy Protection Guaranteed:</strong> Your patient&apos;s home address and exact GPS coordinates are NEVER collected or broadcasted. Only the public hospital name, area, and urgency are published on the emergency board.
+          <div className="rounded-2xl border border-blue-200/80 bg-blue-50/50 dark:border-blue-900/60 dark:bg-blue-950/20 p-4 text-xs text-blue-800 dark:text-blue-300 leading-relaxed flex items-start gap-2.5">
+            <Shield className="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400 mt-0.5" />
+            <span><strong>Privacy Protection Guaranteed:</strong> Your patient&apos;s home address and exact GPS coordinates are NEVER collected or broadcasted. Only the public hospital name, area, and urgency are published on the emergency board.</span>
           </div>
 
           {/* Submit CTA */}
@@ -387,7 +391,7 @@ export default function CreateBloodRequestPage() {
           >
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 font-bold text-lg">
-                🩸
+                <Droplets className="h-5 w-5" />
               </div>
               <div>
                 <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">

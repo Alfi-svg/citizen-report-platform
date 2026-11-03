@@ -5,6 +5,7 @@ import AdminNav from "@/components/AdminNav";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
+import { HeartHandshake, Flag } from "lucide-react";
 
 interface AdminBloodRequest {
   id: string;
@@ -142,7 +143,7 @@ export default function AdminBloodHelpPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200/60 dark:border-rose-900/60 mb-2">
-              <span>🩸</span>
+              <HeartHandshake className="h-3.5 w-3.5" />
               <span>Blood Help Administration</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">
@@ -270,8 +271,9 @@ export default function AdminBloodHelpPage() {
                           </td>
                           <td className="p-4">
                             {r.flag_count > 0 ? (
-                              <span className="font-bold text-red-600 bg-red-50 dark:bg-red-950 px-2 py-0.5 rounded-full">
-                                🚩 {r.flag_count}
+                              <span className="font-bold text-red-600 bg-red-50 dark:bg-red-950 px-2 py-0.5 rounded-full inline-flex items-center gap-1 text-[11px]">
+                                <Flag className="h-3 w-3" />
+                                <span>{r.flag_count}</span>
                               </span>
                             ) : (
                               <span className="text-zinc-400">0</span>

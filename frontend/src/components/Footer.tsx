@@ -7,6 +7,7 @@ import { Language } from "@/lib/i18n";
 import { DEVELOPER_CONFIG } from "@/lib/developerConfig";
 import DeveloperProfileModal from "@/components/DeveloperProfileModal";
 import { Capacitor } from "@capacitor/core";
+import { Smartphone, Siren, Phone, Landmark, Check } from "lucide-react";
 
 export default function Footer() {
   const [lang, setLang] = useState<Language>("en");
@@ -134,7 +135,7 @@ export default function Footer() {
                       download="nirapotta.apk"
                       className="hover:text-emerald-700 dark:hover:text-emerald-400 transition inline-flex items-center gap-1 font-semibold text-emerald-800 dark:text-emerald-300"
                     >
-                      <span>📱</span>
+                      <Smartphone className="h-4 w-4" />
                       <span>{isBn ? "অ্যান্ড্রয়েড অ্যাপ (APK)" : "Download Android App"}</span>
                     </a>
                   </li>
@@ -154,18 +155,20 @@ export default function Footer() {
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300 font-bold border border-red-200/60 dark:border-red-900/60 hover:bg-red-100 transition shadow-2xs"
                     title="Call National Emergency 999"
                   >
-                    <span>🚨</span>
+                    <Siren className="h-4 w-4 text-red-600" />
                     <span>{isBn ? "জাতীয় হটলাইন: ৯৯৯" : "National: 999"}</span>
                   </a>
                 </li>
                 <li>
-                  <a href="tel:109" className="hover:text-zinc-900 dark:hover:text-zinc-200 transition block">
-                    📞 {isBn ? "নারী ও শিশু হেল্পলাইন: ১০৯" : "Women & Child: 109"}
+                  <a href="tel:109" className="hover:text-zinc-900 dark:hover:text-zinc-200 transition inline-flex items-center gap-1.5">
+                    <Phone className="h-3.5 w-3.5 text-zinc-500" />
+                    <span>{isBn ? "নারী ও শিশু হেল্পলাইন: ১০৯" : "Women & Child: 109"}</span>
                   </a>
                 </li>
                 <li>
-                  <a href="tel:333" className="hover:text-zinc-900 dark:hover:text-zinc-200 transition block">
-                    🏛️ {isBn ? "নাগরিক সেবা: ৩৩৩" : "Citizen Services: 333"}
+                  <a href="tel:333" className="hover:text-zinc-900 dark:hover:text-zinc-200 transition inline-flex items-center gap-1.5">
+                    <Landmark className="h-3.5 w-3.5 text-zinc-500" />
+                    <span>{isBn ? "নাগরিক সেবা: ৩৩৩" : "Citizen Services: 333"}</span>
                   </a>
                 </li>
               </ul>
@@ -187,7 +190,7 @@ export default function Footer() {
                   }`}
                 >
                   <span>English</span>
-                  {lang === "en" && <span className="text-emerald-600 font-bold">✓</span>}
+                  {lang === "en" && <Check className="h-4 w-4 text-emerald-600 font-bold" />}
                 </button>
                 <button
                   type="button"
@@ -199,7 +202,7 @@ export default function Footer() {
                   }`}
                 >
                   <span>বাংলা</span>
-                  {lang === "bn" && <span className="text-emerald-600 font-bold">✓</span>}
+                  {lang === "bn" && <Check className="h-4 w-4 text-emerald-600 font-bold" />}
                 </button>
               </div>
             </div>
@@ -210,7 +213,7 @@ export default function Footer() {
             {/* Bottom Line: Copyright & Legal */}
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-2.5 gap-y-1">
               <p>
-                © {new Date().getFullYear()} {isBn ? "নিরাপত্তা" : "NIRAPOTTA"}. {isBn ? "সর্বস্বত্ব সংরক্ষিত।" : "All rights reserved."}
+                &copy; {new Date().getFullYear()} {isBn ? "নিরাপত্তা" : "NIRAPOTTA"}. {isBn ? "সর্বস্বত্ব সংরক্ষিত।" : "All rights reserved."}
               </p>
               <span className="hidden sm:inline text-zinc-400">•</span>
               <Link href="/privacy" className="hover:text-emerald-700 dark:hover:text-emerald-400 hover:underline">

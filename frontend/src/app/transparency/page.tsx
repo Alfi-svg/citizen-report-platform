@@ -7,6 +7,7 @@ import {
   PublicTransparencyOverviewResponse,
 } from "@/lib/types";
 import { translations, Language } from "@/lib/i18n";
+import { BarChart3, Download, Scale, CheckCircle2, TrendingUp, Table, Calendar, Map, Lock, BookOpen } from "lucide-react";
 
 export default function TransparencyDashboardPage() {
   const [lang, setLang] = useState<Language>("en");
@@ -108,8 +109,8 @@ export default function TransparencyDashboardPage() {
       {/* 1. Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-6">
         <div className="flex items-center gap-3.5">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xl font-bold border border-zinc-200 dark:border-zinc-700 shadow-2xs">
-            📊
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 shadow-2xs">
+            <BarChart3 className="h-6 w-6 text-zinc-700 dark:text-zinc-300" />
           </div>
           <div>
             <h1 className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">
@@ -130,15 +131,16 @@ export default function TransparencyDashboardPage() {
             className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-1.5 text-xs font-bold text-zinc-700 dark:text-zinc-300 shadow-2xs hover:bg-zinc-50 dark:hover:bg-zinc-700 transition flex items-center gap-1.5 cursor-pointer"
             title="Download CSV dataset"
           >
-            <span>📥</span>
+            <Download className="h-3.5 w-3.5" />
             <span>CSV</span>
           </button>
           <button
             onClick={() => handleExport("json")}
-            className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-1.5 text-xs font-bold text-zinc-700 dark:text-zinc-300 shadow-2xs hover:bg-zinc-50 dark:hover:bg-zinc-700 transition cursor-pointer"
+            className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-1.5 text-xs font-bold text-zinc-700 dark:text-zinc-300 shadow-2xs hover:bg-zinc-50 dark:hover:bg-zinc-700 transition cursor-pointer flex items-center gap-1.5"
             title="Download JSON dataset"
           >
-            JSON
+            <Download className="h-3.5 w-3.5" />
+            <span>JSON</span>
           </button>
 
           {/* Bilingual Switcher */}
@@ -171,11 +173,12 @@ export default function TransparencyDashboardPage() {
       <div className="rounded-2xl bg-zinc-50 dark:bg-zinc-900/80 p-4 sm:p-5 border border-zinc-200 dark:border-zinc-800 shadow-2xs space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-xs font-bold text-zinc-800 dark:text-zinc-200">
-            <span>⚖️</span>
+            <Scale className="h-4 w-4 text-zinc-700 dark:text-zinc-300" />
             <span>{isBn ? "পদ্ধতি ও নাগরিক সতর্কবার্তা" : "Methodology & Civic Disclaimer"}</span>
           </div>
           <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200/60 dark:border-emerald-900/60">
-            ✓ {isBn ? "১০০% প্ল্যাটফর্ম যাচাইকৃত" : "100% Platform Reviewed"}
+            <CheckCircle2 className="h-3.5 w-3.5 inline mr-0.5" />
+            <span>{isBn ? "১০০% প্ল্যাটফর্ম যাচাইকৃত" : "100% Platform Reviewed"}</span>
           </span>
         </div>
 
@@ -310,24 +313,26 @@ export default function TransparencyDashboardPage() {
               <button
                 type="button"
                 onClick={() => setMonthlyViewMode("CHART")}
-                className={`rounded-xl px-3 py-1.5 text-xs font-bold transition cursor-pointer ${
+                className={`rounded-xl px-3 py-1.5 text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
                   monthlyViewMode === "CHART"
                     ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 shadow-2xs"
                     : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200"
                 }`}
               >
-                📈 {t.chart_view}
+                <TrendingUp className="h-3.5 w-3.5" />
+                <span>{t.chart_view}</span>
               </button>
               <button
                 type="button"
                 onClick={() => setMonthlyViewMode("TABLE")}
-                className={`rounded-xl px-3 py-1.5 text-xs font-bold transition cursor-pointer ${
+                className={`rounded-xl px-3 py-1.5 text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
                   monthlyViewMode === "TABLE"
                     ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 shadow-2xs"
                     : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200"
                 }`}
               >
-                📋 {t.table_view}
+                <Table className="h-3.5 w-3.5" />
+                <span>{t.table_view}</span>
               </button>
             </div>
           </div>
@@ -428,8 +433,9 @@ export default function TransparencyDashboardPage() {
               {/* Hover Tooltip / Detail Box */}
               {hoveredMonthIdx !== null && monthly.monthly_data[hoveredMonthIdx] && (
                 <div className="rounded-xl bg-zinc-100 dark:bg-zinc-800 p-3 text-xs flex flex-wrap items-center justify-between gap-2 border border-zinc-200 dark:border-zinc-700 animate-in fade-in duration-100">
-                  <span className="font-bold text-zinc-900 dark:text-zinc-100">
-                    📅 {isBn ? monthly.monthly_data[hoveredMonthIdx].month_name_bn : monthly.monthly_data[hoveredMonthIdx].month_name} {monthly.year}
+                  <span className="font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                    <Calendar className="h-3.5 w-3.5" />
+                    <span>{isBn ? monthly.monthly_data[hoveredMonthIdx].month_name_bn : monthly.monthly_data[hoveredMonthIdx].month_name} {monthly.year}</span>
                   </span>
                   <div className="flex items-center gap-3">
                     <span className="font-extrabold text-emerald-700 dark:text-emerald-400">
@@ -584,7 +590,7 @@ export default function TransparencyDashboardPage() {
               href="/safety-map"
               className="rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2 text-xs font-bold text-white shadow-2xs transition inline-flex items-center gap-1.5 cursor-pointer"
             >
-              <span>🗺️</span>
+              <Map className="h-3.5 w-3.5" />
               <span>{isBn ? "কমিউনিটি সেফটি ম্যাপ দেখুন" : "Open Community Safety Map"} →</span>
             </Link>
           </div>
@@ -604,10 +610,13 @@ export default function TransparencyDashboardPage() {
             ))}
           </div>
 
-          <p className="text-[11px] text-zinc-400">
-            🔒 {isBn
-              ? "প্রশাসনিক বিভাগ ও জেলা পর্যায়ে সংরক্ষিত। ব্যক্তিগত স্থানাঙ্ক আনুমানিক (~১১০ মিটার গ্রিডে) সীমাবদ্ধ।"
-              : "Aggregated at administrative division & district level. Coordinates are fuzzed (~110m grid) for public privacy."}
+          <p className="text-[11px] text-zinc-400 flex items-center gap-1.5">
+            <Lock className="h-3.5 w-3.5 shrink-0" />
+            <span>
+              {isBn
+                ? "প্রশাসনিক বিভাগ ও জেলা পর্যায়ে সংরক্ষিত। ব্যক্তিগত স্থানাঙ্ক আনুমানিক (~১১০ মিটার গ্রিডে) সীমাবদ্ধ।"
+                : "Aggregated at administrative division & district level. Coordinates are fuzzed (~110m grid) for public privacy."}
+            </span>
           </p>
         </section>
       )}
@@ -615,7 +624,7 @@ export default function TransparencyDashboardPage() {
       {/* 7. Methodology & Data Quality */}
       <section className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 sm:p-7 shadow-xs space-y-4">
         <div className="flex items-center gap-2">
-          <span className="text-xl">📖</span>
+          <BookOpen className="h-5 w-5 text-zinc-700 dark:text-zinc-300" />
           <h2 className="text-lg font-extrabold text-zinc-900 dark:text-zinc-100">
             {t.methodology_title}
           </h2>

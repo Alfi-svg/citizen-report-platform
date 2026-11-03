@@ -4,6 +4,23 @@
   --background: #f8fafc;
   --foreground: #0f172a;
   
+  /* Primary & Civic Brand Tokens */
+  --primary-navy: #0b1f3b;
+  --brand-blue: #2563eb;
+  --brand-blue-hover: #1d4ed8;
+  --brand-blue-subtle: #eff6ff;
+
+  /* Safety & Emergency Tokens */
+  --emergency-red: #dc2626;
+  --emergency-red-hover: #b91c1c;
+  --emergency-red-subtle: #fef2f2;
+  --warning-amber: #f59e0b;
+  --warning-amber-hover: #d97706;
+  --warning-amber-subtle: #fffbeb;
+  --success-green: #16a34a;
+  --success-green-hover: #15803d;
+  --success-green-subtle: #f0fdf4;
+
   /* Brand Primary (Bangladesh Green) */
   --bd-green: #006a4e;
   --bd-green-hover: #00523d;
@@ -24,12 +41,12 @@
   --bd-blood-subtle: #fff1f2;
 
   /* Status Tokens */
-  --status-warning: #d97706;
+  --status-warning: #f59e0b;
   --status-warning-subtle: #fffbeb;
   --status-info: #2563eb;
   --status-info-subtle: #eff6ff;
-  --status-success: #059669;
-  --status-success-subtle: #ecfdf5;
+  --status-success: #16a34a;
+  --status-success-subtle: #f0fdf4;
 
   /* Neutral Surface & Border */
   --surface: #ffffff;
@@ -38,7 +55,7 @@
   --border: #e2e8f0;
   --border-subtle: #f1f5f9;
   --text-primary: #0f172a;
-  --text-secondary: #475569;
+  --text-secondary: #64748B;
   --text-muted: #94a3b8;
   --card-bg: #ffffff;
   --card-border: #e2e8f0;
@@ -56,6 +73,11 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-navy: var(--primary-navy);
+  --color-brand: var(--brand-blue);
+  --color-emergency: var(--emergency-red);
+  --color-warning: var(--warning-amber);
+  --color-success: var(--success-green);
   --color-surface: var(--surface);
   --color-surface-muted: var(--surface-muted);
   --color-surface-raised: var(--surface-raised);

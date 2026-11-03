@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
 import { ReactionSummary, ReactionType, ReactionToggleResponse } from "@/lib/types";
+import { ThumbsUp, AlertTriangle } from "lucide-react";
 
 interface ReactionControlsProps {
   reportId: string;
@@ -93,7 +94,7 @@ export default function ReactionControls({ reportId }: ReactionControlsProps) {
               : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-200/80 dark:border-zinc-700/80"
           }`}
         >
-          <span>🤝</span>
+          <ThumbsUp className="h-4 w-4" />
           <span>Community Support</span>
           <span
             className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
@@ -117,7 +118,7 @@ export default function ReactionControls({ reportId }: ReactionControlsProps) {
               : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 border border-zinc-200/80 dark:border-zinc-700/80"
           }`}
         >
-          <span>⚠️</span>
+          <AlertTriangle className="h-4 w-4" />
           <span>Critical Issue</span>
           <span
             className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${

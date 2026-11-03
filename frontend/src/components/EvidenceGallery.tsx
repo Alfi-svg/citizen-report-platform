@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { ReportMedia } from "@/lib/types";
 import { getApiBaseUrl } from "@/lib/api";
 import { useBackClose } from "@/lib/useBackClose";
+import { ZoomIn, FileText, X, ExternalLink, Download } from "lucide-react";
 
 interface EvidenceGalleryProps {
   media: ReportMedia[];
@@ -80,8 +81,9 @@ export default function EvidenceGallery({
                       loading="lazy"
                     />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-end justify-end p-2">
-                      <span className="rounded-md bg-zinc-950/75 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-xs opacity-0 group-hover:opacity-100 transition">
-                        🔍 Expand
+                      <span className="rounded-md bg-zinc-950/75 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-xs opacity-0 group-hover:opacity-100 transition inline-flex items-center gap-1">
+                        <ZoomIn className="h-3 w-3" />
+                        <span>Expand</span>
                       </span>
                     </div>
                   </button>
@@ -106,7 +108,7 @@ export default function EvidenceGallery({
                         className="font-medium text-emerald-600 dark:text-emerald-400 hover:underline inline-flex items-center gap-1"
                       >
                         <span>Full Size</span>
-                        <span>↗</span>
+                        <ExternalLink className="h-3.5 w-3.5" />
                       </a>
                       {canDelete && onDelete && (
                         <button
@@ -165,7 +167,7 @@ export default function EvidenceGallery({
                       className="font-medium text-emerald-600 dark:text-emerald-400 hover:underline inline-flex items-center gap-1"
                     >
                       <span>Download Video</span>
-                      <span>⭳</span>
+                      <Download className="h-3.5 w-3.5" />
                     </a>
                     {canDelete && onDelete && (
                       <button
@@ -201,7 +203,7 @@ export default function EvidenceGallery({
                 >
                   <div className="flex items-start gap-3">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 font-bold text-base">
-                      📄
+                      <FileText className="h-5 w-5" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold text-zinc-900 dark:text-zinc-100 truncate" title={item.file_name}>
@@ -222,7 +224,7 @@ export default function EvidenceGallery({
                       className="font-medium text-emerald-600 dark:text-emerald-400 hover:underline inline-flex items-center gap-1"
                     >
                       <span>Open Document</span>
-                      <span>↗</span>
+                      <ExternalLink className="h-3.5 w-3.5" />
                     </a>
                     {canDelete && onDelete && (
                       <button
@@ -262,7 +264,7 @@ export default function EvidenceGallery({
                 className="h-8 w-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center font-bold text-sm transition"
                 title="Close viewer"
               >
-                ✕
+                <X className="h-4 w-4" />
               </button>
             </div>
 

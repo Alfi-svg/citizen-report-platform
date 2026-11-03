@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
 import { AdminUser, AdminUserPagination, UserRole } from "@/lib/types";
 import AdminNav from "@/components/AdminNav";
+import { Users } from "lucide-react";
 
 export default function AdminUsersPage() {
   const router = useRouter();
@@ -128,7 +129,8 @@ export default function AdminUsersPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-              <span>👥 User Accounts & Roles / ব্যবহারকারী ব্যবস্থাপনা</span>
+              <Users className="h-6 w-6 text-indigo-600" />
+              <span>User Accounts & Roles / ব্যবহারকারী ব্যবস্থাপনা</span>
               <span className="rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs px-2.5 py-0.5 font-bold">
                 {total}
               </span>

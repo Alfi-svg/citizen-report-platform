@@ -8,6 +8,7 @@ import { PublicCategory, PublicReportPagination } from "@/lib/types";
 import { Language } from "@/lib/i18n";
 import PublicReportCard from "@/components/PublicReportCard";
 import { useBackClose } from "@/lib/useBackClose";
+import { Settings, X, FileText } from "lucide-react";
 
 function PublicReportsContent() {
   const router = useRouter();
@@ -220,10 +221,11 @@ function PublicReportsContent() {
             <button
               type="button"
               onClick={() => setMobileFilterOpen(!mobileFilterOpen)}
-              className="sm:hidden px-3.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-xs font-bold min-h-[44px] flex items-center justify-center cursor-pointer shrink-0"
+              className="sm:hidden px-3.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-xs font-bold min-h-[44px] flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
               title="Filters"
             >
-              ⚙️ {activeFilterCount > 0 && `(${activeFilterCount})`}
+              <Settings className="h-4 w-4" />
+              {activeFilterCount > 0 && <span>({activeFilterCount})</span>}
             </button>
           </div>
         </form>
@@ -238,9 +240,9 @@ function PublicReportsContent() {
               <button
                 type="button"
                 onClick={() => setMobileFilterOpen(false)}
-                className="text-xs text-zinc-400 hover:text-zinc-600 font-bold p-1"
+                className="text-xs text-zinc-400 hover:text-zinc-600 font-bold p-1 cursor-pointer"
               >
-                ✕
+                <X className="h-4 w-4" />
               </button>
             </div>
 
@@ -504,7 +506,9 @@ function PublicReportsContent() {
         </div>
       ) : !data || data.items.length === 0 ? (
         <div className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-12 text-center space-y-3">
-          <div className="text-4xl">📋</div>
+          <div className="h-12 w-12 mx-auto rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-500 flex items-center justify-center">
+            <FileText className="h-6 w-6" />
+          </div>
           <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
             No Reports Found
           </h3>

@@ -8,6 +8,7 @@ import { apiFetch } from "@/lib/api";
 import { AdminFlag, AdminFlagPagination, FlagStatus } from "@/lib/types";
 import AdminNav from "@/components/AdminNav";
 import { useBackClose } from "@/lib/useBackClose";
+import { Flag, User } from "lucide-react";
 
 const STATUS_BADGES: Record<
   FlagStatus,
@@ -156,7 +157,8 @@ export default function AdminFlagsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-              <span>🚩 Content Moderation & Flags Queue / ফ্ল্যাগ পর্যালোচনা</span>
+              <Flag className="h-6 w-6 text-red-600" />
+              <span>Content Moderation & Flags Queue / ফ্ল্যাগ পর্যালোচনা</span>
               <span className="rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs px-2.5 py-0.5 font-bold">
                 {total}
               </span>
@@ -278,8 +280,9 @@ export default function AdminFlagsPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                     <div>
                       <span className="text-zinc-500 block">Flagger Username (Private):</span>
-                      <span className="font-semibold text-zinc-800 dark:text-zinc-200">
-                        👤 {flag.flagger_username || "Unknown"}
+                      <span className="font-semibold text-zinc-800 dark:text-zinc-200 inline-flex items-center gap-1.5 mt-0.5">
+                        <User className="h-3.5 w-3.5 text-zinc-500" />
+                        <span>{flag.flagger_username || "Unknown"}</span>
                       </span>
                     </div>
                     <div>

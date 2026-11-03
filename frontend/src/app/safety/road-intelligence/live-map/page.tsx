@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import LiveRoadSafety3DMap from "@/components/LiveRoadSafety3DMap";
 import { Language } from "@/lib/i18n";
+import { Shield, Map } from "lucide-react";
 
 function LiveMapInner() {
   const searchParams = useSearchParams();
@@ -65,14 +66,14 @@ function LiveMapInner() {
             href="/safety"
             className="hidden sm:inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition px-2.5 py-1 rounded-lg hover:bg-zinc-800"
           >
-            <span>🛡️</span>
+            <Shield className="h-3.5 w-3.5" />
             <span>{isBn ? "নিরাপত্তা কেন্দ্র" : "Safety Hub"}</span>
           </Link>
           <Link
             href="/safety-map"
             className="hidden sm:inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition px-2.5 py-1 rounded-lg hover:bg-zinc-800"
           >
-            <span>🗺️</span>
+            <Map className="h-3.5 w-3.5" />
             <span>{isBn ? "কমিউনিটি ম্যাপ" : "Safety Map"}</span>
           </Link>
         </div>

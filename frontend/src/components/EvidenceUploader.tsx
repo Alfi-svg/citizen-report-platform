@@ -5,6 +5,7 @@ import { ReportMedia } from "@/lib/types";
 import { apiFetch } from "@/lib/api";
 import { Capacitor } from "@capacitor/core";
 import { Camera, CameraResultType, CameraSource } from "@capacitor/camera";
+import { Paperclip, Camera as CameraIcon, Image as ImageIcon, FileText, AlertTriangle, X, Video, Trash2 } from "lucide-react";
 
 export interface SelectedFileItem {
   id: string;
@@ -358,7 +359,7 @@ export default function EvidenceUploader({
         <div className="flex items-center justify-between gap-2 mb-3">
           <div>
             <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
-              <span>📎</span>
+              <Paperclip className="h-4 w-4 text-emerald-600" />
               <span>Attach Incident Evidence</span>
             </h4>
             <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
@@ -379,7 +380,7 @@ export default function EvidenceUploader({
             disabled={disabled || uploading || selectedItems.length >= MAX_ATTACHMENTS}
             className="flex flex-col items-center justify-center gap-1 p-3 rounded-xl border border-zinc-200/90 dark:border-zinc-700/80 bg-white dark:bg-zinc-800/80 hover:bg-emerald-50/60 dark:hover:bg-emerald-950/30 hover:border-emerald-300 dark:hover:border-emerald-700 active:scale-[0.97] transition disabled:opacity-50 disabled:pointer-events-none cursor-pointer min-h-[72px] shadow-2xs group"
           >
-            <span className="text-xl group-hover:scale-110 transition-transform">📷</span>
+            <CameraIcon className="h-5 w-5 text-zinc-700 dark:text-zinc-300 group-hover:text-emerald-600 group-hover:scale-110 transition-transform" />
             <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200 group-hover:text-emerald-700 dark:group-hover:text-emerald-400">
               Take Photo
             </span>
@@ -393,7 +394,7 @@ export default function EvidenceUploader({
             disabled={disabled || uploading || selectedItems.length >= MAX_ATTACHMENTS}
             className="flex flex-col items-center justify-center gap-1 p-3 rounded-xl border border-zinc-200/90 dark:border-zinc-700/80 bg-white dark:bg-zinc-800/80 hover:bg-emerald-50/60 dark:hover:bg-emerald-950/30 hover:border-emerald-300 dark:hover:border-emerald-700 active:scale-[0.97] transition disabled:opacity-50 disabled:pointer-events-none cursor-pointer min-h-[72px] shadow-2xs group"
           >
-            <span className="text-xl group-hover:scale-110 transition-transform">🖼️</span>
+            <ImageIcon className="h-5 w-5 text-zinc-700 dark:text-zinc-300 group-hover:text-emerald-600 group-hover:scale-110 transition-transform" />
             <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200 group-hover:text-emerald-700 dark:group-hover:text-emerald-400">
               Choose Photo
             </span>
@@ -407,7 +408,7 @@ export default function EvidenceUploader({
             disabled={disabled || uploading || selectedItems.length >= MAX_ATTACHMENTS}
             className="flex flex-col items-center justify-center gap-1 p-3 rounded-xl border border-zinc-200/90 dark:border-zinc-700/80 bg-white dark:bg-zinc-800/80 hover:bg-emerald-50/60 dark:hover:bg-emerald-950/30 hover:border-emerald-300 dark:hover:border-emerald-700 active:scale-[0.97] transition disabled:opacity-50 disabled:pointer-events-none cursor-pointer min-h-[72px] shadow-2xs group"
           >
-            <span className="text-xl group-hover:scale-110 transition-transform">📄</span>
+            <FileText className="h-5 w-5 text-zinc-700 dark:text-zinc-300 group-hover:text-emerald-600 group-hover:scale-110 transition-transform" />
             <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200 group-hover:text-emerald-700 dark:group-hover:text-emerald-400">
               Choose File
             </span>
@@ -423,14 +424,14 @@ export default function EvidenceUploader({
       {/* Error Alert */}
       {error && (
         <div className="rounded-xl bg-red-50/90 dark:bg-red-950/40 border border-red-200 dark:border-red-900 p-3.5 text-xs text-red-700 dark:text-red-300 flex items-start gap-2 shadow-2xs">
-          <span className="text-sm shrink-0">⚠️</span>
+          <AlertTriangle className="h-4 w-4 shrink-0 text-red-600" />
           <span className="flex-1">{error}</span>
           <button
             type="button"
             onClick={() => setError(null)}
             className="text-red-500 hover:text-red-700 text-sm font-bold ml-1 cursor-pointer"
           >
-            ✕
+            <X className="h-4 w-4" />
           </button>
         </div>
       )}
@@ -464,9 +465,9 @@ export default function EvidenceUploader({
                       className="w-full h-full object-cover"
                     />
                   ) : item.mediaType === "video" ? (
-                    <span className="text-2xl">🎥</span>
+                    <Video className="h-6 w-6 text-zinc-500" />
                   ) : (
-                    <span className="text-2xl">📄</span>
+                    <FileText className="h-6 w-6 text-zinc-500" />
                   )}
                 </div>
 
@@ -501,7 +502,7 @@ export default function EvidenceUploader({
                   aria-label={`Remove ${item.file.name}`}
                   title="Remove evidence"
                 >
-                  <span className="text-base font-bold">🗑️</span>
+                  <Trash2 className="h-4 w-4" />
                 </button>
               </div>
             ))}

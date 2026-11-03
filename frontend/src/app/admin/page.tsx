@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
 import { AdminDashboardStats, AdminReportPagination } from "@/lib/types";
 import AdminNav from "@/components/AdminNav";
+import { Shield, FileText, Flag, Users, Tag, MessageSquare } from "lucide-react";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -98,7 +99,8 @@ export default function AdminDashboardPage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 mb-2">
-              🛡️ Administrative Console
+              <Shield className="h-3.5 w-3.5" />
+              <span>Administrative Console</span>
             </div>
             <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
               Platform Operations & Governance
@@ -111,15 +113,17 @@ export default function AdminDashboardPage() {
           <div className="flex items-center gap-2.5 flex-wrap">
             <Link
               href="/admin/reports"
-              className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-500 transition"
+              className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-500 transition inline-flex items-center gap-1.5"
             >
-              📋 Reports Queue ({stats?.pending_reports || 0})
+              <FileText className="h-3.5 w-3.5" />
+              <span>Reports Queue ({stats?.pending_reports || 0})</span>
             </Link>
             <Link
               href="/admin/flags"
-              className="rounded-xl bg-amber-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-amber-500 transition"
+              className="rounded-xl bg-amber-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-amber-500 transition inline-flex items-center gap-1.5"
             >
-              🚩 Safety Flags ({stats?.pending_flags || 0})
+              <Flag className="h-3.5 w-3.5" />
+              <span>Safety Flags ({stats?.pending_flags || 0})</span>
             </Link>
           </div>
         </div>
@@ -210,7 +214,7 @@ export default function AdminDashboardPage() {
             className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-sm hover:border-amber-400 dark:hover:border-amber-600 transition space-y-2 text-xs"
           >
             <div className="flex items-center gap-2 text-amber-600 font-bold text-sm">
-              <span>👥</span>
+              <Users className="h-4 w-4" />
               <span>User & Role Governance</span>
             </div>
             <p className="text-zinc-500">
@@ -223,7 +227,7 @@ export default function AdminDashboardPage() {
             className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-sm hover:border-emerald-400 dark:hover:border-emerald-600 transition space-y-2 text-xs"
           >
             <div className="flex items-center gap-2 text-emerald-600 font-bold text-sm">
-              <span>🏷️</span>
+              <Tag className="h-4 w-4" />
               <span>Category Management</span>
             </div>
             <p className="text-zinc-500">
@@ -236,7 +240,7 @@ export default function AdminDashboardPage() {
             className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-sm hover:border-blue-400 dark:hover:border-blue-600 transition space-y-2 text-xs"
           >
             <div className="flex items-center gap-2 text-blue-600 font-bold text-sm">
-              <span>💬</span>
+              <MessageSquare className="h-4 w-4" />
               <span>Comments Moderation</span>
             </div>
             <p className="text-zinc-500">
@@ -249,7 +253,8 @@ export default function AdminDashboardPage() {
         <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-              <span>📋 Recent Submissions Awaiting Moderation</span>
+              <FileText className="h-4 w-4 text-emerald-600" />
+              <span>Recent Submissions Awaiting Moderation</span>
             </h2>
             <Link
               href="/admin/reports"

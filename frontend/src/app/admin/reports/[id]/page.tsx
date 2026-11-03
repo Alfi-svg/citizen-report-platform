@@ -9,6 +9,7 @@ import { Report, ReportStatus, AdminComment, CommentStatus } from "@/lib/types";
 import EvidenceGallery from "@/components/EvidenceGallery";
 import AdminNav from "@/components/AdminNav";
 import { useBackClose } from "@/lib/useBackClose";
+import { Search, CheckCircle2, MessageSquare, XCircle, Archive, MapPin, Clock, Eye, EyeOff, Trash2, Lock, Shield, User } from "lucide-react";
 
 const STATUS_BADGES: Record<
   ReportStatus,
@@ -296,9 +297,10 @@ export default function AdminReportDetailPage() {
                   type="button"
                   onClick={handleStartReview}
                   disabled={processing}
-                  className="rounded-lg bg-amber-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-amber-500 shadow-sm transition disabled:opacity-50"
+                  className="rounded-lg bg-amber-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-amber-500 shadow-sm transition disabled:opacity-50 inline-flex items-center gap-1.5"
                 >
-                  🔍 Start Review
+                  <Search className="h-3.5 w-3.5" />
+                  <span>Start Review</span>
                 </button>
               )}
 
@@ -306,27 +308,30 @@ export default function AdminReportDetailPage() {
                 type="button"
                 onClick={() => setActiveModal("APPROVE")}
                 disabled={processing || report.status === "APPROVED"}
-                className="rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500 shadow-sm transition disabled:opacity-50"
+                className="rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500 shadow-sm transition disabled:opacity-50 inline-flex items-center gap-1.5"
               >
-                ✓ Approve Report
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                <span>Approve Report</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setActiveModal("REQUEST_INFO")}
                 disabled={processing || report.status === "NEEDS_MORE_INFORMATION"}
-                className="rounded-lg bg-purple-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-purple-500 shadow-sm transition disabled:opacity-50"
+                className="rounded-lg bg-purple-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-purple-500 shadow-sm transition disabled:opacity-50 inline-flex items-center gap-1.5"
               >
-                💬 Request More Info
+                <MessageSquare className="h-3.5 w-3.5" />
+                <span>Request More Info</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setActiveModal("REJECT")}
                 disabled={processing || report.status === "REJECTED"}
-                className="rounded-lg bg-red-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-red-500 shadow-sm transition disabled:opacity-50"
+                className="rounded-lg bg-red-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-red-500 shadow-sm transition disabled:opacity-50 inline-flex items-center gap-1.5"
               >
-                ✕ Reject Report
+                <XCircle className="h-3.5 w-3.5" />
+                <span>Reject Report</span>
               </button>
 
               {report.status !== "ARCHIVED" && (
@@ -334,9 +339,10 @@ export default function AdminReportDetailPage() {
                   type="button"
                   onClick={() => setActiveModal("ARCHIVE")}
                   disabled={processing}
-                  className="rounded-lg bg-zinc-700 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-zinc-600 shadow-sm transition disabled:opacity-50"
+                  className="rounded-lg bg-zinc-700 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-zinc-600 shadow-sm transition disabled:opacity-50 inline-flex items-center gap-1.5"
                 >
-                  📦 Archive Report
+                  <Archive className="h-3.5 w-3.5" />
+                  <span>Archive Report</span>
                 </button>
               )}
             </div>
@@ -363,14 +369,16 @@ export default function AdminReportDetailPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/60 dark:border-zinc-700/60 mb-4">
               <div>
                 <span className="text-zinc-500 block">Incident Location:</span>
-                <span className="font-semibold text-zinc-800 dark:text-zinc-200 text-sm mt-0.5 block">
-                  📍 {report.location_text}
+                <span className="font-semibold text-zinc-800 dark:text-zinc-200 text-sm mt-0.5 flex items-center gap-1.5">
+                  <MapPin className="h-4 w-4 text-zinc-500 shrink-0" />
+                  <span>{report.location_text}</span>
                 </span>
               </div>
               <div>
                 <span className="text-zinc-500 block">Incident Date / Time:</span>
-                <span className="font-semibold text-zinc-800 dark:text-zinc-200 text-sm mt-0.5 block">
-                  🕒 {report.incident_date ? new Date(report.incident_date).toLocaleString() : "Not specified"}
+                <span className="font-semibold text-zinc-800 dark:text-zinc-200 text-sm mt-0.5 flex items-center gap-1.5">
+                  <Clock className="h-4 w-4 text-zinc-500 shrink-0" />
+                  <span>{report.incident_date ? new Date(report.incident_date).toLocaleString() : "Not specified"}</span>
                 </span>
               </div>
               <div>
@@ -459,26 +467,29 @@ export default function AdminReportDetailPage() {
                         <button
                           type="button"
                           onClick={() => handleUpdateCommentStatus(c.id, "VISIBLE")}
-                          className="rounded px-2.5 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-emerald-300"
+                          className="rounded px-2.5 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-emerald-300 inline-flex items-center gap-1"
                         >
-                          👁️ Make Visible
+                          <Eye className="h-3 w-3" />
+                          <span>Make Visible</span>
                         </button>
                       )}
                       {c.status !== "HIDDEN" && (
                         <button
                           type="button"
                           onClick={() => handleUpdateCommentStatus(c.id, "HIDDEN")}
-                          className="rounded px-2.5 py-1 text-[11px] font-semibold text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/40 border border-amber-300"
+                          className="rounded px-2.5 py-1 text-[11px] font-semibold text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/40 border border-amber-300 inline-flex items-center gap-1"
                         >
-                          🚫 Hide Comment
+                          <EyeOff className="h-3 w-3" />
+                          <span>Hide Comment</span>
                         </button>
                       )}
                       <button
                         type="button"
                         onClick={() => handleDeleteCommentAdmin(c.id)}
-                        className="rounded px-2.5 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 border border-red-300"
+                        className="rounded px-2.5 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 border border-red-300 inline-flex items-center gap-1"
                       >
-                        🗑️ Delete
+                        <Trash2 className="h-3 w-3" />
+                        <span>Delete</span>
                       </button>
                     </div>
                   </div>
@@ -524,7 +535,10 @@ export default function AdminReportDetailPage() {
 
                     {rec.internal_notes && (
                       <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-amber-900 dark:text-amber-200">
-                        <span className="font-semibold block mb-0.5">🔒 Private Internal Moderator Note:</span>
+                        <span className="font-semibold flex items-center gap-1 mb-0.5">
+                          <Lock className="h-3.5 w-3.5 text-amber-600" />
+                          <span>Private Internal Moderator Note:</span>
+                        </span>
                         {rec.internal_notes}
                       </div>
                     )}
@@ -551,12 +565,18 @@ export default function AdminReportDetailPage() {
               <span className="text-xs font-medium text-zinc-500 block mb-1">Public Privacy Mode</span>
               {report.is_anonymous ? (
                 <div className="p-2.5 rounded-lg bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900 text-xs text-purple-800 dark:text-purple-300">
-                  <span className="font-bold block">🛡️ Anonymous Whistleblower</span>
+                  <span className="font-bold flex items-center gap-1.5 mb-0.5">
+                    <Shield className="h-4 w-4 text-purple-600" />
+                    <span>Anonymous Whistleblower</span>
+                  </span>
                   Identity is masked on public interfaces. Visible here for administrator verification.
                 </div>
               ) : (
                 <div className="p-2.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-xs text-blue-800 dark:text-blue-300">
-                  <span className="font-bold block">👤 Public Attribution</span>
+                  <span className="font-bold flex items-center gap-1.5 mb-0.5">
+                    <User className="h-4 w-4 text-blue-600" />
+                    <span>Public Attribution</span>
+                  </span>
                   Reporter requested standard public attribution.
                 </div>
               )}

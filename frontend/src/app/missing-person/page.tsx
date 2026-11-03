@@ -5,6 +5,7 @@ import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import { PublicMissingPersonAlertPagination, AlertStatus } from "@/lib/types";
 import { translations, Language } from "@/lib/i18n";
+import { AlertTriangle, User, Eye, Check, Search, Plus } from "lucide-react";
 
 export default function MissingPersonsFeedPage() {
   const [lang, setLang] = useState<Language>("en");
@@ -91,8 +92,8 @@ export default function MissingPersonsFeedPage() {
       {/* Top Header & Bilingual Toggle */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-red-600 text-white text-xl font-bold shadow-sm">
-            🚨
+          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-red-600 text-white shadow-sm">
+            <AlertTriangle className="h-5 w-5" />
           </span>
           <div>
             <h1 className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">
@@ -120,7 +121,7 @@ export default function MissingPersonsFeedPage() {
             href="/missing-person/create"
             className="inline-flex items-center gap-1.5 rounded-xl bg-red-600 hover:bg-red-500 px-4 py-2 text-xs font-bold text-white transition shadow-sm shrink-0"
           >
-            <span>🚨</span>
+            <Plus className="h-4 w-4" />
             <span>{lang === "bn" ? "নিখোঁজ ব্যক্তির তথ্য দিন" : "Report Missing Person"}</span>
           </Link>
 
@@ -180,26 +181,28 @@ export default function MissingPersonsFeedPage() {
               setStatusFilter("ALERT_ACTIVE");
               setPage(0);
             }}
-            className={`rounded-2xl px-4 py-2 text-xs font-bold transition ${
+            className={`rounded-2xl px-4 py-2 text-xs font-bold transition inline-flex items-center gap-1.5 ${
               statusFilter === "ALERT_ACTIVE"
                 ? "bg-red-600 text-white shadow-xs"
                 : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200"
             }`}
           >
-            🚨 {lang === "bn" ? "চলমান সন্ধান" : "Active Only"}
+            <AlertTriangle className="h-3.5 w-3.5" />
+            <span>{lang === "bn" ? "চলমান সন্ধান" : "Active Only"}</span>
           </button>
           <button
             onClick={() => {
               setStatusFilter("FOUND");
               setPage(0);
             }}
-            className={`rounded-2xl px-4 py-2 text-xs font-bold transition ${
+            className={`rounded-2xl px-4 py-2 text-xs font-bold transition inline-flex items-center gap-1.5 ${
               statusFilter === "FOUND"
                 ? "bg-emerald-600 text-white shadow-xs"
                 : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200"
             }`}
           >
-            ✅ {lang === "bn" ? "উদ্ধারকৃত" : "Found"}
+            <Check className="h-3.5 w-3.5" />
+            <span>{lang === "bn" ? "উদ্ধারকৃত" : "Found"}</span>
           </button>
         </div>
       </div>
@@ -217,7 +220,9 @@ export default function MissingPersonsFeedPage() {
         </div>
       ) : !data || data.items.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-zinc-300 dark:border-zinc-700 p-12 text-center text-xs text-zinc-500 space-y-3">
-          <div className="text-3xl">🕊️</div>
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-400 mx-auto">
+            <User className="h-6 w-6" />
+          </div>
           <p className="font-semibold text-sm">
             {lang === "bn"
               ? "বর্তমানে কোনো সক্রিয় নিখোঁজ ব্যক্তি সতর্কতা নেই।"
@@ -236,8 +241,9 @@ export default function MissingPersonsFeedPage() {
                 <div className="flex items-center justify-between">
                   {getStatusBadge(alert.status)}
                   {alert.approved_sightings_count > 0 && (
-                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-md">
-                      👁️ {alert.approved_sightings_count} {lang === "bn" ? "তথ্য" : "Sightings"}
+                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-md inline-flex items-center gap-1">
+                      <Eye className="h-3 w-3" />
+                      <span>{alert.approved_sightings_count} {lang === "bn" ? "তথ্য" : "Sightings"}</span>
                     </span>
                   )}
                 </div>
@@ -251,8 +257,8 @@ export default function MissingPersonsFeedPage() {
                       className="h-20 w-20 rounded-2xl object-cover border border-zinc-100 dark:border-zinc-800 shrink-0"
                     />
                   ) : (
-                    <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-3xl shrink-0">
-                      👤
+                    <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-400 shrink-0">
+                      <User className="h-8 w-8" />
                     </div>
                   )}
 

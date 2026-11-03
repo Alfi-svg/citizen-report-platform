@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import AdminNav from "@/components/AdminNav";
 import { apiFetch } from "@/lib/api";
 import { AdminMissingPersonSightingResponse, SightingStatus } from "@/lib/types";
+import { MapPin, AlertTriangle, Image as ImageIcon, CheckCircle, XCircle } from "lucide-react";
 
 function SightingsContent() {
   const searchParams = useSearchParams();
@@ -155,10 +156,14 @@ function SightingsContent() {
               {sightings.map((s) => (
                 <tr key={s.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition">
                   <td className="p-3.5 font-bold text-zinc-900 dark:text-zinc-100">
-                    <div>📍 {s.approximate_location}</div>
+                    <div className="flex items-center gap-1">
+                      <MapPin className="h-3.5 w-3.5 text-zinc-500 shrink-0" />
+                      <span>{s.approximate_location}</span>
+                    </div>
                     {s.is_potential_duplicate && (
                       <span className="inline-flex items-center gap-1 mt-1 rounded-md bg-amber-100 dark:bg-amber-950/80 px-2 py-0.5 text-[10px] font-extrabold text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
-                        <span>⚠️</span> {s.duplicate_reason || "Potential duplicate"}
+                        <AlertTriangle className="h-3 w-3" />
+                        <span>{s.duplicate_reason || "Potential duplicate"}</span>
                       </span>
                     )}
                   </td>
@@ -178,7 +183,8 @@ function SightingsContent() {
                         rel="noopener noreferrer"
                         className="text-[11px] font-bold text-blue-600 hover:underline mt-1 inline-flex items-center gap-1"
                       >
-                        <span>🖼️</span> View Attached Evidence
+                        <ImageIcon className="h-3.5 w-3.5" />
+                        <span>View Attached Evidence</span>
                       </a>
                     )}
                   </td>
@@ -228,8 +234,18 @@ function SightingsContent() {
       {targetStatus && activeSighting && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
           <div className="w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 p-6 shadow-2xl border border-zinc-200 dark:border-zinc-800 space-y-4">
-            <h3 className="text-base font-extrabold text-zinc-900 dark:text-zinc-100">
-              {targetStatus === "APPROVED" ? "✅ Approve Sighting" : "❌ Reject Sighting"}
+            <h3 className="text-base font-extrabold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+              {targetStatus === "APPROVED" ? (
+                <>
+                  <CheckCircle className="h-5 w-5 text-emerald-600" />
+                  <span>Approve Sighting</span>
+                </>
+              ) : (
+                <>
+                  <XCircle className="h-5 w-5 text-red-600" />
+                  <span>Reject Sighting</span>
+                </>
+              )}
             </h3>
 
             {modalError && (

@@ -19,6 +19,7 @@ import {
   calculateBearingDegrees,
 } from "@/lib/location";
 import { Language } from "@/lib/i18n";
+import { MapPin, X, Siren, TrafficCone, Shield, Check, Square, CarFront } from "lucide-react";
 
 interface LiveRoadSafety3DMapProps {
   initialLatitude?: number;
@@ -693,7 +694,7 @@ export default function LiveRoadSafety3DMap({
         {/* Navigation Search Bar */}
         <div className="w-full bg-zinc-900/90 backdrop-blur-md border border-zinc-700/80 rounded-2xl shadow-2xl p-2.5 flex items-center gap-2.5 pointer-events-auto">
           <div className="h-9 w-9 rounded-xl bg-zinc-800 flex items-center justify-center shrink-0 text-emerald-400 font-black">
-            📍
+            <MapPin className="h-4 w-4" />
           </div>
           <div className="flex-1 min-w-0">
             <input
@@ -715,7 +716,7 @@ export default function LiveRoadSafety3DMap({
               className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition"
               title="Clear Route"
             >
-              ✕
+              <X className="h-4 w-4" />
             </button>
           ) : (
             <button
@@ -751,7 +752,7 @@ export default function LiveRoadSafety3DMap({
         {activeDriverAlert && (
           <div className="w-full bg-red-650/95 border-2 border-red-500 text-white rounded-2xl shadow-2xl p-3 flex items-start justify-between gap-3 pointer-events-auto animate-bounce duration-1000">
             <div className="flex items-center gap-2.5">
-              <span className="text-2xl animate-pulse">🚨</span>
+              <Siren className="h-6 w-6 text-red-300 animate-pulse shrink-0" />
               <div>
                 <h4 className="text-xs font-black uppercase tracking-wider text-red-200">
                   {isBn ? "সতর্কতা: উচ্চ-ঝুঁকিপূর্ণ দুর্ঘটনা পয়েন্ট" : "Driver Warning: High-Risk Accident Zone"}
@@ -768,7 +769,7 @@ export default function LiveRoadSafety3DMap({
               onClick={() => setActiveDriverAlert(null)}
               className="p-1 rounded-lg hover:bg-white/20 text-white/80 hover:text-white"
             >
-              ✕
+              <X className="h-4 w-4" />
             </button>
           </div>
         )}
@@ -778,7 +779,7 @@ export default function LiveRoadSafety3DMap({
           <div className="bg-zinc-900/95 border border-amber-500/50 text-amber-300 text-xs px-3.5 py-2 rounded-xl shadow-lg flex items-center justify-between gap-3 pointer-events-auto">
             <span>{trafficNotice}</span>
             <button onClick={() => setTrafficNotice(null)} className="text-zinc-400 hover:text-white font-bold">
-              ✕
+              <X className="h-4 w-4" />
             </button>
           </div>
         )}
@@ -788,7 +789,7 @@ export default function LiveRoadSafety3DMap({
           <div className="bg-red-950/90 border border-red-500/50 text-red-300 text-xs px-3.5 py-2 rounded-xl shadow-lg flex items-center justify-between gap-3 pointer-events-auto">
             <span>{locationError}</span>
             <button onClick={() => setLocationError(null)} className="text-zinc-400 hover:text-white font-bold">
-              ✕
+              <X className="h-4 w-4" />
             </button>
           </div>
         )}
@@ -833,7 +834,7 @@ export default function LiveRoadSafety3DMap({
           }`}
           title="Traffic Layer Toggle"
         >
-          <span className="text-base">🚦</span>
+          <TrafficCone className="h-5 w-5" />
         </button>
 
         {/* Accident Risk Heatmap Toggle */}
@@ -847,7 +848,7 @@ export default function LiveRoadSafety3DMap({
           }`}
           title="Accident Risk Heatmap Toggle"
         >
-          <span className="text-base">🛡️</span>
+          <Shield className="h-5 w-5" />
         </button>
 
         {/* National 999 Hotline Quick Dial */}
@@ -956,18 +957,28 @@ export default function LiveRoadSafety3DMap({
                   {isBn ? "সড়ক দুর্ঘটনা ও ঝুঁকি রেকর্ড" : "Accident & Road Hazard Record"}
                 </span>
                 <h4 className="text-sm font-bold text-white mt-0.5">{selectedIncident.title}</h4>
-                <p className="text-xs text-zinc-400 mt-0.5">📍 {selectedIncident.location_text}</p>
+                <p className="text-xs text-zinc-400 mt-0.5 flex items-center gap-1">
+                  <MapPin className="h-3 w-3 shrink-0" />
+                  <span>{selectedIncident.location_text}</span>
+                </p>
               </div>
               <button
                 onClick={() => setSelectedIncident(null)}
                 className="p-1 rounded-lg text-zinc-400 hover:text-white"
               >
-                ✕
+                <X className="h-4 w-4" />
               </button>
             </div>
             <div className="pt-2 flex items-center justify-between border-t border-zinc-800 text-xs">
-              <span className="text-zinc-500">
-                {(selectedIncident as any).is_verified ? "✓ Verified by Platform" : "Under Citizen Review"}
+              <span className="text-zinc-500 flex items-center gap-1">
+                {(selectedIncident as any).is_verified ? (
+                  <>
+                    <Check className="h-3 w-3 text-emerald-400" />
+                    <span>Verified by Platform</span>
+                  </>
+                ) : (
+                  "Under Citizen Review"
+                )}
               </span>
               <Link
                 href={`/reports/${selectedIncident.report_id}`}
@@ -1009,7 +1020,7 @@ export default function LiveRoadSafety3DMap({
                 : "bg-cyan-600 hover:bg-cyan-500 text-white shadow-cyan-900/30"
             }`}
           >
-            <span>{isDriving ? "⏹️" : "🚘"}</span>
+            {isDriving ? <Square className="h-4 w-4 fill-current" /> : <CarFront className="h-4 w-4" />}
             <span>
               {isDriving
                 ? (isBn ? "ট্র্যাকিং বন্ধ করুন" : "Stop Tracking")

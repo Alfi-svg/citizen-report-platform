@@ -17,6 +17,7 @@ import {
   openNativeLocationSettings,
 } from "@/lib/location";
 import { useBackClose } from "@/lib/useBackClose";
+import { X, AlertTriangle, Check, MapPin } from "lucide-react";
 
 const BLOOD_GROUPS: BloodGroup[] = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
@@ -518,8 +519,8 @@ export default function BloodHelpMapPage() {
             className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2.5 py-1 text-[11px] text-zinc-800 dark:text-zinc-200 shrink-0 focus:outline-none focus:ring-1 focus:ring-rose-500 cursor-pointer"
           >
             <option value="ALL">All Urgencies</option>
-            <option value="EMERGENCY">🚨 Emergency</option>
-            <option value="URGENT">⚠️ Urgent</option>
+            <option value="EMERGENCY">Emergency</option>
+            <option value="URGENT">Urgent</option>
             <option value="NORMAL">Normal</option>
           </select>
 
@@ -528,21 +529,25 @@ export default function BloodHelpMapPage() {
             <button
               type="button"
               onClick={clearAllFilters}
-              className="rounded-lg bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 px-2 py-1 text-[10px] font-bold text-zinc-700 dark:text-zinc-200 shrink-0 transition cursor-pointer"
+              className="rounded-lg bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 px-2 py-1 text-[10px] font-bold text-zinc-700 dark:text-zinc-200 shrink-0 transition cursor-pointer inline-flex items-center gap-1"
             >
-              ✕ Reset
+              <X className="h-3 w-3" />
+              <span>Reset</span>
             </button>
           )}
         </div>
 
         {error && (
           <div className="rounded-xl bg-red-50 dark:bg-red-950/40 p-2 border border-red-200 dark:border-red-900 text-[11px] text-red-800 dark:text-red-200 flex items-center justify-between">
-            <span>⚠️ {error}</span>
+            <span className="flex items-center gap-1.5">
+              <AlertTriangle className="h-3.5 w-3.5 text-red-600 shrink-0" />
+              <span>{error}</span>
+            </span>
             <button
               onClick={() => setError(null)}
-              className="text-red-600 font-bold ml-2 cursor-pointer"
+              className="text-red-600 font-bold ml-2 cursor-pointer p-0.5"
             >
-              ✕
+              <X className="h-3.5 w-3.5" />
             </button>
           </div>
         )}
@@ -551,7 +556,7 @@ export default function BloodHelpMapPage() {
         {locationNotice && (
           <div className="rounded-xl bg-amber-50 dark:bg-amber-950/40 p-2.5 border border-amber-200 dark:border-amber-900 text-[11px] text-amber-800 dark:text-amber-200 flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 min-w-0 flex-1">
-              <span className="shrink-0">⚠️</span>
+              <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0" />
               <span className="break-words leading-relaxed">{typeof locationNotice === "string" ? locationNotice : locationNotice.message}</span>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
@@ -579,7 +584,7 @@ export default function BloodHelpMapPage() {
                 className="text-amber-600 font-bold ml-1 cursor-pointer p-1"
                 aria-label="Dismiss notice"
               >
-                ✕
+                <X className="h-3.5 w-3.5" />
               </button>
             </div>
           </div>
@@ -587,12 +592,15 @@ export default function BloodHelpMapPage() {
 
         {responseSuccess && (
           <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/40 p-2 border border-emerald-200 dark:border-emerald-900 text-[11px] text-emerald-800 dark:text-emerald-200 flex items-center justify-between">
-            <span>✓ {responseSuccess}</span>
+            <span className="flex items-center gap-1.5">
+              <Check className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+              <span>{responseSuccess}</span>
+            </span>
             <button
               onClick={() => setResponseSuccess(null)}
-              className="text-emerald-600 font-bold ml-2 cursor-pointer"
+              className="text-emerald-600 font-bold ml-2 cursor-pointer p-0.5"
             >
-              ✕
+              <X className="h-3.5 w-3.5" />
             </button>
           </div>
         )}
@@ -684,7 +692,7 @@ export default function BloodHelpMapPage() {
                 className="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs font-bold h-9 w-9 flex items-center justify-center cursor-pointer rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
                 aria-label="Close details"
               >
-                ✕
+                <X className="h-4 w-4" />
               </button>
             </div>
 
@@ -694,7 +702,7 @@ export default function BloodHelpMapPage() {
                 {selectedPoint.hospital_name}
               </h3>
               <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 flex items-center gap-1">
-                <span>📍</span>
+                <MapPin className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
                 <span>{selectedPoint.hospital_area}, {selectedPoint.district}</span>
                 {selectedPoint.distance_km !== undefined && selectedPoint.distance_km !== null && (
                   <span className="font-semibold text-blue-600 dark:text-blue-400">
@@ -778,7 +786,7 @@ export default function BloodHelpMapPage() {
                 onClick={() => setIsResponseModalOpen(false)}
                 className="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-sm font-bold p-1 cursor-pointer"
               >
-                ✕
+                <X className="h-4 w-4" />
               </button>
             </div>
 

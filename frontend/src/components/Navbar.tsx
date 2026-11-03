@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import NotificationBell from "@/components/NotificationBell";
 import { useBackClose } from "@/lib/useBackClose";
+import { Shield, BarChart3, FileText, Bell, AlertTriangle, LogOut, Search, X, Bike } from "lucide-react";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -136,6 +137,12 @@ export default function Navbar() {
       label: "Road Safety",
       bn: "সড়ক নিরাপত্তা",
       isRoad: true,
+    },
+    {
+      href: "/safety/safe-ride",
+      label: "Safe Ride",
+      bn: "নিরাপদ রাইড",
+      isSafeRide: true,
     },
     {
       href: "/safety",
@@ -380,7 +387,7 @@ export default function Navbar() {
                           onClick={() => setProfileOpen(false)}
                           className="flex items-center gap-2 px-4 py-2 font-bold text-amber-700 dark:text-amber-400 bg-amber-50/60 dark:bg-amber-950/40 hover:bg-amber-100/80 transition"
                         >
-                          <span>🛡️</span>
+                          <Shield className="h-4 w-4 text-amber-600" />
                           <span>Admin Console</span>
                         </Link>
                       )}
@@ -390,7 +397,7 @@ export default function Navbar() {
                         onClick={() => setProfileOpen(false)}
                         className="flex items-center gap-2 px-4 py-2 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
                       >
-                        <span>📊</span>
+                        <BarChart3 className="h-4 w-4 text-zinc-500" />
                         <span>Citizen Dashboard</span>
                       </Link>
 
@@ -399,7 +406,7 @@ export default function Navbar() {
                         onClick={() => setProfileOpen(false)}
                         className="flex items-center gap-2 px-4 py-2 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
                       >
-                        <span>📋</span>
+                        <FileText className="h-4 w-4 text-zinc-500" />
                         <span>My Submissions</span>
                       </Link>
 
@@ -408,7 +415,7 @@ export default function Navbar() {
                         onClick={() => setProfileOpen(false)}
                         className="flex items-center gap-2 px-4 py-2 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
                       >
-                        <span>🔔</span>
+                        <Bell className="h-4 w-4 text-zinc-500" />
                         <span>Notifications</span>
                       </Link>
 
@@ -417,7 +424,7 @@ export default function Navbar() {
                         onClick={() => setProfileOpen(false)}
                         className="flex items-center gap-2 px-4 py-2 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
                       >
-                        <span>🚨</span>
+                        <AlertTriangle className="h-4 w-4 text-zinc-500" />
                         <span>Emergency Directory</span>
                       </Link>
                     </div>
@@ -431,7 +438,7 @@ export default function Navbar() {
                         }}
                         className="flex w-full items-center gap-2 px-4 py-2 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition font-medium"
                       >
-                        <span>🚪</span>
+                        <LogOut className="h-4 w-4 text-red-500" />
                         <span>Sign Out</span>
                       </button>
                     </div>
@@ -719,7 +726,7 @@ export default function Navbar() {
                       onClick={() => setMobileMenuOpen(false)}
                       className="flex items-center justify-center min-h-[40px] py-2 px-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition"
                     >
-                      <span>🔔</span>
+                      <Bell className="h-4 w-4 text-zinc-500" />
                       <span className="ml-1.5">{lang === "bn" ? "বিজ্ঞপ্তি" : "Alerts"}</span>
                     </Link>
                     <Link
@@ -794,7 +801,7 @@ export default function Navbar() {
           <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-2xl p-4 sm:p-5 z-10 animate-in fade-in zoom-in-95 duration-150 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                <span>🔍</span>
+                <Search className="h-4 w-4 text-zinc-500" />
                 <span>{lang === "bn" ? "নাগরিক রিপোর্ট অনুসন্ধান" : "Search Citizen Reports"}</span>
               </h3>
               <button
@@ -803,7 +810,7 @@ export default function Navbar() {
                 className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 rounded-lg cursor-pointer"
                 aria-label="Close search"
               >
-                ✕
+                <X className="h-5 w-5" />
               </button>
             </div>
 

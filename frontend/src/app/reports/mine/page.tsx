@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
 import { Report, ReportStatus } from "@/lib/types";
+import { FileText, MapPin } from "lucide-react";
 
 const STATUS_BADGES: Record<
   ReportStatus,
@@ -151,7 +152,7 @@ export default function MyReportsPage() {
       {filteredReports.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700 p-12 text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-400">
-            📋
+            <FileText className="h-6 w-6" />
           </div>
           <h3 className="mt-4 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
             {activeFilter === "ALL" ? "No incident reports found" : `No reports with status: ${activeFilter}`}
@@ -215,7 +216,7 @@ export default function MyReportsPage() {
 
                 <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-zinc-100 dark:border-zinc-800 text-xs text-zinc-500">
                   <div className="flex items-center gap-1">
-                    <span>📍</span>
+                    <MapPin className="h-3.5 w-3.5 text-zinc-400" />
                     <span className="font-medium text-zinc-700 dark:text-zinc-300">
                       {report.location_text}
                     </span>

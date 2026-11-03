@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Language } from "@/lib/i18n";
+import { FileText, Siren, Phone } from "lucide-react";
 
 export default function TermsOfServicePage() {
   const [lang, setLang] = useState<Language>("en");
@@ -29,7 +30,8 @@ export default function TermsOfServicePage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-2">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200">
-              📜 {isBn ? "কমিউনিটি নির্দেশিকা ও শর্তাবলী" : "Community Rules & Legal Terms"}
+              <FileText className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-300" />
+              <span>{isBn ? "কমিউনিটি নির্দেশিকা ও শর্তাবলী" : "Community Rules & Legal Terms"}</span>
             </span>
             <h1 className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">
               {isBn ? "ব্যবহারের শর্তাবলী (Terms of Service)" : "Terms of Service"}
@@ -78,7 +80,7 @@ export default function TermsOfServicePage() {
       <div className="rounded-2xl border border-red-300 dark:border-red-900/70 bg-red-50 dark:bg-red-950/30 p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-red-800 dark:text-red-300 font-black text-sm">
-            <span>🚨</span>
+            <Siren className="h-4 w-4 text-red-600 dark:text-red-400" />
             <span>{isBn ? "জরুরি সতর্কবার্তা ও ডিসক্লেইমার" : "Important Emergency Notice"}</span>
           </div>
           <p className="text-xs text-red-700 dark:text-red-400 leading-relaxed max-w-2xl">
@@ -91,7 +93,7 @@ export default function TermsOfServicePage() {
           href="tel:999"
           className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs shrink-0 shadow-xs transition"
         >
-          <span>📞</span>
+          <Phone className="h-3.5 w-3.5" />
           <span>{isBn ? "৯৯৯ কল করুন" : "Call 999"}</span>
         </a>
       </div>

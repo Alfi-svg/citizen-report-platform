@@ -8,6 +8,7 @@ import { translations, Language } from "@/lib/i18n";
 import EmergencyCallModal from "@/components/EmergencyCallModal";
 import { captureCurrentLocation } from "@/lib/location";
 import { useBackClose } from "@/lib/useBackClose";
+import { Shield, ShieldAlert, AlertTriangle, Settings, Phone, X, Siren, MapPin, Check, AlertOctagon, FlaskConical, Users, Pencil, Trash2, FileText, Lock, MessageSquare, CheckCircle2, Circle } from "lucide-react";
 
 interface TrustedContactItem {
   id: string;
@@ -376,8 +377,8 @@ export default function GuardPage() {
   if (!isAuthenticated) {
     return (
       <div className="mx-auto max-w-lg px-4 py-16 text-center space-y-5">
-        <div className="h-16 w-16 mx-auto rounded-2xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-400 flex items-center justify-center text-3xl shadow-lg">
-          🛡️
+        <div className="h-16 w-16 mx-auto rounded-2xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-400 flex items-center justify-center shadow-lg">
+          <Shield className="h-8 w-8" />
         </div>
         <h1 className="text-2xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">
           {t.guard_title}
@@ -407,13 +408,15 @@ export default function GuardPage() {
           <div className="space-y-1.5">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>🛡️ {t.guard_title}</span>
+              <Shield className="h-3.5 w-3.5 text-emerald-400" />
+              <span>{t.guard_title}</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
               {t.guard_tagline}
             </h1>
-            <p className="text-xs text-zinc-400 max-w-xl leading-relaxed">
-              ⚠️ {t.guard_disclaimer}
+            <p className="text-xs text-zinc-400 max-w-xl leading-relaxed flex items-center gap-1.5">
+              <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+              <span>{t.guard_disclaimer}</span>
             </p>
           </div>
 
@@ -423,7 +426,7 @@ export default function GuardPage() {
               onClick={() => setSettingsModalOpen(true)}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-zinc-700 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-200 text-xs font-bold transition min-h-[44px]"
             >
-              <span>⚙️</span>
+              <Settings className="h-4 w-4" />
               <span>{t.guard_settings_title}</span>
             </button>
 
@@ -432,7 +435,7 @@ export default function GuardPage() {
               onClick={() => setEmergencyModalOpen(true)}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-600/80 hover:bg-red-600 text-white text-xs font-black shadow-lg shadow-red-700/20 transition min-h-[44px]"
             >
-              <span>📞</span>
+              <Phone className="h-4 w-4" />
               <span>{t.guard_call_999_btn}</span>
             </button>
           </div>
@@ -442,13 +445,16 @@ export default function GuardPage() {
       {/* Global Error Banner */}
       {error && (
         <div className="rounded-2xl border border-red-500/40 bg-red-950/40 p-4 text-xs text-red-300 flex items-center justify-between">
-          <span>⚠️ {error}</span>
+          <span className="flex items-center gap-1.5">
+            <AlertTriangle className="h-4 w-4 text-red-400 shrink-0" />
+            <span>{error}</span>
+          </span>
           <button
             type="button"
             onClick={() => setError(null)}
             className="text-red-400 hover:text-red-200 font-bold ml-2"
           >
-            ✕
+            <X className="h-4 w-4" />
           </button>
         </div>
       )}
@@ -462,7 +468,8 @@ export default function GuardPage() {
             <div className="space-y-1">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black bg-red-500 text-white shadow-md shadow-red-500/50">
                 <span className="h-2 w-2 rounded-full bg-white animate-ping" />
-                <span>🚨 {t.guard_active_title}</span>
+                <Siren className="h-3.5 w-3.5" />
+                <span>{t.guard_active_title}</span>
                 {activeSession.is_test && <span className="bg-zinc-800 px-1.5 py-0.5 rounded text-[10px]">[TEST]</span>}
               </div>
               <h2 className="text-xl sm:text-2xl font-black text-white">
@@ -473,7 +480,7 @@ export default function GuardPage() {
               </p>
               {activeSession.location_shared && activeSession.latitude && (
                 <p className="text-[11px] text-emerald-400 flex items-center gap-1 font-semibold">
-                  <span>📍</span>
+                  <MapPin className="h-3 w-3 shrink-0" />
                   <span>
                     {lang === "bn" ? "আনুমানিক অবস্থান শেয়ার করা হয়েছে:" : "Approximate location shared:"}{" "}
                     {activeSession.latitude}, {activeSession.longitude} (~110m)
@@ -488,7 +495,7 @@ export default function GuardPage() {
                 onClick={() => setSafeModalOpen(true)}
                 className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-black text-sm shadow-xl shadow-emerald-600/40 transition active:scale-95 min-h-[48px]"
               >
-                <span>🟢</span>
+                <Check className="h-4 w-4" />
                 <span>{t.guard_im_safe_btn}</span>
               </button>
 
@@ -497,7 +504,8 @@ export default function GuardPage() {
                 onClick={() => setEmergencyModalOpen(true)}
                 className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-3 rounded-2xl border border-red-500/50 bg-red-950/40 hover:bg-red-900/60 text-red-200 font-bold text-sm transition min-h-[48px]"
               >
-                <span>📞 999</span>
+                <Phone className="h-4 w-4" />
+                <span>999</span>
               </button>
             </div>
           </div>
@@ -525,13 +533,13 @@ export default function GuardPage() {
                     </div>
                     <div className="flex items-center gap-1 font-bold text-[11px]">
                       {rec.delivery_status === "DELIVERED" ? (
-                        <span className="text-emerald-400">✓ {t.guard_status_delivered}</span>
+                        <span className="text-emerald-400 flex items-center gap-1"><Check className="h-3 w-3" /><span>{t.guard_status_delivered}</span></span>
                       ) : rec.delivery_status === "SENT" ? (
-                        <span className="text-blue-400">✓ {t.guard_status_sent}</span>
+                        <span className="text-blue-400 flex items-center gap-1"><Check className="h-3 w-3" /><span>{t.guard_status_sent}</span></span>
                       ) : rec.delivery_status === "FAILED" ? (
-                        <span className="text-rose-400">✕ {t.guard_status_failed}</span>
+                        <span className="text-rose-400 flex items-center gap-1"><X className="h-3 w-3" /><span>{t.guard_status_failed}</span></span>
                       ) : (
-                        <span className="text-amber-400">? {t.guard_status_pending}</span>
+                        <span className="text-amber-400">{t.guard_status_pending}</span>
                       )}
                     </div>
                   </div>
@@ -582,7 +590,7 @@ export default function GuardPage() {
             className="group relative flex flex-col items-center justify-center h-44 w-44 sm:h-52 sm:w-52 rounded-full bg-gradient-to-br from-red-600 via-red-600 to-red-800 text-white font-black shadow-2xl shadow-red-600/40 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer ring-8 ring-red-500/20 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-400"
             aria-label={t.guard_emergency_btn}
           >
-            <span className="text-3xl sm:text-4xl mb-1 group-hover:scale-110 transition">🔴</span>
+            <AlertOctagon className="h-10 w-10 mb-1 group-hover:scale-110 transition" />
             <span className="text-base sm:text-lg tracking-wider font-extrabold">{t.guard_emergency_btn}</span>
             <span className="text-[10px] text-red-200 font-semibold mt-1">
               {contacts.length} {lang === "bn" ? "জন বিশ্বস্ত ব্যক্তি" : "Contacts Linked"}
@@ -602,7 +610,7 @@ export default function GuardPage() {
               }}
               className="text-xs text-zinc-400 hover:text-zinc-200 underline underline-offset-4 flex items-center gap-1.5 transition"
             >
-              <span>🧪</span>
+              <FlaskConical className="h-4 w-4" />
               <span>{t.guard_test_alert_btn}</span>
             </button>
           </div>
@@ -616,7 +624,7 @@ export default function GuardPage() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-              <span>👥</span>
+              <Users className="h-5 w-5 text-emerald-600" />
               <span>{t.guard_trusted_contacts_title}</span>
               <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500">
                 {contacts.length}/5
@@ -641,7 +649,7 @@ export default function GuardPage() {
 
         {contacts.length >= 5 && (
           <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300 flex items-center gap-2">
-            <span>ℹ️</span>
+            <AlertTriangle className="h-4 w-4 shrink-0" />
             <span>
               {lang === "bn"
                 ? "সর্বোচ্চ ৫ জন বিশ্বস্ত ব্যক্তি যুক্ত করা হয়েছে। নতুন কাউকে যুক্ত করতে বিদ্যমান কাউকে পরিবর্তন বা মুছুন।"
@@ -689,7 +697,7 @@ export default function GuardPage() {
                     className="p-2 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
                     title="Edit contact"
                   >
-                    ✏️
+                    <Pencil className="h-4 w-4" />
                   </button>
                   <button
                     type="button"
@@ -697,7 +705,7 @@ export default function GuardPage() {
                     className="p-2 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-950/40 transition min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
                     title="Delete contact"
                   >
-                    🗑️
+                    <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
               </div>
@@ -711,7 +719,7 @@ export default function GuardPage() {
       {/* =================================================================== */}
       <section className="space-y-4 pt-4 border-t border-zinc-200 dark:border-zinc-800">
         <h2 className="text-base font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-          <span>📋</span>
+          <FileText className="h-4 w-4 text-emerald-600" />
           <span>{t.guard_history_title}</span>
         </h2>
 
@@ -729,7 +737,7 @@ export default function GuardPage() {
                 <div className="space-y-0.5">
                   <div className="flex items-center gap-2">
                     <span
-                      className={`font-black text-[11px] ${
+                      className={`font-black text-[11px] inline-flex items-center gap-1.5 ${
                         item.status === "RESOLVED"
                           ? "text-emerald-500"
                           : item.status === "CANCELLED"
@@ -737,7 +745,14 @@ export default function GuardPage() {
                           : "text-red-500"
                       }`}
                     >
-                      ● {item.status}
+                      <span className={`h-1.5 w-1.5 rounded-full ${
+                        item.status === "RESOLVED"
+                          ? "bg-emerald-500"
+                          : item.status === "CANCELLED"
+                          ? "bg-zinc-400"
+                          : "bg-red-500"
+                      }`} />
+                      <span>{item.status}</span>
                     </span>
                     {item.is_test && (
                       <span className="text-[10px] bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-400">
@@ -761,7 +776,7 @@ export default function GuardPage() {
         )}
 
         <p className="text-[11px] text-zinc-500 flex items-center gap-1.5 pt-2">
-          <span>🔒</span>
+          <Lock className="h-3.5 w-3.5 text-zinc-400" />
           <span>{t.guard_privacy_reassurance}</span>
         </p>
       </section>
@@ -795,12 +810,14 @@ export default function GuardPage() {
             <div className="space-y-1.5">
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider mx-auto">
                 {isTestMode ? (
-                  <span className="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full">
-                    🧪 TEST ALERT ONLY
+                  <span className="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <FlaskConical className="h-3 w-3" />
+                    <span>TEST ALERT ONLY</span>
                   </span>
                 ) : (
-                  <span className="bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded-full">
-                    🚨 EMERGENCY ALERT
+                  <span className="bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <Siren className="h-3 w-3" />
+                    <span>EMERGENCY ALERT</span>
                   </span>
                 )}
               </div>
@@ -824,7 +841,7 @@ export default function GuardPage() {
               <button
                 type="button"
                 onClick={handleCancelCountdown}
-                className="px-4 py-3.5 rounded-2xl border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold transition min-h-[48px] active:scale-95"
+                className="px-4 py-3.5 rounded-2xl border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold transition min-h-[48px] active:scale-95 cursor-pointer"
               >
                 {t.guard_cancel_btn}
               </button>
@@ -833,7 +850,7 @@ export default function GuardPage() {
                 type="button"
                 onClick={handleImmediateSend}
                 disabled={triggering}
-                className={`px-4 py-3.5 rounded-2xl text-white text-xs font-black shadow-lg transition min-h-[48px] active:scale-95 disabled:opacity-50 ${
+                className={`px-4 py-3.5 rounded-2xl text-white text-xs font-black shadow-lg transition min-h-[48px] active:scale-95 disabled:opacity-50 cursor-pointer ${
                   isTestMode
                     ? "bg-indigo-600 hover:bg-indigo-500 shadow-indigo-600/30"
                     : "bg-red-600 hover:bg-red-500 active:bg-red-700 shadow-red-600/40"
@@ -862,7 +879,9 @@ export default function GuardPage() {
           aria-modal="true"
         >
           <div className="relative w-full max-w-sm rounded-3xl border border-emerald-500/40 bg-zinc-900 p-6 text-center space-y-4 shadow-2xl">
-            <div className="text-4xl">🟢</div>
+            <div className="flex items-center justify-center text-emerald-400">
+              <CheckCircle2 className="h-12 w-12" />
+            </div>
             <div className="space-y-1">
               <h3 className="text-lg font-black text-white">{t.guard_im_safe_confirm}</h3>
               <p className="text-xs text-zinc-400">{t.guard_im_safe_confirm_sub}</p>
@@ -871,7 +890,7 @@ export default function GuardPage() {
               <button
                 type="button"
                 onClick={() => setSafeModalOpen(false)}
-                className="px-4 py-2.5 rounded-xl border border-zinc-700 bg-zinc-800 text-zinc-300 text-xs font-bold"
+                className="px-4 py-2.5 rounded-xl border border-zinc-700 bg-zinc-800 text-zinc-300 text-xs font-bold cursor-pointer"
               >
                 {t.guard_cancel_btn}
               </button>
@@ -879,7 +898,7 @@ export default function GuardPage() {
                 type="button"
                 onClick={handleConfirmSafe}
                 disabled={resolving}
-                className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black shadow-md shadow-emerald-600/30"
+                className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black shadow-lg shadow-emerald-700/30 transition active:scale-95 disabled:opacity-50 cursor-pointer"
               >
                 {resolving ? "..." : t.guard_im_safe_yes}
               </button>
@@ -905,9 +924,9 @@ export default function GuardPage() {
               <button
                 type="button"
                 onClick={() => setContactModalOpen(false)}
-                className="text-zinc-400 hover:text-zinc-200"
+                className="text-zinc-400 hover:text-zinc-200 cursor-pointer"
               >
-                ✕
+                <X className="h-5 w-5" />
               </button>
             </div>
 
@@ -1011,13 +1030,16 @@ export default function GuardPage() {
         >
           <div className="relative w-full max-w-md rounded-3xl border border-zinc-700 bg-zinc-900 p-6 space-y-5 shadow-2xl">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-black text-white">⚙️ {t.guard_settings_title}</h3>
+              <h3 className="text-base font-black text-white flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                <span>{t.guard_settings_title}</span>
+              </h3>
               <button
                 type="button"
                 onClick={() => setSettingsModalOpen(false)}
-                className="text-zinc-400 hover:text-zinc-200"
+                className="text-zinc-400 hover:text-zinc-200 cursor-pointer"
               >
-                ✕
+                <X className="h-5 w-5" />
               </button>
             </div>
 
@@ -1025,8 +1047,9 @@ export default function GuardPage() {
               {/* Location sharing toggle */}
               <div className="flex items-start justify-between gap-3 p-3 rounded-2xl bg-zinc-800/80 border border-zinc-700">
                 <div className="space-y-1">
-                  <span className="text-xs font-bold text-white block">
-                    📍 {t.guard_share_location_label}
+                  <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <MapPin className="h-3.5 w-3.5 text-zinc-400" />
+                    <span>{t.guard_share_location_label}</span>
                   </span>
                   <p className="text-[11px] text-zinc-400 leading-snug">
                     {t.guard_share_location_desc}
@@ -1052,8 +1075,9 @@ export default function GuardPage() {
               {/* Custom message with character counter */}
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-bold text-zinc-300">
-                    💬 {t.guard_custom_msg_label}
+                  <label className="text-xs font-bold text-zinc-300 flex items-center gap-1.5">
+                    <MessageSquare className="h-3.5 w-3.5 text-zinc-400" />
+                    <span>{t.guard_custom_msg_label}</span>
                   </label>
                   <span className={`text-[11px] font-mono ${customMsgSetting.length > 140 ? "text-amber-400" : "text-zinc-500"}`}>
                     {customMsgSetting.length}/160

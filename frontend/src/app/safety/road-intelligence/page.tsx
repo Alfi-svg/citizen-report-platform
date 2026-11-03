@@ -11,6 +11,7 @@ import {
 import { Language } from "@/lib/i18n";
 import { captureCurrentLocation } from "@/lib/location";
 import EmergencyActionPlanModal from "@/components/EmergencyActionPlanModal";
+import { Siren, CarFront, Bot, Check, Bell, Milestone, Bike } from "lucide-react";
 
 // Preset Bangladesh High-Risk & Major Urban Locations
 const PRESET_AREAS = [
@@ -148,9 +149,17 @@ export default function RoadSafetyIntelligencePage() {
                 onClick={() => setActionPlanOpen(true)}
                 className="px-4 py-2.5 bg-red-600 hover:bg-red-500 active:scale-95 text-white rounded-xl font-bold text-xs sm:text-sm shadow-md transition flex items-center gap-2"
               >
-                <span>🚨</span>
+                <Siren className="h-4 w-4" />
                 <span>{isBn ? "জরুরি প্রটোকল (৯৯৯)" : "Action Protocol (999)"}</span>
               </button>
+
+              <Link
+                href="/safety/safe-ride"
+                className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-600 active:scale-95 text-white rounded-xl font-black text-xs sm:text-sm shadow-lg transition flex items-center gap-2"
+              >
+                <Bike className="h-4 w-4" />
+                <span>{isBn ? "সেফ রাইড (হেলমেট ভেরিফিকেশন)" : "Safe Ride (Helmet Check)"}</span>
+              </Link>
 
               <Link
                 href={`/safety/road-intelligence/live-map?lat=${latitude}&lng=${longitude}&area=${encodeURIComponent(areaName)}`}
@@ -212,7 +221,7 @@ export default function RoadSafetyIntelligencePage() {
               href={`/safety/road-intelligence/live-map?lat=${latitude}&lng=${longitude}&area=${encodeURIComponent(areaName)}`}
               className="px-5 py-3 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black text-xs sm:text-sm shadow-xl shadow-cyan-900/30 transition active:scale-95 flex items-center justify-center gap-2 shrink-0"
             >
-              <span>🚘</span>
+              <CarFront className="h-4 w-4" />
               <span>{isBn ? "লাইভ ৩ডি ম্যাপ খুলুন →" : "Open 3D Live Map →"}</span>
             </Link>
           </div>
@@ -388,7 +397,7 @@ export default function RoadSafetyIntelligencePage() {
             <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-xl">🤖</span>
+                  <Bot className="h-5 w-5 text-emerald-600" />
                   <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
                     {isBn ? "এআই নিরাপত্তা বিশ্লেষণ ও সতর্কতা" : "AI Safety Analysis & Precautions"}
                   </h3>
@@ -426,7 +435,7 @@ export default function RoadSafetyIntelligencePage() {
                   <ul className="space-y-1.5 text-xs text-zinc-600 dark:text-zinc-300">
                     {data.explanation.precautions.map((prec, idx) => (
                       <li key={idx} className="flex items-start gap-2">
-                        <span className="text-emerald-500 font-bold">✓</span>
+                        <Check className="h-3.5 w-3.5 text-emerald-500 shrink-0 mt-0.5" />
                         <span>{prec}</span>
                       </li>
                     ))}
@@ -439,7 +448,7 @@ export default function RoadSafetyIntelligencePage() {
             {data.nearby_alerts && data.nearby_alerts.length > 0 && (
               <div className="bg-red-50/50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 rounded-2xl p-5 shadow-sm space-y-3">
                 <div className="flex items-center gap-2 text-red-700 dark:text-red-400 font-bold text-sm">
-                  <span>🔔</span>
+                  <Bell className="h-4 w-4" />
                   <span>{isBn ? "নিকটবর্তী সাম্প্রতিক দুর্ঘটনা অ্যালার্ট" : "Active Nearby Accident Alerts"}</span>
                 </div>
 
@@ -537,7 +546,7 @@ export default function RoadSafetyIntelligencePage() {
               <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-2xs space-y-4">
                 <div>
                   <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                    <span>🛣️</span>
+                    <Milestone className="h-4 w-4 text-emerald-600" />
                     <span>{isBn ? "আঞ্চলিক সড়ক করিডোর (ডেটাবেস রেকর্ড অনুযায়ী)" : "Regional Highway Corridors (DB Grounded)"}</span>
                   </h3>
                   <p className="text-xs text-zinc-500 mt-0.5">

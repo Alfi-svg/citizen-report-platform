@@ -7,6 +7,7 @@ import { apiFetch } from "@/lib/api";
 import { PublicBloodRequest, BloodResponseItem, BloodDonationRecord } from "@/lib/types";
 import { useAuth } from "@/context/AuthContext";
 import { useBackClose } from "@/lib/useBackClose";
+import { AlertTriangle, Droplets, Lightbulb, Building2, MapPin, Clock, Shield, Phone, Check, Star, Heart, Flag, X, Scale } from "lucide-react";
 
 export default function BloodRequestDetailPage() {
   const router = useRouter();
@@ -262,7 +263,9 @@ export default function BloodRequestDetailPage() {
   if (error || !request) {
     return (
       <div className="mx-auto max-w-md px-4 py-16 text-center space-y-4">
-        <span className="text-4xl">⚠️</span>
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 mx-auto">
+          <AlertTriangle className="h-6 w-6" />
+        </div>
         <h1 className="text-lg font-black text-zinc-900 dark:text-zinc-100">
           Request Unavailable
         </h1>
@@ -356,7 +359,7 @@ export default function BloodRequestDetailPage() {
         <div className="p-4 sm:p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/80 dark:border-zinc-700/80 space-y-3">
           <div className="flex items-center justify-between text-xs font-bold text-zinc-700 dark:text-zinc-300">
             <span className="flex items-center gap-1.5">
-              <span>🩸</span>
+              <Droplets className="h-4 w-4 text-rose-600" />
               <span>Donation Workflow Progress</span>
             </span>
             <span className="text-[11px] font-normal text-zinc-500">
@@ -429,7 +432,7 @@ export default function BloodRequestDetailPage() {
 
         {/* Next Steps Guidance Card */}
         <div className="p-3.5 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-900/40 text-xs flex items-start gap-2.5">
-          <span className="text-base leading-none">💡</span>
+          <Lightbulb className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
           <div className="space-y-0.5">
             <span className="font-bold text-blue-900 dark:text-blue-200 block">
               What happens next?
@@ -454,23 +457,28 @@ export default function BloodRequestDetailPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/80 dark:border-zinc-700/80 text-xs">
           <div>
             <span className="text-zinc-400 font-medium block">Hospital / Clinic</span>
-            <span className="font-bold text-zinc-900 dark:text-zinc-100 text-xs sm:text-sm mt-0.5 block truncate">
-              🏥 {request.hospital_name}
+            <span className="font-bold text-zinc-900 dark:text-zinc-100 text-xs sm:text-sm mt-0.5 flex items-center gap-1.5 truncate">
+              <Building2 className="h-3.5 w-3.5 text-zinc-500 shrink-0" />
+              <span className="truncate">{request.hospital_name}</span>
             </span>
           </div>
 
           <div>
             <span className="text-zinc-400 font-medium block">Area & District</span>
-            <span className="font-bold text-zinc-900 dark:text-zinc-100 text-xs sm:text-sm mt-0.5 block truncate">
-              📍 {request.hospital_area}, {request.district}
+            <span className="font-bold text-zinc-900 dark:text-zinc-100 text-xs sm:text-sm mt-0.5 flex items-center gap-1.5 truncate">
+              <MapPin className="h-3.5 w-3.5 text-zinc-500 shrink-0" />
+              <span className="truncate">{request.hospital_area}, {request.district}</span>
             </span>
           </div>
 
           <div>
             <span className="text-zinc-400 font-medium block">Required Date & Time</span>
-            <span className="font-bold text-zinc-900 dark:text-zinc-100 text-xs sm:text-sm mt-0.5 block">
-              🕒 {new Date(request.required_date).toLocaleDateString()}{" "}
-              {request.required_time ? `(${request.required_time})` : ""}
+            <span className="font-bold text-zinc-900 dark:text-zinc-100 text-xs sm:text-sm mt-0.5 flex items-center gap-1.5">
+              <Clock className="h-3.5 w-3.5 text-zinc-500 shrink-0" />
+              <span>
+                {new Date(request.required_date).toLocaleDateString()}{" "}
+                {request.required_time ? `(${request.required_time})` : ""}
+              </span>
             </span>
           </div>
         </div>
@@ -478,7 +486,7 @@ export default function BloodRequestDetailPage() {
         {/* View on Map Link */}
         <div className="flex items-center justify-between p-3.5 rounded-2xl bg-rose-50/50 dark:bg-rose-950/20 border border-rose-200/60 dark:border-rose-900/40 text-xs">
           <span className="text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5 text-[11px]">
-            <span>🛡️</span>
+            <Shield className="h-3.5 w-3.5 text-zinc-500" />
             <span>Approximate Location (~110m privacy buffer)</span>
           </span>
           <Link
@@ -505,8 +513,9 @@ export default function BloodRequestDetailPage() {
         {/* Contact Info (if authorized: requester, responder, or admin) */}
         {request.contact_phone && (
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 dark:border-emerald-900 dark:bg-emerald-950/20 p-4 space-y-1">
-            <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 block">
-              📞 Emergency Contact Details
+            <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+              <Phone className="h-3.5 w-3.5" />
+              <span>Emergency Contact Details</span>
             </span>
             <p className="text-xs text-emerald-700 dark:text-emerald-400">
               {request.contact_name ? `${request.contact_name}: ` : ""}
@@ -519,8 +528,9 @@ export default function BloodRequestDetailPage() {
         {request.is_own_request && (
           <div className="p-4 rounded-2xl border border-amber-200 bg-amber-50/50 dark:border-amber-900/60 dark:bg-amber-950/20 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-amber-900 dark:text-amber-200">
-                🛡️ You are the author of this request
+              <span className="text-xs font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+                <Shield className="h-4 w-4" />
+                <span>You are the author of this request</span>
               </span>
               <div className="flex gap-2">
                 {request.status !== "FULFILLED" && (
@@ -538,7 +548,7 @@ export default function BloodRequestDetailPage() {
                     type="button"
                     onClick={() => handleUpdateStatus("CANCELLED")}
                     disabled={updatingStatus}
-                    className="rounded-xl border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer"
+                    className="rounded-xl border border-zinc-300 dark:border-zinc-700 px-3.5 py-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer"
                   >
                     Cancel Request
                   </button>
@@ -563,8 +573,9 @@ export default function BloodRequestDetailPage() {
                           {resp.donor_display_name}
                         </span>
                         {resp.contact_phone && (
-                          <span className="ml-2 font-mono text-emerald-700 dark:text-emerald-400 font-bold">
-                            📞 {resp.contact_phone}
+                          <span className="ml-2 font-mono text-emerald-700 dark:text-emerald-400 font-bold inline-flex items-center gap-1">
+                            <Phone className="h-3 w-3" />
+                            <span>{resp.contact_phone}</span>
                           </span>
                         )}
                         {resp.message && (
@@ -585,7 +596,8 @@ export default function BloodRequestDetailPage() {
               <div className="pt-3 border-t border-amber-200/60 dark:border-amber-900/60 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
-                    <span>🩸</span> Blood Donation Claims ({donations.length})
+                    <Droplets className="h-4 w-4 text-rose-600" />
+                    <span>Blood Donation Claims ({donations.length})</span>
                   </span>
                   <span className="text-[10px] text-zinc-400">
                     Verify or dispute volunteer donations
@@ -638,9 +650,10 @@ export default function BloodRequestDetailPage() {
                               type="button"
                               onClick={() => handleConfirmDonation(d.id)}
                               disabled={confirmingDonationId === d.id}
-                              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition disabled:opacity-50 cursor-pointer"
+                              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition disabled:opacity-50 cursor-pointer inline-flex items-center gap-1"
                             >
-                              {confirmingDonationId === d.id ? "Confirming..." : "✅ Confirm Received"}
+                              <Check className="h-3.5 w-3.5" />
+                              <span>{confirmingDonationId === d.id ? "Confirming..." : "Confirm Received"}</span>
                             </button>
                             <button
                               type="button"
@@ -650,7 +663,7 @@ export default function BloodRequestDetailPage() {
                               }}
                               className="px-3 py-1.5 rounded-xl border border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 font-semibold text-xs hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer"
                             >
-                              ⚠️ Dispute Claim
+                              Dispute Claim
                             </button>
                           </div>
                         </div>
@@ -660,7 +673,8 @@ export default function BloodRequestDetailPage() {
                         <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-2">
                           {d.donor_rating ? (
                             <span className="text-[11px] text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1.5">
-                              <span>★ {d.donor_rating} / 5</span>
+                              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                              <span>{d.donor_rating} / 5</span>
                               {d.donor_review && (
                                 <span className="text-zinc-500 font-normal italic">
                                   &ldquo;{d.donor_review}&rdquo;
@@ -675,9 +689,9 @@ export default function BloodRequestDetailPage() {
                                 setSelectedRating(5);
                                 setDonorReview("");
                               }}
-                              className="text-xs font-bold text-amber-600 hover:underline flex items-center gap-1 cursor-pointer"
+                              className="text-xs font-bold text-amber-600 hover:underline flex items-center gap-1.5 cursor-pointer"
                             >
-                              <span>⭐</span>
+                              <Star className="h-3.5 w-3.5" />
                               <span>Rate Donor Assistance</span>
                             </button>
                           )}
@@ -687,7 +701,7 @@ export default function BloodRequestDetailPage() {
                       {d.status === "DISPUTED" && (
                         <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 p-2.5 rounded-xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 text-xs text-amber-800 dark:text-amber-300 space-y-1">
                           <span className="font-bold flex items-center gap-1.5 text-[11px]">
-                            <span>⚖️</span>
+                            <Scale className="h-3.5 w-3.5" />
                             <span>Claim Verification Unresolved</span>
                           </span>
                           <p className="text-[11px] text-zinc-600 dark:text-zinc-400">
@@ -746,8 +760,10 @@ export default function BloodRequestDetailPage() {
                           : "Status: " + myDonation.status}
                       </p>
                       {myDonation.donor_rating && (
-                        <p className="text-[11px] text-amber-600 dark:text-amber-400 font-bold mt-1">
-                          Rating received: ★ {myDonation.donor_rating} / 5
+                        <p className="text-[11px] text-amber-600 dark:text-amber-400 font-bold mt-1 inline-flex items-center gap-1">
+                          <span>Rating received:</span>
+                          <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                          <span>{myDonation.donor_rating} / 5</span>
                           {myDonation.donor_review && ` — "${myDonation.donor_review}"`}
                         </p>
                       )}
@@ -767,8 +783,11 @@ export default function BloodRequestDetailPage() {
                       disabled={hasRespondedLocally}
                       className="inline-flex items-center gap-2 rounded-2xl bg-rose-600 hover:bg-rose-700 px-5 py-3 text-xs sm:text-sm font-bold text-white shadow-2xs transition disabled:opacity-50 cursor-pointer"
                     >
-                      <span>❤️</span>
-                      <span>{hasRespondedLocally ? "Response Sent ✓" : "I Can Help (Donate Blood)"}</span>
+                      <Heart className="h-4 w-4" />
+                      <span className="inline-flex items-center gap-1">
+                        <span>{hasRespondedLocally ? "Response Sent" : "I Can Help (Donate Blood)"}</span>
+                        {hasRespondedLocally && <Check className="h-3.5 w-3.5" />}
+                      </span>
                     </button>
 
                     {!donations.some((d) => d.donor_id === user?.id) && (
@@ -778,7 +797,7 @@ export default function BloodRequestDetailPage() {
                         disabled={claimingDonation}
                         className="inline-flex items-center gap-2 rounded-2xl bg-emerald-700 hover:bg-emerald-800 px-5 py-3 text-xs sm:text-sm font-bold text-white shadow-2xs transition disabled:opacity-50 cursor-pointer"
                       >
-                        <span>🩸</span>
+                        <Droplets className="h-4 w-4" />
                         <span>{claimingDonation ? "Submitting Claim..." : "I Donated Blood"}</span>
                       </button>
                     )}
@@ -788,7 +807,7 @@ export default function BloodRequestDetailPage() {
                     href={`/login?redirect=/blood-help/${request.id}`}
                     className="inline-flex items-center gap-2 rounded-2xl bg-rose-600 hover:bg-rose-700 px-6 py-3 text-xs sm:text-sm font-bold text-white shadow-2xs transition"
                   >
-                    <span>❤️</span>
+                    <Heart className="h-4 w-4" />
                     <span>Sign In to Volunteer or Claim Donation</span>
                   </Link>
                 )}
@@ -799,7 +818,7 @@ export default function BloodRequestDetailPage() {
                 onClick={() => setIsFlagModalOpen(true)}
                 className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-zinc-500 hover:text-red-600 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer"
               >
-                <span>🚩</span>
+                <Flag className="h-3.5 w-3.5" />
                 <span>Report Request</span>
               </button>
             </div>
@@ -823,9 +842,9 @@ export default function BloodRequestDetailPage() {
               <button
                 type="button"
                 onClick={() => setIsResponseModalOpen(false)}
-                className="rounded-xl p-1.5 text-zinc-400 hover:text-zinc-600"
+                className="rounded-xl p-1.5 text-zinc-400 hover:text-zinc-600 cursor-pointer"
               >
-                ✕
+                <X className="h-4 w-4" />
               </button>
             </div>
 
@@ -893,9 +912,9 @@ export default function BloodRequestDetailPage() {
               <button
                 type="button"
                 onClick={() => setIsFlagModalOpen(false)}
-                className="rounded-xl p-1.5 text-zinc-400 hover:text-zinc-600"
+                className="rounded-xl p-1.5 text-zinc-400 hover:text-zinc-600 cursor-pointer"
               >
-                ✕
+                <X className="h-4 w-4" />
               </button>
             </div>
 
@@ -958,7 +977,8 @@ export default function BloodRequestDetailPage() {
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="text-base font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                  <span>⚠️</span> Dispute Donation Claim
+                  <AlertTriangle className="h-4 w-4 text-amber-600" />
+                  <span>Dispute Donation Claim</span>
                 </h3>
                 <p className="text-xs text-zinc-500">
                   Donor: {disputeDonation.donor_name}
@@ -967,9 +987,9 @@ export default function BloodRequestDetailPage() {
               <button
                 type="button"
                 onClick={() => setDisputeDonation(null)}
-                className="rounded-xl p-1.5 text-zinc-400 hover:text-zinc-600"
+                className="rounded-xl p-1.5 text-zinc-400 hover:text-zinc-600 cursor-pointer"
               >
-                ✕
+                <X className="h-4 w-4" />
               </button>
             </div>
 
@@ -1023,7 +1043,8 @@ export default function BloodRequestDetailPage() {
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="text-base font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                  <span>⭐</span> Rate Volunteer Donor
+                  <Star className="h-4 w-4 text-amber-500" />
+                  <span>Rate Volunteer Donor</span>
                 </h3>
                 <p className="text-xs text-zinc-500">
                   Donor: {ratingDonation.donor_name}
@@ -1032,9 +1053,9 @@ export default function BloodRequestDetailPage() {
               <button
                 type="button"
                 onClick={() => setRatingDonation(null)}
-                className="rounded-xl p-1.5 text-zinc-400 hover:text-zinc-600"
+                className="rounded-xl p-1.5 text-zinc-400 hover:text-zinc-600 cursor-pointer"
               >
-                ✕
+                <X className="h-4 w-4" />
               </button>
             </div>
 
@@ -1049,26 +1070,27 @@ export default function BloodRequestDetailPage() {
                       key={star}
                       type="button"
                       onClick={() => setSelectedRating(star)}
-                      className="text-3xl transition transform hover:scale-125 focus:outline-none cursor-pointer"
+                      className="p-1 transition transform hover:scale-125 focus:outline-none cursor-pointer"
+                      title={`${star} Star`}
                     >
                       {star <= selectedRating ? (
-                        <span className="text-amber-400">★</span>
+                        <Star className="h-7 w-7 fill-amber-400 text-amber-400" />
                       ) : (
-                        <span className="text-zinc-300 dark:text-zinc-700">☆</span>
+                        <Star className="h-7 w-7 text-zinc-300 dark:text-zinc-700" />
                       )}
                     </button>
                   ))}
                 </div>
                 <div className="text-center text-xs font-bold text-amber-600 dark:text-amber-400">
                   {selectedRating === 5
-                    ? "⭐⭐⭐⭐⭐ Outstanding / Lifesaver!"
+                    ? "5/5 — Outstanding / Lifesaver!"
                     : selectedRating === 4
-                    ? "⭐⭐⭐⭐ Very Helpful & Reliable"
+                    ? "4/5 — Very Helpful & Reliable"
                     : selectedRating === 3
-                    ? "⭐⭐⭐ Helpful"
+                    ? "3/5 — Helpful"
                     : selectedRating === 2
-                    ? "⭐⭐ Below Expectations"
-                    : "⭐ Poor Assistance"}
+                    ? "2/5 — Below Expectations"
+                    : "1/5 — Poor Assistance"}
                 </div>
               </div>
 

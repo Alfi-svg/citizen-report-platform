@@ -13,6 +13,7 @@ import {
   SafetyServiceDuplicateCandidate,
 } from "@/lib/types";
 import { useBackClose } from "@/lib/useBackClose";
+import { Shield, CheckCircle2, AlertTriangle, Clock, Hourglass, Search, Upload, History, X, Check } from "lucide-react";
 
 const DIVISIONS = [
   "Dhaka",
@@ -418,26 +419,30 @@ export default function AdminEmergencyServicesPage() {
     switch (status) {
       case "VERIFIED":
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300">
-            ✓ Verified
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300">
+            <CheckCircle2 className="h-3 w-3" />
+            <span>Verified</span>
           </span>
         );
       case "NEEDS_REVIEW":
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300">
-            ⚠️ Review Needed
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300">
+            <AlertTriangle className="h-3 w-3" />
+            <span>Review Needed</span>
           </span>
         );
       case "OUTDATED":
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300">
-            🕒 Outdated
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300">
+            <Clock className="h-3 w-3" />
+            <span>Outdated</span>
           </span>
         );
       case "PENDING_VERIFICATION":
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300">
-            ⏳ Pending
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300">
+            <Hourglass className="h-3 w-3" />
+            <span>Pending</span>
           </span>
         );
       default:
@@ -458,7 +463,7 @@ export default function AdminEmergencyServicesPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight flex items-center gap-2">
-              <span>🛡️</span>
+              <Shield className="h-6 w-6 text-indigo-600" />
               <span>Official Bangladesh Safety Directory Verification</span>
             </h1>
             <p className="text-xs text-zinc-500 mt-1">
@@ -471,7 +476,7 @@ export default function AdminEmergencyServicesPage() {
               onClick={handleOpenDuplicates}
               className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 hover:bg-amber-100 transition shadow-xs"
             >
-              <span>🔍</span>
+              <Search className="h-3.5 w-3.5" />
               <span>Check Duplicates</span>
             </button>
             <button
@@ -482,7 +487,7 @@ export default function AdminEmergencyServicesPage() {
               }}
               className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 transition shadow-xs"
             >
-              <span>📥</span>
+              <Upload className="h-3.5 w-3.5" />
               <span>Batch Import</span>
             </button>
             <button
@@ -804,10 +809,11 @@ export default function AdminEmergencyServicesPage() {
                           {/* Audit History */}
                           <button
                             onClick={() => handleOpenHistory(svc)}
-                            className="px-2 py-1 text-[11px] font-semibold rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 transition"
+                            className="px-2 py-1 text-[11px] font-semibold rounded-lg border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 transition inline-flex items-center gap-1"
                             title="View verification audit trail"
                           >
-                            📜
+                            <History className="h-3 w-3" />
+                            <span>Audit</span>
                           </button>
 
                           {/* Deactivate / Reactivate */}
@@ -874,7 +880,7 @@ export default function AdminEmergencyServicesPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="w-full max-w-md bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-6 shadow-2xl space-y-4">
             <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-              <span>✓</span>
+              <CheckCircle2 className="h-5 w-5 text-emerald-600" />
               <span>Verify Directory Record</span>
             </h3>
             <p className="text-xs text-zinc-500">
@@ -948,7 +954,7 @@ export default function AdminEmergencyServicesPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="w-full max-w-md bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 p-6 shadow-2xl space-y-4">
             <h3 className="text-lg font-black text-amber-600 flex items-center gap-2">
-              <span>⚠️</span>
+              <AlertTriangle className="h-5 w-5" />
               <span>Mark Record For Review</span>
             </h3>
             <p className="text-xs text-zinc-500">
@@ -999,16 +1005,16 @@ export default function AdminEmergencyServicesPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                  <span>📜</span>
+                  <History className="h-5 w-5 text-indigo-600" />
                   <span>Verification & Audit History</span>
                 </h3>
                 <p className="text-xs text-zinc-500 mt-0.5">{historyService.name} ({historyService.district})</p>
               </div>
               <button
                 onClick={() => setIsHistoryModalOpen(false)}
-                className="text-zinc-400 hover:text-zinc-600 text-lg font-bold"
+                className="text-zinc-400 hover:text-zinc-600"
               >
-                ✕
+                <X className="h-5 w-5" />
               </button>
             </div>
 
@@ -1068,7 +1074,7 @@ export default function AdminEmergencyServicesPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                  <span>🔍</span>
+                  <Search className="h-5 w-5 text-indigo-600" />
                   <span>Potential Duplicate Service Records</span>
                 </h3>
                 <p className="text-xs text-zinc-500 mt-0.5">
@@ -1077,9 +1083,9 @@ export default function AdminEmergencyServicesPage() {
               </div>
               <button
                 onClick={() => setIsDuplicateModalOpen(false)}
-                className="text-zinc-400 hover:text-zinc-600 text-lg font-bold"
+                className="text-zinc-400 hover:text-zinc-600"
               >
-                ✕
+                <X className="h-5 w-5" />
               </button>
             </div>
 
@@ -1087,8 +1093,9 @@ export default function AdminEmergencyServicesPage() {
               {duplicatesLoading ? (
                 <div className="p-8 text-center text-zinc-400 font-semibold">Scanning directory for duplicates...</div>
               ) : duplicates.length === 0 ? (
-                <div className="p-8 text-center text-emerald-600 dark:text-emerald-400 font-semibold">
-                  ✓ No duplicate candidate records detected in the active directory!
+                <div className="p-8 text-center text-emerald-600 dark:text-emerald-400 font-semibold flex items-center justify-center gap-2">
+                  <Check className="h-4 w-4" />
+                  <span>No duplicate candidate records detected in the active directory!</span>
                 </div>
               ) : (
                 duplicates.map((dup, idx) => (
@@ -1136,7 +1143,7 @@ export default function AdminEmergencyServicesPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                  <span>📥</span>
+                  <Upload className="h-5 w-5 text-indigo-600" />
                   <span>Safe Batch Directory Ingest</span>
                 </h3>
                 <p className="text-xs text-zinc-500 mt-0.5">
@@ -1145,9 +1152,9 @@ export default function AdminEmergencyServicesPage() {
               </div>
               <button
                 onClick={() => setIsImportModalOpen(false)}
-                className="text-zinc-400 hover:text-zinc-600 text-lg font-bold"
+                className="text-zinc-400 hover:text-zinc-600"
               >
-                ✕
+                <X className="h-5 w-5" />
               </button>
             </div>
 

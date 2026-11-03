@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
 import { FlagResponse, FlagTargetType, ReportFlagReason, CommentFlagReason } from "@/lib/types";
 import { useBackClose } from "@/lib/useBackClose";
+import { Flag, X, Check } from "lucide-react";
 
 interface FlagModalProps {
   isOpen: boolean;
@@ -164,7 +165,7 @@ export default function FlagModal({
       <div className="w-full max-w-lg rounded-3xl bg-white dark:bg-zinc-900 p-4 sm:p-8 shadow-2xl border border-zinc-200 dark:border-zinc-800 space-y-5 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
           <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-            <span>🚩</span>
+            <Flag className="h-4 w-4 text-amber-600" />
             <span>
               {targetType === "REPORT"
                 ? "Flag Incident Report for Review / রিপোর্টটি ফ্ল্যাগ করুন"
@@ -174,16 +175,16 @@ export default function FlagModal({
           <button
             onClick={handleClose}
             type="button"
-            className="rounded-lg p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 text-lg leading-none"
+            className="rounded-lg p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition"
           >
-            ✕
+            <X className="h-5 w-5" />
           </button>
         </div>
 
         {confirmationMessage ? (
           <div className="space-y-4 text-center py-4">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 text-xl font-bold">
-              ✓
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+              <Check className="h-6 w-6 font-bold" />
             </div>
             <h4 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
               Flag Recorded

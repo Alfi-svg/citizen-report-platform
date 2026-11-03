@@ -32,7 +32,7 @@ export const translations = {
     all_nearby: "All Nearby Emergency Units",
     
     // Privacy & Disclaimers
-    privacy_notice: "🔒 Your location is used only to find nearby emergency services. We never track, store, or share your live location.",
+    privacy_notice: "Your location is used only to find nearby emergency services. We never track, store, or share your live location.",
     permission_denied_title: "Location Permission Denied",
     permission_denied_desc: "Location access is required to find emergency services near you. Please enable location permissions or select your area manually below.",
     permission_denied_native: "Location access is blocked. Tap 'Open Settings' to grant permission, or select your area manually below.",
@@ -52,7 +52,7 @@ export const translations = {
 
     // Missing Person Alert Network
     missing_person_title: "Missing Person Alerts",
-    missing_person_badge: "🚨 MISSING PERSON",
+    missing_person_badge: "MISSING PERSON",
     last_seen_near: "Last seen near",
     last_seen_time: "Time last seen",
     identifying_details: "Identifying Features",
@@ -65,7 +65,7 @@ export const translations = {
     submit_sighting: "Submit Sighting Information",
     community_sightings: "Moderated Community Sightings",
     no_sightings: "No verified sightings reported yet. If you have information, please click below.",
-    sighting_disclaimer: "🔒 Your submission is reviewed by moderators before safe approximate updates are shared with officials.",
+    sighting_disclaimer: "Your submission is reviewed by moderators before safe approximate updates are shared with officials.",
     approx_location_label: "Approximate Location Seen *",
     sighting_desc_label: "What did you see? Describe details *",
     sighting_time_label: "Time or Date Seen",
@@ -88,7 +88,7 @@ export const translations = {
     // Community Safety Map & Incident Clustering
     safety_map_title: "Community Safety Map",
     safety_map_subtitle: "Geographic visualization of platform-reviewed public safety incidents and alerts across Bangladesh.",
-    map_privacy_notice: "🔒 Public coordinates are privacy-sanitized (approx. ~110m grid). Exact residential coordinates and private reporter identities are never exposed.",
+    map_privacy_notice: "Public coordinates are privacy-sanitized (approx. ~110m grid). Exact residential coordinates and private reporter identities are never exposed.",
     all_categories: "All Incident Categories",
     view_incident_detail: "View Full Incident Report",
     platform_reviewed: "Platform Reviewed",
@@ -307,7 +307,7 @@ export const translations = {
     all_nearby: "নিকটস্থ সকল জরুরি সেবা কেন্দ্র",
     
     // Privacy & Disclaimers
-    privacy_notice: "🔒 আপনার বর্তমান লোকেশন শুধুমাত্র নিকটস্থ জরুরি সেবাগুলো খুঁজে দিতে ব্যবহৃত হয়। আমরা কখনোই আপনার লোকেশন সংরক্ষণ বা ট্র্যাক করি না।",
+    privacy_notice: "আপনার বর্তমান লোকেশন শুধুমাত্র নিকটস্থ জরুরি সেবাগুলো খুঁজে দিতে ব্যবহৃত হয়। আমরা কখনোই আপনার লোকেশন সংরক্ষণ বা ট্র্যাক করি না।",
     permission_denied_title: "লোকেশন পারমিশন দেওয়া হয়নি",
     permission_denied_desc: "কাছাকাছি জরুরি সেবা পেতে লোকেশন অনুমতি প্রয়োজন। অনুগ্রহ করে অনুমতি প্রদান করুন অথবা নিচে থেকে আপনার এলাকাটি সরাসরি নির্বাচন করুন।",
     permission_denied_native: "লোকেশন পারমিশন বন্ধ করা আছে। 'সেটিংস খুলুন'-এ ট্যাপ করে অনুমতি দিন অথবা নিচে থেকে আপনার এলাকা নির্বাচন করুন।",
@@ -327,7 +327,7 @@ export const translations = {
 
     // Missing Person Alert Network
     missing_person_title: "নিখোঁজ ব্যক্তি সন্ধান সতর্কতা",
-    missing_person_badge: "🚨 নিখোঁজ ব্যক্তি",
+    missing_person_badge: "নিখোঁজ ব্যক্তি",
     last_seen_near: "সর্বশেষ দেখা গেছে",
     last_seen_time: "সর্বশেষ দেখার সময়",
     identifying_details: "শনাক্তকারী বৈশিষ্ট্য",
@@ -340,7 +340,7 @@ export const translations = {
     submit_sighting: "দেখার তথ্য জমা দিন",
     community_sightings: "যাচাইকৃত দেখার তথ্য",
     no_sightings: "এখনও কোনো তথ্য জমা পড়েনি। আপনার কাছে কোনো তথ্য থাকলে নিচের বাটনে ক্লিক করুন।",
-    sighting_disclaimer: "🔒 আপনার তথ্যটি মডারেশন টিম দ্বারা যাচাইয়ের পরই অনুমোদিত হবে। আপনার কোনো ব্যক্তিগত তথ্য প্রকাশ করা হবে না।",
+    sighting_disclaimer: "আপনার তথ্যটি মডারেশন টিম দ্বারা যাচাইয়ের পরই অনুমোদিত হবে। আপনার কোনো ব্যক্তিগত তথ্য প্রকাশ করা হবে না।",
     approx_location_label: "যে এলাকায় দেখেছেন *",
     sighting_desc_label: "বিস্তারিত বিবরণ লিখুন *",
     sighting_time_label: "দেখার সময় বা তারিখ",
@@ -363,7 +363,7 @@ export const translations = {
     // Community Safety Map & Incident Clustering
     safety_map_title: "কমিউনিটি সেফটি ম্যাপ",
     safety_map_subtitle: "সারাদেশের যাচাইকৃত নাগরিক সুরক্ষা প্রতিবেদন ও সতর্কতার ভৌগোলিক মানচিত্র।",
-    map_privacy_notice: "🔒 সাধারণের জন্য প্রদর্শিত অবস্থান আনুমানিক (~১১০ মিটার গ্রিড)। কোনো ব্যক্তিগত বাসস্থানের সঠিক স্থানাঙ্ক বা পরিচয় প্রকাশ করা হয় না।",
+    map_privacy_notice: "সাধারণের জন্য প্রদর্শিত অবস্থান আনুমানিক (~১১০ মিটার গ্রিড)। কোনো ব্যক্তিগত বাসস্থানের সঠিক স্থানাঙ্ক বা পরিচয় প্রকাশ করা হয় না।",
     all_categories: "সকল ক্যাটাগরি",
     view_incident_detail: "সম্পূর্ণ রিপোর্ট দেখুন",
     platform_reviewed: "প্ল্যাটফর্ম যাচাইকৃত",

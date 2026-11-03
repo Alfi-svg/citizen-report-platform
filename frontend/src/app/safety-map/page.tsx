@@ -17,6 +17,7 @@ import {
 } from "@/lib/location";
 import { useBackClose } from "@/lib/useBackClose";
 import { isAppActive } from "@/lib/appLifecycle";
+import { Milestone, CarFront, X, AlertTriangle, MapPin, Check, Link2 } from "lucide-react";
 
 export default function SafetyMapPage() {
   const [lang, setLang] = useState<Language>("en");
@@ -188,7 +189,7 @@ export default function SafetyMapPage() {
             <div style="font-size: 11px; color: #71717a; margin-top: 4px;">
               <strong>${cluster.member_count}</strong> ${t.cluster_reports_count}.
             </div>
-            ${cluster.area ? `<div style="font-size: 10px; color: #a1a1aa; margin-top: 2px;">📍 ${cluster.area}</div>` : ""}
+            ${cluster.area ? `<div style="font-size: 10px; color: #a1a1aa; margin-top: 2px;">${cluster.area}</div>` : ""}
             <div style="margin-top: 8px; border-top: 1px solid #f4f4f5; padding-top: 6px;">
               <span style="color: #ea580c; font-weight: 700; font-size: 11px;">
                 ${lang === "bn" ? "বিস্তারিত দেখতে ট্যাপ করুন →" : "Tap for details →"}
@@ -261,16 +262,16 @@ export default function SafetyMapPage() {
                 ${isMissing ? (lang === "bn" ? "নিখোঁজ ব্যক্তি সতর্কতা" : "MISSING PERSON") : inc.category_name}
               </span>
               <span style="font-size: 9px; background: #ecfdf5; color: #059669; padding: 2px 6px; border-radius: 6px; font-weight: 800;">
-                ✓ ${t.platform_reviewed}
+                ${t.platform_reviewed}
               </span>
             </div>
             <div style="font-weight: 800; font-size: 13px; color: #18181b; margin-top: 2px; line-height: 1.3;">
               ${inc.title}
             </div>
             <div style="font-size: 11px; color: #71717a; margin-top: 4px;">
-              📍 <strong>${inc.location_text}</strong>
+              <strong>${inc.location_text}</strong>
             </div>
-            ${inc.cluster_title ? `<div style="font-size: 10px; color: #d97706; margin-top: 2px; font-weight: 600;">🔗 ${lang === "bn" ? "সম্পর্কিত ক্লাস্টার:" : "Part of cluster:"} ${inc.cluster_title}</div>` : ""}
+            ${inc.cluster_title ? `<div style="font-size: 10px; color: #d97706; margin-top: 2px; font-weight: 600;">${lang === "bn" ? "সম্পর্কিত ক্লাস্টার:" : "Part of cluster:"} ${inc.cluster_title}</div>` : ""}
             <div style="margin-top: 8px; border-top: 1px solid #f4f4f5; padding-top: 6px;">
               <a href="${linkUrl}" style="color: #059669; font-weight: 700; font-size: 11px; text-decoration: none;">
                 ${t.view_incident_detail} →
@@ -448,11 +449,11 @@ export default function SafetyMapPage() {
     const popupHtml = `
       <div style="font-family: inherit; font-size: 12px; padding: 4px; min-width: 160px;">
         <div style="font-weight: 800; color: #059669; font-size: 13px;">
-          🎯 ${lang === "bn" ? "আপনার আনুমানিক অবস্থান" : "Your Approximate Location"}
+          ${lang === "bn" ? "আপনার আনুমানিক অবস্থান" : "Your Approximate Location"}
         </div>
         <div style="font-size: 11px; color: #4b5563; margin-top: 4px; line-height: 1.4;">
-          ${suggestedAreaName ? `📍 <strong>${suggestedAreaName}</strong><br/>` : ""}
-          <span style="font-size: 10px; color: #6b7280;">🔒 ~110m privacy buffer applied</span>
+          ${suggestedAreaName ? `<strong>${suggestedAreaName}</strong><br/>` : ""}
+          <span style="font-size: 10px; color: #6b7280;">~110m privacy buffer applied</span>
         </div>
       </div>
     `;
@@ -525,7 +526,7 @@ export default function SafetyMapPage() {
             href="/safety/road-intelligence"
             className="inline-flex items-center gap-1.5 rounded-xl border border-blue-600/40 bg-blue-50 dark:bg-blue-950/60 px-3.5 py-2 text-xs font-bold text-blue-700 dark:text-blue-300 shadow-2xs hover:bg-blue-100 dark:hover:bg-blue-900/50 transition cursor-pointer"
           >
-            <span>🛣️</span>
+            <Milestone className="h-4 w-4 text-blue-600" />
             <span>{lang === "bn" ? "সড়ক ইন্টেলিজেন্স" : "Road Safety AI"}</span>
           </Link>
 
@@ -534,7 +535,7 @@ export default function SafetyMapPage() {
             href="/safety/road-intelligence/live-map"
             className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-600/40 bg-cyan-50 dark:bg-cyan-950/60 px-3.5 py-2 text-xs font-bold text-cyan-700 dark:text-cyan-300 shadow-2xs hover:bg-cyan-100 dark:hover:bg-cyan-900/50 transition cursor-pointer"
           >
-            <span>🚘</span>
+            <CarFront className="h-4 w-4 text-cyan-600" />
             <span>{lang === "bn" ? "৩ডি লাইভ ম্যাপ" : "3D Live Map"}</span>
           </Link>
 
@@ -670,7 +671,7 @@ export default function SafetyMapPage() {
               onClick={() => setSearch("")}
               className="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer"
             >
-              ✕
+              <X className="h-4 w-4" />
             </button>
           )}
         </div>
@@ -742,7 +743,10 @@ export default function SafetyMapPage() {
 
       {error && (
         <div className="rounded-2xl bg-red-50 dark:bg-red-950/40 p-3.5 border border-red-200 dark:border-red-900 text-xs text-red-700 dark:text-red-300 flex items-center justify-between">
-          <span>⚠️ {error}</span>
+          <span className="flex items-center gap-1.5">
+            <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />
+            <span>{error}</span>
+          </span>
           <button
             onClick={() => loadMapData(false)}
             className="px-3 py-1 font-bold text-xs bg-red-600 text-white rounded-lg hover:bg-red-700 cursor-pointer"
@@ -799,7 +803,7 @@ export default function SafetyMapPage() {
                       {inc.title}
                     </h3>
                     <p className="text-xs text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
-                      <span>📍</span>
+                      <MapPin className="h-3 w-3 text-zinc-400 shrink-0" />
                       <span>{inc.location_text}</span>
                     </p>
                     {inc.cluster_title && (
@@ -860,8 +864,9 @@ export default function SafetyMapPage() {
                       ? selectedPoint.category_name
                       : "Incident"}
                   </span>
-                  <span className="text-[9px] bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 px-1.5 py-0.5 rounded-md font-bold">
-                    ✓ Verified
+                  <span className="text-[9px] bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 px-1.5 py-0.5 rounded-md font-bold flex items-center gap-1">
+                    <Check className="h-2.5 w-2.5" />
+                    <span>Verified</span>
                   </span>
                 </div>
                 <button
@@ -869,7 +874,7 @@ export default function SafetyMapPage() {
                   className="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs font-bold h-9 w-9 flex items-center justify-center cursor-pointer rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
                   aria-label="Close details"
                 >
-                  ✕
+                  <X className="h-4 w-4" />
                 </button>
               </div>
 
@@ -879,7 +884,7 @@ export default function SafetyMapPage() {
 
               <div className="space-y-1 text-xs text-zinc-600 dark:text-zinc-400">
                 <p className="flex items-center gap-1.5">
-                  <span className="shrink-0 text-zinc-400">📍</span>
+                  <MapPin className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
                   <span className="line-clamp-1">
                     {"location_text" in selectedPoint ? selectedPoint.location_text : selectedPoint.area || "Approximate area"}
                   </span>
@@ -890,8 +895,9 @@ export default function SafetyMapPage() {
                   </p>
                 )}
                 {"cluster_title" in selectedPoint && selectedPoint.cluster_title && (
-                  <p className="text-[11px] text-amber-600 font-semibold">
-                    🔗 Part of cluster: {selectedPoint.cluster_title}
+                  <p className="text-[11px] text-amber-600 font-semibold flex items-center gap-1.5">
+                    <Link2 className="h-3 w-3 text-amber-600 shrink-0" />
+                    <span>Part of cluster: {selectedPoint.cluster_title}</span>
                   </p>
                 )}
               </div>
@@ -926,7 +932,7 @@ export default function SafetyMapPage() {
           {locationNotice && (
             <div className="absolute top-4 left-4 right-4 sm:left-auto sm:right-4 z-30 max-w-sm bg-amber-50 dark:bg-amber-950/90 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 rounded-2xl p-3 text-xs shadow-xl flex items-center justify-between gap-2.5 animate-in fade-in duration-150">
               <div className="flex items-center gap-2 min-w-0 flex-1">
-                <span className="shrink-0">⚠️</span>
+                <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
                 <span className="leading-snug break-words">{locationNotice.message}</span>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
@@ -954,7 +960,7 @@ export default function SafetyMapPage() {
                   className="text-amber-700 dark:text-amber-300 hover:text-amber-900 dark:hover:text-amber-100 p-1 font-bold min-h-[28px] min-w-[28px] flex items-center justify-center cursor-pointer"
                   aria-label="Dismiss notice"
                 >
-                  ✕
+                  <X className="h-4 w-4" />
                 </button>
               </div>
             </div>

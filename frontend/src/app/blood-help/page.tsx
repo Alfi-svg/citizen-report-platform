@@ -13,6 +13,7 @@ import { translations, Language } from "@/lib/i18n";
 import { useAuth } from "@/context/AuthContext";
 import DonorProfileModal from "@/components/DonorProfileModal";
 import AIBloodSearchCard from "@/components/AIBloodSearchCard";
+import { Droplets, AlertTriangle, Map, Heart, Check, MapPin } from "lucide-react";
 
 const BLOOD_GROUPS: BloodGroup[] = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
@@ -114,7 +115,7 @@ export default function BloodHelpPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200/60 dark:border-rose-900/60">
-              <span>🩸</span>
+              <Droplets className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
               <span>{lang === "bn" ? t.blood_help_bn : t.blood_help}</span>
               <span className="h-1.5 w-1.5 rounded-full bg-rose-600 animate-pulse" />
             </div>
@@ -134,7 +135,7 @@ export default function BloodHelpPage() {
               href="/blood-help/request"
               className="inline-flex items-center gap-2 rounded-2xl bg-rose-600 hover:bg-rose-700 px-5 py-3 text-xs sm:text-sm font-bold text-white shadow-sm transition hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
             >
-              <span>🚨</span>
+              <AlertTriangle className="h-4 w-4" />
               <span>{lang === "bn" ? "রক্ত প্রয়োজন (আবেদন)" : "Need Blood"}</span>
             </Link>
 
@@ -142,7 +143,7 @@ export default function BloodHelpPage() {
               href="/blood-help/map"
               className="inline-flex items-center gap-2 rounded-2xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 px-5 py-3 text-xs sm:text-sm font-bold text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/50 transition cursor-pointer shadow-2xs"
             >
-              <span>🗺️</span>
+              <Map className="h-4 w-4" />
               <span>{lang === "bn" ? "মানচিত্র ভিউ" : "Map View"}</span>
             </Link>
 
@@ -151,12 +152,12 @@ export default function BloodHelpPage() {
               onClick={() => setIsDonorModalOpen(true)}
               className="inline-flex items-center gap-2 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-5 py-3 text-xs sm:text-sm font-bold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-750 transition cursor-pointer shadow-2xs"
             >
-              <span>❤️</span>
+              <Heart className="h-4 w-4 text-rose-600 dark:text-rose-400" />
               <span>
                 {myProfile
                   ? myProfile.availability_status === "AVAILABLE"
-                    ? "🟢 My Donor Status (Active)"
-                    : "⚪ My Donor Status (Off)"
+                    ? "My Donor Status (Active)"
+                    : "My Donor Status (Off)"
                   : lang === "bn"
                   ? "রক্তদাতা হন"
                   : "Become a Donor"}
@@ -179,13 +180,20 @@ export default function BloodHelpPage() {
             <button
               type="button"
               onClick={() => setFilterCompatibleOnly(!filterCompatibleOnly)}
-              className={`rounded-xl px-3 py-1.5 text-xs font-bold transition cursor-pointer ${
+              className={`rounded-xl px-3 py-1.5 text-xs font-bold transition cursor-pointer inline-flex items-center gap-1.5 ${
                 filterCompatibleOnly
                   ? "bg-rose-600 text-white shadow-2xs"
                   : "border border-rose-300 dark:border-rose-800 bg-white dark:bg-zinc-900 text-rose-700 dark:text-rose-300"
               }`}
             >
-              {filterCompatibleOnly ? "✓ Showing Compatible for Me" : "Show Only Requests I Can Donate To"}
+              {filterCompatibleOnly ? (
+                <>
+                  <Check className="h-3.5 w-3.5" />
+                  <span>Showing Compatible for Me</span>
+                </>
+              ) : (
+                <span>Show Only Requests I Can Donate To</span>
+              )}
             </button>
           </div>
         )}
@@ -263,9 +271,9 @@ export default function BloodHelpPage() {
               className="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-2.5 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-rose-600"
             >
               <option value="ALL">All Urgencies</option>
-              <option value="EMERGENCY">🚨 Emergency (Immediate)</option>
-              <option value="URGENT">⚠️ Urgent (Within 24h)</option>
-              <option value="NORMAL">ℹ️ Normal (Scheduled)</option>
+              <option value="EMERGENCY">Emergency (Immediate)</option>
+              <option value="URGENT">Urgent (Within 24h)</option>
+              <option value="NORMAL">Normal (Scheduled)</option>
             </select>
           </div>
 
@@ -292,7 +300,8 @@ export default function BloodHelpPage() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-sm sm:text-base font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-            <span>🩸 Active Blood Requests</span>
+            <Droplets className="h-4 w-4 text-rose-600" />
+            <span>Active Blood Requests</span>
             <span className="rounded-full bg-rose-50 dark:bg-rose-950/60 px-2.5 py-0.5 text-xs text-rose-700 dark:text-rose-400 font-bold border border-rose-200/60 dark:border-rose-900/60">
               {total}
             </span>
@@ -300,9 +309,9 @@ export default function BloodHelpPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/blood-help/map"
-              className="inline-flex items-center gap-1 text-xs font-bold text-rose-600 dark:text-rose-400 hover:underline"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-600 dark:text-rose-400 hover:underline"
             >
-              <span>🗺️</span>
+              <Map className="h-3.5 w-3.5" />
               <span>{lang === "bn" ? "মানচিত্রে দেখুন" : "View on Map"} →</span>
             </Link>
           </div>
@@ -329,7 +338,9 @@ export default function BloodHelpPage() {
           </div>
         ) : requests.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-zinc-200 dark:border-zinc-800 p-12 text-center space-y-3">
-            <span className="text-3xl">🕊️</span>
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-400 mx-auto">
+              <Droplets className="h-6 w-6" />
+            </div>
             <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-200">
               No matching blood requests found
             </h3>
@@ -378,8 +389,9 @@ export default function BloodHelpPage() {
                     <h3 className="text-sm font-black text-zinc-900 dark:text-zinc-100 group-hover:text-rose-600 transition line-clamp-1">
                       {req.hospital_name}
                     </h3>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 truncate">
-                      📍 {req.hospital_area}, {req.district}
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 truncate flex items-center gap-1">
+                      <MapPin className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
+                      <span>{req.hospital_area}, {req.district}</span>
                     </p>
                   </div>
 

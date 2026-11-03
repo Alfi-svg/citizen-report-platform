@@ -13,6 +13,7 @@ import CommentsSection from "@/components/CommentsSection";
 import FlagModal from "@/components/FlagModal";
 import ReportLocationMap from "@/components/ReportLocationMap";
 import { useBackClose } from "@/lib/useBackClose";
+import { FileText, Shield, MapPin, Clock, User, Map, Share2, Flag, Info, Link2, Edit3, MessageSquare } from "lucide-react";
 
 const STATUS_BADGES: Record<
   ReportStatus,
@@ -301,7 +302,9 @@ export default function ReportDetailPage() {
     return (
       <div className="mx-auto max-w-xl px-4 py-16 text-center">
         <div className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-8 shadow-sm space-y-4">
-          <div className="text-4xl">📋</div>
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-500 mx-auto">
+            <FileText className="h-6 w-6" />
+          </div>
           <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Report Unavailable</h2>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-sm mx-auto leading-relaxed">
             {error || "This report was not found or has not yet been approved for public release."}
@@ -381,7 +384,7 @@ export default function ReportDetailPage() {
           {report && (report.user_id === user?.id || user?.role === "ADMIN") && (
             <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/60 dark:border-emerald-900/60 dark:bg-emerald-950/20 p-3.5 flex flex-wrap items-center justify-between gap-2 text-xs text-emerald-800 dark:text-emerald-300">
               <span className="font-semibold flex items-center gap-1.5">
-                <span>🛡️</span>
+                <Shield className="h-4 w-4 shrink-0" />
                 <span>{report.user_id === user?.id ? "You submitted this verified citizen report" : "Administrator Preview Mode"}</span>
               </span>
               <span className="font-mono text-[11px] text-emerald-700/70 dark:text-emerald-400/70">
@@ -417,20 +420,32 @@ export default function ReportDetailPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/80 dark:border-zinc-700/80 text-xs">
             <div>
               <span className="text-zinc-400 font-medium block">Approximate Location</span>
-              <span className="font-bold text-zinc-800 dark:text-zinc-200 text-xs sm:text-sm mt-0.5 block truncate">
-                📍 {displayReport.location_text}
+              <span className="font-bold text-zinc-800 dark:text-zinc-200 text-xs sm:text-sm mt-0.5 flex items-center gap-1.5 truncate">
+                <MapPin className="h-3.5 w-3.5 text-zinc-500 shrink-0" />
+                <span className="truncate">{displayReport.location_text}</span>
               </span>
             </div>
             <div>
               <span className="text-zinc-400 font-medium block">Incident Time</span>
-              <span className="font-bold text-zinc-800 dark:text-zinc-200 text-xs sm:text-sm mt-0.5 block">
-                🕒 {displayReport.incident_date ? new Date(displayReport.incident_date).toLocaleString() : "Not specified"}
+              <span className="font-bold text-zinc-800 dark:text-zinc-200 text-xs sm:text-sm mt-0.5 flex items-center gap-1.5">
+                <Clock className="h-3.5 w-3.5 text-zinc-500 shrink-0" />
+                <span>{displayReport.incident_date ? new Date(displayReport.incident_date).toLocaleString() : "Not specified"}</span>
               </span>
             </div>
             <div>
               <span className="text-zinc-400 font-medium block">Reporter Identity</span>
-              <span className="font-bold text-zinc-800 dark:text-zinc-200 text-xs sm:text-sm mt-0.5 block">
-                {displayReport.is_anonymous ? "🛡️ Anonymous Citizen" : `👤 ${displayReport.reporter_display_name || "Citizen"}`}
+              <span className="font-bold text-zinc-800 dark:text-zinc-200 text-xs sm:text-sm mt-0.5 flex items-center gap-1.5">
+                {displayReport.is_anonymous ? (
+                  <>
+                    <Shield className="h-3.5 w-3.5 text-purple-600 shrink-0" />
+                    <span>Anonymous Citizen</span>
+                  </>
+                ) : (
+                  <>
+                    <User className="h-3.5 w-3.5 text-zinc-500 shrink-0" />
+                    <span>{displayReport.reporter_display_name || "Citizen"}</span>
+                  </>
+                )}
               </span>
             </div>
           </div>
@@ -456,9 +471,9 @@ export default function ReportDetailPage() {
                   ? `/safety-map?lat=${displayReport.latitude}&lng=${displayReport.longitude}&report_id=${displayReport.id}`
                   : "/safety-map"
               }
-              className="text-emerald-700 dark:text-emerald-400 font-bold hover:underline inline-flex items-center gap-1"
+              className="text-emerald-700 dark:text-emerald-400 font-bold hover:underline inline-flex items-center gap-1.5"
             >
-              <span>🗺️</span>
+              <Map className="h-4 w-4" />
               <span>View On Interactive Safety Map →</span>
             </Link>
           </div>
@@ -493,7 +508,7 @@ export default function ReportDetailPage() {
                 onClick={() => handleShare(displayReport.title)}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-750 transition shadow-2xs min-h-[40px] cursor-pointer"
               >
-                <span>↗</span>
+                <Share2 className="h-3.5 w-3.5" />
                 <span>{copied ? "Link Copied!" : "Share Report"}</span>
               </button>
 
@@ -502,15 +517,16 @@ export default function ReportDetailPage() {
                 onClick={() => setIsFlagModalOpen(true)}
                 className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-zinc-500 hover:text-red-600 dark:text-zinc-400 dark:hover:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition min-h-[40px] cursor-pointer"
               >
-                <span>🚩</span>
+                <Flag className="h-3.5 w-3.5" />
                 <span>Flag</span>
               </button>
             </div>
           </div>
 
           {/* Verification Notice Banner */}
-          <div className="rounded-2xl border border-blue-200/80 bg-blue-50/50 dark:border-blue-900/60 dark:bg-blue-950/20 p-4 text-xs text-blue-800 dark:text-blue-300 leading-relaxed">
-            ℹ️ <strong>Platform Verification Notice:</strong> This report has undergone administrative review according to platform civic guidelines. It is published for public transparency and community safety awareness.
+          <div className="rounded-2xl border border-blue-200/80 bg-blue-50/50 dark:border-blue-900/60 dark:bg-blue-950/20 p-4 text-xs text-blue-800 dark:text-blue-300 leading-relaxed flex items-start gap-2.5">
+            <Info className="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400 mt-0.5" />
+            <span><strong>Platform Verification Notice:</strong> This report has undergone administrative review according to platform civic guidelines. It is published for public transparency and community safety awareness.</span>
           </div>
 
           {/* Related Incidents Section */}
@@ -518,7 +534,7 @@ export default function ReportDetailPage() {
             <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/40 p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
-                  <span>🔗</span>
+                  <Link2 className="h-4 w-4 text-zinc-500" />
                   <span>Related Reports</span>
                 </h3>
                 <span className="text-[11px] text-zinc-400 font-semibold">
@@ -541,8 +557,9 @@ export default function ReportDetailPage() {
                     <h4 className="text-xs font-bold text-zinc-800 dark:text-zinc-200 group-hover:text-emerald-700 transition line-clamp-1">
                       {rel.title}
                     </h4>
-                    <p className="text-[11px] text-zinc-500 mt-1 line-clamp-1">
-                      📍 {rel.location_text}
+                    <p className="text-[11px] text-zinc-500 mt-1 line-clamp-1 flex items-center gap-1">
+                      <MapPin className="h-3 w-3 text-zinc-400 shrink-0" />
+                      <span>{rel.location_text}</span>
                     </p>
                   </Link>
                 ))}
@@ -601,9 +618,10 @@ export default function ReportDetailPage() {
           {canEdit && !isEditing && (
             <button
               onClick={() => setIsEditing(true)}
-              className="rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3.5 py-2 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 transition shadow-2xs min-h-[40px] flex items-center justify-center cursor-pointer"
+              className="rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3.5 py-2 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 transition shadow-2xs min-h-[40px] flex items-center justify-center gap-1.5 cursor-pointer"
             >
-              ✏️ Edit Draft
+              <Edit3 className="h-3.5 w-3.5" />
+              <span>Edit Draft</span>
             </button>
           )}
           {canEdit && (
@@ -768,12 +786,14 @@ export default function ReportDetailPage() {
                   Category: {report.category?.name || "Incident"}
                 </span>
                 {report.is_anonymous ? (
-                  <span className="text-xs font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 px-2.5 py-1 rounded-full">
-                    🛡️ Anonymous Mode
+                  <span className="text-xs font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 px-2.5 py-1 rounded-full inline-flex items-center gap-1">
+                    <Shield className="h-3 w-3" />
+                    <span>Anonymous Mode</span>
                   </span>
                 ) : (
-                  <span className="text-xs font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 px-2.5 py-1 rounded-full">
-                    👤 Public Attribution
+                  <span className="text-xs font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 px-2.5 py-1 rounded-full inline-flex items-center gap-1">
+                    <User className="h-3 w-3" />
+                    <span>Public Attribution</span>
                   </span>
                 )}
               </div>
@@ -789,14 +809,16 @@ export default function ReportDetailPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200/80 dark:border-zinc-700/80">
               <div>
                 <span className="text-zinc-400 block font-medium">Incident Location</span>
-                <span className="font-bold text-zinc-800 dark:text-zinc-200 text-sm mt-0.5 block">
-                  📍 {report.location_text}
+                <span className="font-bold text-zinc-800 dark:text-zinc-200 text-sm mt-0.5 flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5 text-zinc-500 shrink-0" />
+                  <span>{report.location_text}</span>
                 </span>
               </div>
               <div>
                 <span className="text-zinc-400 block font-medium">Incident Occurrence</span>
-                <span className="font-bold text-zinc-800 dark:text-zinc-200 text-sm mt-0.5 block">
-                  🕒 {report.incident_date ? new Date(report.incident_date).toLocaleString() : "Not specified"}
+                <span className="font-bold text-zinc-800 dark:text-zinc-200 text-sm mt-0.5 flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5 text-zinc-500 shrink-0" />
+                  <span>{report.incident_date ? new Date(report.incident_date).toLocaleString() : "Not specified"}</span>
                 </span>
               </div>
               <div>
@@ -817,7 +839,8 @@ export default function ReportDetailPage() {
             {report.moderation_records && report.moderation_records.some((m) => m.user_message) && (
               <div className="rounded-2xl border border-purple-200 bg-purple-50/70 dark:border-purple-900 dark:bg-purple-950/30 p-4 space-y-2">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-purple-900 dark:text-purple-200">
-                  <span>💬 Official Moderation Feedback</span>
+                  <MessageSquare className="h-4 w-4" />
+                  <span>Official Moderation Feedback</span>
                 </div>
                 {report.moderation_records
                   .filter((m) => m.user_message)
@@ -860,8 +883,9 @@ export default function ReportDetailPage() {
           </div>
 
           {!canEdit && (
-            <div className="rounded-2xl border border-blue-200 bg-blue-50/50 p-4 dark:border-blue-900 dark:bg-blue-950/20 text-xs text-blue-800 dark:text-blue-300 leading-relaxed">
-              ℹ️ This report has been submitted to the moderation team and is locked against modifications. You will be notified once administrators review and verify your submission.
+            <div className="rounded-2xl border border-blue-200 bg-blue-50/50 p-4 dark:border-blue-900 dark:bg-blue-950/20 text-xs text-blue-800 dark:text-blue-300 leading-relaxed flex items-start gap-2.5">
+              <Info className="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400 mt-0.5" />
+              <span>This report has been submitted to the moderation team and is locked against modifications. You will be notified once administrators review and verify your submission.</span>
             </div>
           )}
 

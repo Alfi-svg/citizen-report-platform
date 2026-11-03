@@ -18,6 +18,7 @@ import {
 import ReportLocationMap from "@/components/ReportLocationMap";
 import { useBackClose } from "@/lib/useBackClose";
 import { registerBackHandler, BackPriority } from "@/lib/backButton";
+import { Sparkles, Bot, AlertTriangle, MapPin, Map, Shield, X, Info, FileText, User, Paperclip, Check } from "lucide-react";
 
 export default function CreateReportPage() {
   const router = useRouter();
@@ -353,9 +354,10 @@ export default function CreateReportPage() {
           </div>
           <Link
             href="/"
-            className="text-xs font-semibold text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
+            className="text-xs font-semibold text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 inline-flex items-center gap-1"
           >
-            ✕ Cancel
+            <X className="h-4 w-4" />
+            <span>Cancel</span>
           </Link>
         </div>
 
@@ -383,8 +385,9 @@ export default function CreateReportPage() {
       </div>
 
       {error && (
-        <div className="rounded-2xl bg-red-50 dark:bg-red-950/50 p-4 border border-red-200 dark:border-red-900">
-          <p className="text-xs font-bold text-red-800 dark:text-red-300">⚠️ {error}</p>
+        <div className="rounded-2xl bg-red-50 dark:bg-red-950/50 p-4 border border-red-200 dark:border-red-900 flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4 shrink-0 text-red-600 dark:text-red-400" />
+          <p className="text-xs font-bold text-red-800 dark:text-red-300">{error}</p>
         </div>
       )}
 
@@ -394,7 +397,7 @@ export default function CreateReportPage() {
           <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/30 border border-blue-200/80 dark:border-blue-900/60 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-blue-600/10 dark:bg-blue-400/20 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-lg shrink-0">
-                🤖
+                <Bot className="h-5 w-5" />
               </div>
               <div>
                 <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
@@ -413,7 +416,7 @@ export default function CreateReportPage() {
               onClick={() => setIsAIAssistantOpen(true)}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold rounded-xl shadow transition shrink-0 flex items-center justify-center gap-1.5"
             >
-              <span>✨</span>
+              <Sparkles className="h-4 w-4" />
               <span>Create with AI</span>
             </button>
           </div>
@@ -444,7 +447,7 @@ export default function CreateReportPage() {
             {selectedCategoryObj && (selectedCategoryObj.slug?.includes("missing-person") || selectedCategoryObj.name?.toLowerCase().includes("missing person")) && (
               <div className="rounded-2xl border border-red-200 dark:border-red-900 bg-red-50/80 dark:bg-red-950/50 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs mt-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-lg">🚨</span>
+                  <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 shrink-0" />
                   <span className="text-red-900 dark:text-red-200 font-medium">
                     Reporting a missing person? Use our dedicated alert form to include photo, age, clothing, and physical markings.
                   </span>
@@ -505,7 +508,8 @@ export default function CreateReportPage() {
                     className="inline-flex items-center gap-1 text-[11px] font-bold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition"
                     title="Select pin location on map"
                   >
-                    <span>🗺️ Pin on Map</span>
+                    <Map className="h-3.5 w-3.5" />
+                    <span>Pin on Map</span>
                   </button>
                   <span className="text-zinc-300 dark:text-zinc-600 text-xs">•</span>
                   <button
@@ -521,7 +525,10 @@ export default function CreateReportPage() {
                         <span>Locating...</span>
                       </>
                     ) : (
-                      <span>📍 Use My Location</span>
+                      <>
+                        <MapPin className="h-3.5 w-3.5" />
+                        <span>Use My Location</span>
+                      </>
                     )}
                   </button>
                 </div>
@@ -542,7 +549,7 @@ export default function CreateReportPage() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-2 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 px-3 py-1.5 text-[11px]">
                     <div className="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300">
-                      <span>🛡️</span>
+                      <Shield className="h-3.5 w-3.5" />
                       <span className="font-semibold">GPS:</span>
                       <span>
                         ~{formData.latitude.toFixed(3)}, {formData.longitude.toFixed(3)}
@@ -554,10 +561,11 @@ export default function CreateReportPage() {
                     <button
                       type="button"
                       onClick={handleClearLocationCoordinates}
-                      className="text-zinc-500 hover:text-red-500 font-bold transition text-xs"
+                      className="text-zinc-500 hover:text-red-500 font-bold transition text-xs inline-flex items-center gap-1"
                       title="Remove attached GPS coordinates"
                     >
-                      ✕ Remove
+                      <X className="h-3 w-3" />
+                      <span>Remove</span>
                     </button>
                   </div>
 
@@ -583,7 +591,11 @@ export default function CreateReportPage() {
                   }`}
                 >
                   <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                    <span className="shrink-0">{locationNotice.type === "warning" ? "⚠️" : "ℹ️"}</span>
+                    {locationNotice.type === "warning" ? (
+                      <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
+                    ) : (
+                      <Info className="h-4 w-4 shrink-0 text-emerald-600" />
+                    )}
                     <span className="break-words leading-relaxed">{locationNotice.message}</span>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
@@ -611,7 +623,7 @@ export default function CreateReportPage() {
                       className="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 font-bold p-1 min-h-[24px] min-w-[24px] flex items-center justify-center cursor-pointer"
                       aria-label="Dismiss notice"
                     >
-                      ✕
+                      <X className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 </div>
@@ -656,8 +668,9 @@ export default function CreateReportPage() {
               className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-purple-600 focus:ring-purple-500"
             />
             <label htmlFor="isAnonymous" className="text-xs text-zinc-700 dark:text-zinc-300 cursor-pointer">
-              <span className="font-bold text-purple-900 dark:text-purple-300 block">
-                🛡️ Submit as Anonymous Citizen
+              <span className="font-bold text-purple-900 dark:text-purple-300 flex items-center gap-1.5">
+                <Shield className="h-4 w-4" />
+                <span>Submit as Anonymous Citizen</span>
               </span>
               Your username and identity will be shielded completely from the public feed. Only platform compliance records will note your account securely.
             </label>
@@ -688,7 +701,7 @@ export default function CreateReportPage() {
           {duplicateCandidate && (
             <div className="p-3.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/50 rounded-xl text-xs space-y-1">
               <span className="font-bold text-blue-800 dark:text-blue-300 flex items-center gap-1.5">
-                <span>ℹ️</span>
+                <Info className="h-4 w-4 shrink-0" />
                 <span>Corroboration Match: Similar incident reported nearby</span>
               </span>
               <p className="text-zinc-600 dark:text-zinc-400">
@@ -707,13 +720,15 @@ export default function CreateReportPage() {
 
             <div>
               <span className="text-zinc-400 block font-medium">Location</span>
-              <span className="font-bold text-zinc-900 dark:text-zinc-100">
-                📍 {formData.locationText}
+              <span className="font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                <MapPin className="h-3.5 w-3.5 text-zinc-500 shrink-0" />
+                <span>{formData.locationText}</span>
               </span>
               {formData.latitude !== null && formData.longitude !== null ? (
                 <div className="mt-1 space-y-1.5">
-                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 block">
-                    🛡️ GPS Attached: ~{formData.latitude.toFixed(3)}, {formData.longitude.toFixed(3)} (Fuzzed ~110m)
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                    <Shield className="h-3 w-3 shrink-0" />
+                    <span>GPS Attached: ~{formData.latitude.toFixed(3)}, {formData.longitude.toFixed(3)} (Fuzzed ~110m)</span>
                   </span>
                   <ReportLocationMap
                     latitude={formData.latitude}
@@ -724,8 +739,9 @@ export default function CreateReportPage() {
                   />
                 </div>
               ) : (
-                <span className="text-[10px] text-zinc-400 block mt-0.5">
-                  📝 Manual landmark only
+                <span className="text-[10px] text-zinc-400 flex items-center gap-1 mt-0.5">
+                  <FileText className="h-3 w-3 shrink-0" />
+                  <span>Manual landmark only</span>
                 </span>
               )}
             </div>
@@ -741,8 +757,18 @@ export default function CreateReportPage() {
 
             <div>
               <span className="text-zinc-400 block font-medium">Identity Mode</span>
-              <span className="font-bold text-zinc-900 dark:text-zinc-100">
-                {formData.isAnonymous ? "🛡️ Anonymous Citizen" : `👤 ${user?.username}`}
+              <span className="font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1">
+                {formData.isAnonymous ? (
+                  <>
+                    <Shield className="h-3.5 w-3.5 text-purple-600 shrink-0" />
+                    <span>Anonymous Citizen</span>
+                  </>
+                ) : (
+                  <>
+                    <User className="h-3.5 w-3.5 text-zinc-500 shrink-0" />
+                    <span>{user?.username}</span>
+                  </>
+                )}
               </span>
             </div>
           </div>
@@ -773,7 +799,7 @@ export default function CreateReportPage() {
                         className="w-10 h-10 rounded-lg object-cover border border-zinc-200 dark:border-zinc-700 shrink-0"
                       />
                     ) : (
-                      <span className="text-xl shrink-0">📎</span>
+                      <Paperclip className="h-5 w-5 text-zinc-400 shrink-0" />
                     )}
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold text-zinc-800 dark:text-zinc-200 truncate">
@@ -814,9 +840,10 @@ export default function CreateReportPage() {
               type="button"
               disabled={submitting}
               onClick={handleFinalSubmit}
-              className="w-full sm:w-auto rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white px-7 py-2.5 text-xs font-bold shadow-md shadow-emerald-800/20 disabled:opacity-50 transition active:scale-98 min-h-[44px] flex items-center justify-center cursor-pointer"
+              className="w-full sm:w-auto rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white px-7 py-2.5 text-xs font-bold shadow-md shadow-emerald-800/20 disabled:opacity-50 transition active:scale-98 min-h-[44px] flex items-center justify-center gap-1.5 cursor-pointer"
             >
-              {submitting ? "Submitting..." : "Submit Incident Report ✓"}
+              <span>{submitting ? "Submitting..." : "Submit Incident Report"}</span>
+              {!submitting && <Check className="h-4 w-4" />}
             </button>
           </div>
         </div>
@@ -836,7 +863,7 @@ export default function CreateReportPage() {
           >
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 font-bold text-lg">
-                ⚠️
+                <AlertTriangle className="h-5 w-5" />
               </div>
               <div>
                 <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">

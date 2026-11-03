@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
 import { Language } from "@/lib/i18n";
+import { Trash2, Shield, XCircle, FileText, CheckCircle2, Globe, Smartphone } from "lucide-react";
 
 export default function AccountDeletionPage() {
   const router = useRouter();
@@ -85,7 +86,8 @@ export default function AccountDeletionPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-2">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 dark:bg-red-900/60 dark:text-red-200">
-              🗑️ {isBn ? "গুগল প্লে ডেটা নীতিমালা" : "Google Play Data Safety"}
+              <Trash2 className="h-3.5 w-3.5" />
+              <span>{isBn ? "গুগল প্লে ডেটা নীতিমালা" : "Google Play Data Safety"}</span>
             </span>
             <h1 className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">
               {isBn ? "অ্যাকাউন্ট ও ডেটা মোচন (Account & Data Deletion)" : "Account & Data Deletion"}
@@ -135,13 +137,14 @@ export default function AccountDeletionPage() {
         {/* Policy & Explanation */}
         <section className="space-y-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
           <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-            <span>🛡️</span>
+            <Shield className="h-5 w-5 text-red-600 dark:text-red-400" />
             <span>{isBn ? "ডেটা অপসারণের বিবরণ" : "Data Erasure Breakdown"}</span>
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div className="p-4 rounded-xl bg-red-50/60 dark:bg-red-950/30 border border-red-200/80 dark:border-red-900/60 space-y-2">
-              <h3 className="font-bold text-red-900 dark:text-red-200 text-sm">
-                ❌ {isBn ? "যা স্থায়ীভাবে মুছে যাবে:" : "Data Permanently Deleted:"}
+              <h3 className="font-bold text-red-900 dark:text-red-200 text-sm flex items-center gap-1.5">
+                <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                <span>{isBn ? "যা স্থায়ীভাবে মুছে যাবে:" : "Data Permanently Deleted:"}</span>
               </h3>
               <ul className="list-disc pl-4 space-y-1 text-zinc-600 dark:text-zinc-400">
                 <li>{isBn ? "লগইন ইমেইল এবং পাসওয়ার্ড হ্যাশ" : "Email address & bcrypt password hash"}</li>
@@ -153,8 +156,9 @@ export default function AccountDeletionPage() {
             </div>
 
             <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/80 dark:border-zinc-700/80 space-y-2">
-              <h3 className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">
-                📋 {isBn ? "যা জনস্বার্থে বেনামী থাকবে:" : "Data Retained for Public Safety:"}
+              <h3 className="font-bold text-zinc-900 dark:text-zinc-100 text-sm flex items-center gap-1.5">
+                <FileText className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
+                <span>{isBn ? "যা জনস্বার্থে বেনামী থাকবে:" : "Data Retained for Public Safety:"}</span>
               </h3>
               <ul className="list-disc pl-4 space-y-1 text-zinc-600 dark:text-zinc-400">
                 <li>
@@ -189,7 +193,7 @@ export default function AccountDeletionPage() {
 
             {inAppSuccess ? (
               <div className="p-4 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 text-xs font-bold flex items-center gap-2">
-                <span>✓</span>
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <span>
                   {isBn
                     ? "অ্যাকাউন্ট সফলভাবে নিষ্ক্রিয় করা হয়েছে। আপনাকে মূল পাতায় পাঠানো হচ্ছে..."
@@ -211,7 +215,7 @@ export default function AccountDeletionPage() {
                     <span>{isBn ? "প্রক্রিয়াধীন..." : "Deactivating..."}</span>
                   ) : (
                     <>
-                      <span>🗑️</span>
+                      <Trash2 className="h-4 w-4" />
                       <span>{isBn ? "আমার অ্যাকাউন্ট এখনই নিষ্ক্রিয় ও মুছে ফেলুন" : "Deactivate & Delete My Account Now"}</span>
                     </>
                   )}
@@ -224,7 +228,7 @@ export default function AccountDeletionPage() {
         {/* Method 2: Web Deletion Request Form (For users who uninstalled the app or cannot log in) */}
         <section className="space-y-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
           <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-            <span>🌐</span>
+            <Globe className="h-5 w-5 text-zinc-700 dark:text-zinc-300" />
             <span>
               {isBn
                 ? "অ্যাপ ছাড়া ওয়েব ফর্মের মাধ্যমে রিকোয়েস্ট পাঠান"
@@ -239,7 +243,9 @@ export default function AccountDeletionPage() {
 
           {webSubmitted ? (
             <div className="p-6 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-center space-y-2">
-              <div className="text-2xl">✅</div>
+              <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400">
+                <CheckCircle2 className="h-6 w-6" />
+              </div>
               <h3 className="font-bold text-emerald-800 dark:text-emerald-200 text-sm">
                 {isBn ? "ডিলিট রিকোয়েস্ট সফলভাবে জমা হয়েছে" : "Deletion Request Received"}
               </h3>
@@ -306,7 +312,7 @@ export default function AccountDeletionPage() {
         {/* Method 3: Mobile App Instructions */}
         <section className="space-y-3 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 text-xs">
           <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-            <span>📱</span>
+            <Smartphone className="h-5 w-5 text-zinc-700 dark:text-zinc-300" />
             <span>{isBn ? "অ্যান্ড্রয়েড অ্যাপে যেভাবে করবেন" : "How to Delete From Within the Android App"}</span>
           </h2>
           <ol className="list-decimal pl-5 space-y-1.5 text-zinc-600 dark:text-zinc-400">

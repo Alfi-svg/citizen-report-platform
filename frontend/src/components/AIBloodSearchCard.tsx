@@ -5,6 +5,7 @@ import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import { BloodAssistantResponse, BloodDonorResultItem } from "@/lib/types";
 import { Language } from "@/lib/i18n";
+import { Bot, Search, Sparkles, X, AlertTriangle, MapPin, Droplet, Check, Scale } from "lucide-react";
 
 interface AIBloodSearchCardProps {
   lang: Language;
@@ -71,7 +72,7 @@ export default function AIBloodSearchCard({ lang, onSelectDonor }: AIBloodSearch
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
           <div className="h-9 w-9 rounded-xl bg-rose-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">
-            🤖
+            <Bot className="h-5 w-5" />
           </div>
           <div>
             <h2 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
@@ -96,9 +97,10 @@ export default function AIBloodSearchCard({ lang, onSelectDonor }: AIBloodSearch
               setQuery("");
               setIsExpanded(false);
             }}
-            className="text-xs text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 font-semibold self-start sm:self-auto"
+            className="text-xs text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 font-semibold self-start sm:self-auto inline-flex items-center gap-1 cursor-pointer"
           >
-            ✕ {isBn ? "রিসেট করুন" : "Clear Search"}
+            <X className="h-3.5 w-3.5" />
+            <span>{isBn ? "রিসেট করুন" : "Clear Search"}</span>
           </button>
         )}
       </div>
@@ -124,7 +126,7 @@ export default function AIBloodSearchCard({ lang, onSelectDonor }: AIBloodSearch
             className="w-full px-4 py-3 pl-10 text-xs sm:text-sm rounded-2xl border border-rose-300/80 dark:border-rose-900 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-rose-600 shadow-2xs font-medium"
           />
           <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-rose-500 text-sm">
-            🔍
+            <Search className="h-4 w-4" />
           </span>
         </div>
 
@@ -140,7 +142,7 @@ export default function AIBloodSearchCard({ lang, onSelectDonor }: AIBloodSearch
             </>
           ) : (
             <>
-              <span>✨</span>
+              <Sparkles className="h-4 w-4" />
               <span>{isBn ? "দাতা খুঁজুন" : "Find Donors"}</span>
             </>
           )}
@@ -168,8 +170,9 @@ export default function AIBloodSearchCard({ lang, onSelectDonor }: AIBloodSearch
       )}
 
       {error && (
-        <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-xl text-xs text-red-600 dark:text-red-400">
-          ⚠️ {error}
+        <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-xl text-xs text-red-600 dark:text-red-400 flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          <span>{error}</span>
         </div>
       )}
 
@@ -180,7 +183,7 @@ export default function AIBloodSearchCard({ lang, onSelectDonor }: AIBloodSearch
           {result.is_clarification_needed && (
             <div className="p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 rounded-2xl space-y-3">
               <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 font-bold text-xs">
-                <span>⚠️</span>
+                <AlertTriangle className="h-4 w-4 shrink-0" />
                 <span>{result.clarification_question}</span>
               </div>
               <p className="text-xs text-zinc-600 dark:text-zinc-400">
@@ -212,8 +215,9 @@ export default function AIBloodSearchCard({ lang, onSelectDonor }: AIBloodSearch
                     {result.parsed_blood_group}
                   </span>
                   {result.parsed_district && (
-                    <span className="text-xs font-bold text-zinc-600 dark:text-zinc-300">
-                      📍 {result.parsed_district}
+                    <span className="text-xs font-bold text-zinc-600 dark:text-zinc-300 inline-flex items-center gap-1">
+                      <MapPin className="h-3 w-3 text-zinc-400" />
+                      <span>{result.parsed_district}</span>
                     </span>
                   )}
                   <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
@@ -230,7 +234,7 @@ export default function AIBloodSearchCard({ lang, onSelectDonor }: AIBloodSearch
                   href={`/blood-help/request?blood_group=${result.parsed_blood_group || ""}&district=${result.parsed_district || ""}`}
                   className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-1.5 shrink-0"
                 >
-                  <span>🚨</span>
+                  <Droplet className="h-4 w-4" />
                   <span>{isBn ? "রক্ত রিকোয়েস্ট পোস্ট করুন" : "Post Blood Request"}</span>
                 </Link>
               )}
@@ -260,9 +264,13 @@ export default function AIBloodSearchCard({ lang, onSelectDonor }: AIBloodSearch
                       </div>
 
                       <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 space-y-0.5">
-                        <p>📍 {donor.area}, {donor.district}</p>
-                        <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
-                          ✓ {donor.availability_status === "AVAILABLE" ? (isBn ? "রক্তদানে প্রস্তুত" : "Available to Donate") : donor.availability_status}
+                        <p className="inline-flex items-center gap-1">
+                          <MapPin className="h-3 w-3 text-zinc-400 shrink-0" />
+                          <span>{donor.area}, {donor.district}</span>
+                        </p>
+                        <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold inline-flex items-center gap-1">
+                          <Check className="h-3 w-3 text-emerald-600 shrink-0" />
+                          <span>{donor.availability_status === "AVAILABLE" ? (isBn ? "রক্তদানে প্রস্তুত" : "Available to Donate") : donor.availability_status}</span>
                         </p>
                       </div>
                     </div>
@@ -288,8 +296,9 @@ export default function AIBloodSearchCard({ lang, onSelectDonor }: AIBloodSearch
           )}
 
           {/* Medical Disclaimer */}
-          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 italic pt-1">
-            ⚖️ {result.disclaimer}
+          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 italic pt-1 inline-flex items-center gap-1.5">
+            <Scale className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
+            <span>{result.disclaimer}</span>
           </p>
         </div>
       )}

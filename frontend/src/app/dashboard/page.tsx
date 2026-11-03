@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
 import { Report, UserReputation, ReputationHistoryResponse } from "@/lib/types";
+import { Award, Shield, Star, History, FileText, MapPin, AlertTriangle } from "lucide-react";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -126,8 +127,9 @@ export default function DashboardPage() {
                   {user.role}
                 </span>
                 {reputation && (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300">
-                    🏅 {reputation.badge}
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 inline-flex items-center gap-1">
+                    <Award className="h-3 w-3" />
+                    <span>{reputation.badge}</span>
                   </span>
                 )}
               </div>
@@ -206,7 +208,8 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-              <span>🛡️</span> Community Standing & Impact
+              <Shield className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              <span>Community Standing & Impact</span>
             </h2>
             <p className="text-xs text-zinc-500">
               Reliability score and contributions verified by the Nirapotta community
@@ -252,8 +255,8 @@ export default function DashboardPage() {
                       </span>
                     </div>
                   </div>
-                  <div className="h-10 w-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 flex items-center justify-center text-xl shrink-0">
-                    🛡️
+                  <div className="h-10 w-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                    <Shield className="h-5 w-5" />
                   </div>
                 </div>
 
@@ -291,13 +294,14 @@ export default function DashboardPage() {
                         {reputation.impact_points}
                       </span>
                       <span className="text-sm text-zinc-400 font-medium">pts</span>
-                      <span className="ml-2 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300">
-                        🏅 {reputation.badge}
+                      <span className="ml-2 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 inline-flex items-center gap-1">
+                        <Award className="h-3.5 w-3.5" />
+                        <span>{reputation.badge}</span>
                       </span>
                     </div>
                   </div>
-                  <div className="h-10 w-10 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center text-xl shrink-0">
-                    ⭐
+                  <div className="h-10 w-10 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                    <Star className="h-5 w-5" />
                   </div>
                 </div>
 
@@ -352,7 +356,12 @@ export default function DashboardPage() {
 
               <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 text-center">
                 <span className="text-2xl font-black text-amber-500 block">
-                  {reputation.help_rating > 0 ? `★ ${reputation.help_rating}` : "—"}
+                  {reputation.help_rating > 0 ? (
+                    <span className="inline-flex items-center gap-1 justify-center">
+                      <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
+                      <span>{reputation.help_rating}</span>
+                    </span>
+                  ) : "—"}
                 </span>
                 <span className="text-[11px] text-zinc-500 font-medium">
                   {reputation.help_rating_count > 0 ? `${reputation.help_rating_count} donor review(s)` : "Donor Rating"}
@@ -364,7 +373,8 @@ export default function DashboardPage() {
             {showHistory && (
               <div className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 sm:p-6 shadow-2xs space-y-4">
                 <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                  <span>📜</span> Recent Point Ledger & Trust Score History
+                  <History className="h-4 w-4 text-zinc-500" />
+                  <span>Recent Point Ledger & Trust Score History</span>
                 </h3>
 
                 {loadingHistory ? (
@@ -468,7 +478,9 @@ export default function DashboardPage() {
           </div>
         ) : reports.length === 0 ? (
           <div className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-12 text-center space-y-3">
-            <div className="text-4xl">📝</div>
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-500 mx-auto">
+              <FileText className="h-6 w-6" />
+            </div>
             <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
               You haven&apos;t filed any incident reports yet
             </h3>
@@ -508,8 +520,9 @@ export default function DashboardPage() {
                       {new Date(report.created_at).toLocaleDateString()}
                     </span>
                     {report.is_anonymous && (
-                      <span className="text-[10px] font-semibold text-purple-700 dark:text-purple-300">
-                        🛡️ Anonymous
+                      <span className="text-[10px] font-semibold text-purple-700 dark:text-purple-300 inline-flex items-center gap-1">
+                        <Shield className="h-3 w-3" />
+                        <span>Anonymous</span>
                       </span>
                     )}
                   </div>
@@ -520,8 +533,9 @@ export default function DashboardPage() {
                     </Link>
                   </h3>
 
-                  <p className="text-xs text-zinc-500 truncate max-w-md">
-                    📍 {report.location_text}
+                  <p className="text-xs text-zinc-500 truncate max-w-md flex items-center gap-1">
+                    <MapPin className="h-3 w-3 text-zinc-400 shrink-0" />
+                    <span>{report.location_text}</span>
                   </p>
                 </div>
 
@@ -544,7 +558,7 @@ export default function DashboardPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <h2 className="text-base font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-              <span>🛡️</span>
+              <Shield className="h-5 w-5 text-zinc-700 dark:text-zinc-300" />
               <span>Account & Data Privacy</span>
             </h2>
             <p className="text-xs text-zinc-500">
@@ -597,8 +611,8 @@ export default function DashboardPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 sm:p-8 space-y-4 shadow-xl">
             <div className="flex items-center gap-3 text-red-600 dark:text-red-400">
-              <div className="h-10 w-10 rounded-2xl bg-red-100 dark:bg-red-950/60 flex items-center justify-center text-xl font-black">
-                ⚠️
+              <div className="h-10 w-10 rounded-2xl bg-red-100 dark:bg-red-950/60 flex items-center justify-center">
+                <AlertTriangle className="h-5 w-5" />
               </div>
               <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
                 Deactivate Your Account?

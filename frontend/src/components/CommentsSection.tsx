@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
 import { CommentPagination, PublicComment } from "@/lib/types";
 import FlagModal from "@/components/FlagModal";
+import { MessageSquare, User, Flag } from "lucide-react";
 
 interface CommentsSectionProps {
   reportId: string;
@@ -130,7 +131,8 @@ export default function CommentsSection({ reportId }: CommentsSectionProps) {
     <section id="comments" className="space-y-6 pt-6 border-t border-zinc-200 dark:border-zinc-800">
       <div className="flex items-center justify-between">
         <h2 className="text-base sm:text-lg font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-          <span>💬 Citizen Discussion</span>
+          <MessageSquare className="h-5 w-5 text-emerald-600" />
+          <span>Citizen Discussion</span>
           <span className="rounded-full bg-zinc-100 dark:bg-zinc-800 px-2.5 py-0.5 text-xs text-zinc-600 dark:text-zinc-400 font-bold border border-zinc-200/60 dark:border-zinc-700/60">
             {total}
           </span>
@@ -228,8 +230,9 @@ export default function CommentsSection({ reportId }: CommentsSectionProps) {
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-zinc-900 dark:text-zinc-100">
-                    👤 {comment.user_display_name}
+                  <span className="font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                    <User className="h-3.5 w-3.5 text-zinc-400" />
+                    <span>{comment.user_display_name}</span>
                   </span>
                   {comment.is_own_comment && (
                     <span className="rounded bg-emerald-100 dark:bg-emerald-950 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800 dark:text-emerald-300">
@@ -245,9 +248,10 @@ export default function CommentsSection({ reportId }: CommentsSectionProps) {
                     <button
                       type="button"
                       onClick={() => setFlagTargetComment(comment)}
-                      className="text-zinc-400 hover:text-red-600 dark:hover:text-red-400 font-medium text-[11px]"
+                      className="text-zinc-400 hover:text-red-600 dark:hover:text-red-400 font-medium text-[11px] flex items-center gap-1 cursor-pointer"
                     >
-                      🚩 Flag
+                      <Flag className="h-3 w-3" />
+                      <span>Flag</span>
                     </button>
                   )}
                   {(comment.is_own_comment || user?.role === "ADMIN") && (

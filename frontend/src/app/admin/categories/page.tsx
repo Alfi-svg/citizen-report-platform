@@ -7,6 +7,7 @@ import { apiFetch } from "@/lib/api";
 import { AdminCategory } from "@/lib/types";
 import AdminNav from "@/components/AdminNav";
 import { useBackClose } from "@/lib/useBackClose";
+import { Tag } from "lucide-react";
 
 export default function AdminCategoriesPage() {
   const router = useRouter();
@@ -156,7 +157,8 @@ export default function AdminCategoriesPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-              <span>🏷️ Category Management / ক্যাটাগরি ব্যবস্থাপনা</span>
+              <Tag className="h-6 w-6 text-indigo-600" />
+              <span>Category Management / ক্যাটাগরি ব্যবস্থাপনা</span>
               <span className="rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs px-2.5 py-0.5 font-bold">
                 {categories.length}
               </span>

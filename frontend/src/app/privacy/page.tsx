@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Language } from "@/lib/i18n";
+import { Shield, User, MapPin, Camera, HeartHandshake, Trash2, Settings } from "lucide-react";
 
 export default function PrivacyPolicyPage() {
   const [lang, setLang] = useState<Language>("en");
@@ -29,7 +30,8 @@ export default function PrivacyPolicyPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-2">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200">
-              🛡️ {isBn ? "আইনি ও ডেটা সুরক্ষা" : "Legal & Data Safety"}
+              <Shield className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-300" />
+              <span>{isBn ? "আইনি ও ডেটা সুরক্ষা" : "Legal & Data Safety"}</span>
             </span>
             <h1 className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">
               {isBn ? "গোপনীয়তা নীতি (Privacy Policy)" : "Privacy Policy"}
@@ -98,8 +100,9 @@ export default function PrivacyPolicyPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
             <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/80 dark:border-zinc-700/80 space-y-1.5">
-              <h3 className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">
-                👤 {isBn ? "অ্যাকাউন্ট তথ্য" : "Account Information"}
+              <h3 className="font-bold text-zinc-900 dark:text-zinc-100 text-sm flex items-center gap-2">
+                <User className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                <span>{isBn ? "অ্যাকাউন্ট তথ্য" : "Account Information"}</span>
               </h3>
               <p>
                 {isBn
@@ -109,8 +112,9 @@ export default function PrivacyPolicyPage() {
             </div>
 
             <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/80 dark:border-zinc-700/80 space-y-1.5">
-              <h3 className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">
-                📍 {isBn ? "স্থান ও ভৌগোলিক তথ্য" : "Location & Geolocation"}
+              <h3 className="font-bold text-zinc-900 dark:text-zinc-100 text-sm flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                <span>{isBn ? "স্থান ও ভৌগোলিক তথ্য" : "Location & Geolocation"}</span>
               </h3>
               <p>
                 {isBn
@@ -120,8 +124,9 @@ export default function PrivacyPolicyPage() {
             </div>
 
             <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/80 dark:border-zinc-700/80 space-y-1.5">
-              <h3 className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">
-                📸 {isBn ? "মিডিয়া ও সাক্ষ্য-প্রমাণ" : "Media & Evidence"}
+              <h3 className="font-bold text-zinc-900 dark:text-zinc-100 text-sm flex items-center gap-2">
+                <Camera className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                <span>{isBn ? "মিডিয়া ও সাক্ষ্য-প্রমাণ" : "Media & Evidence"}</span>
               </h3>
               <p>
                 {isBn
@@ -131,8 +136,9 @@ export default function PrivacyPolicyPage() {
             </div>
 
             <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/80 dark:border-zinc-700/80 space-y-1.5">
-              <h3 className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">
-                🩸 {isBn ? "রক্ত সহায়তা ও নিখোঁজ ব্যক্তি" : "Blood Help & Missing Person"}
+              <h3 className="font-bold text-zinc-900 dark:text-zinc-100 text-sm flex items-center gap-2">
+                <HeartHandshake className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                <span>{isBn ? "রক্ত সহায়তা ও নিখোঁজ ব্যক্তি" : "Blood Help & Missing Person"}</span>
               </h3>
               <p>
                 {isBn
@@ -224,14 +230,14 @@ export default function PrivacyPolicyPage() {
               href="/account-deletion"
               className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-xs transition"
             >
-              <span>🗑️</span>
+              <Trash2 className="h-4 w-4" />
               <span>{isBn ? "অ্যাকাউন্ট ও ডেটা ডিলিট পোর্টাল" : "Account & Data Deletion Portal"}</span>
             </Link>
             <Link
               href="/dashboard"
               className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 font-bold text-xs hover:bg-zinc-50 dark:hover:bg-zinc-700 transition"
             >
-              <span>⚙️</span>
+              <Settings className="h-4 w-4" />
               <span>{isBn ? "ড্যাশবোর্ড সেটিংস" : "Dashboard Account Settings"}</span>
             </Link>
           </div>

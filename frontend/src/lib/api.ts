@@ -149,3 +149,42 @@ export async function apiFetch<T>(endpoint: string, options: ApiFetchOptions = {
 
   return data as T;
 }
+
+export async function verifyHelmet(
+  imageBase64: string,
+  latitude?: number,
+  longitude?: number
+): Promise<import("./types").HelmetVerificationResponse> {
+  return apiFetch("/safety/safe-ride/verify-helmet", {
+    method: "POST",
+    body: JSON.stringify({
+      image_base64: imageBase64,
+      latitude,
+      longitude,
+    }),
+  });
+}
+
+export async function startSafeRide(
+  payload: import("./types").StartSafeRideRequest
+): Promise<import("./types").StartSafeRideResponse> {
+  return apiFetch("/safety/safe-ride/start", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function stopSafeRide(
+  payload: import("./types").StopSafeRideRequest
+): Promise<import("./types").StopSafeRideResponse> {
+  return apiFetch("/safety/safe-ride/stop", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function getActiveSafeRide(
+  rideId: string
+): Promise<{ has_active_ride: boolean; ride: import("./types").StartSafeRideResponse | null }> {
+  return apiFetch(`/safety/safe-ride/active/${encodeURIComponent(rideId)}`);
+}

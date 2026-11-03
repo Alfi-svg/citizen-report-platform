@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { Siren, PhoneCall, TriangleAlert, X } from "lucide-react";
 import { useBackClose } from "@/lib/useBackClose";
 import { translations, Language } from "@/lib/i18n";
 import { launchEmergencyDialer, sanitizePhoneNumber, BANGLADESH_EMERGENCY_HOTLINES } from "@/lib/emergency";
@@ -106,32 +107,33 @@ export default function EmergencyCallModal({
       <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-red-200 dark:border-red-900/80 bg-white dark:bg-zinc-900 p-6 sm:p-7 shadow-2xl z-10 space-y-5 animate-in zoom-in-95 duration-150">
         {/* Top Decorative / Close */}
         <div className="flex items-start justify-between">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black bg-red-100 dark:bg-red-950/80 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-900/60">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-red-100 dark:bg-red-950/80 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-900/60">
             <span className="h-2 w-2 rounded-full bg-red-600 animate-ping" />
-            <span>🚨 {t.emergency_modal_badge}</span>
+            <Siren className="h-3.5 w-3.5 text-red-600" aria-hidden="true" />
+            <span>{t.emergency_modal_badge}</span>
           </div>
 
           <button
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="rounded-full p-2 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 transition min-h-[44px] min-w-[44px] flex items-center justify-center"
+            className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition min-h-[44px] min-w-[44px] flex items-center justify-center"
           >
-            ✕
+            <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
 
         {/* Big Alert Icon & Hotline Number */}
         <div className="flex flex-col items-center text-center space-y-2 pt-1">
-          <div className="h-16 w-16 rounded-3xl bg-red-600 text-white flex items-center justify-center text-3xl shadow-lg shadow-red-600/30">
-            📞
+          <div className="h-16 w-16 rounded-3xl bg-red-600 text-white flex items-center justify-center shadow-lg shadow-red-600/30">
+            <PhoneCall className="h-8 w-8" aria-hidden="true" />
           </div>
           <div className="text-3xl sm:text-4xl font-black text-red-600 dark:text-red-400 tracking-tight">
             {cleanNumber}
           </div>
           <h2
             id="emergency-modal-title"
-            className="text-base sm:text-lg font-black text-zinc-900 dark:text-zinc-100 leading-snug"
+            className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 leading-snug"
           >
             {cleanNumber === "999" ? t.emergency_modal_heading : displayName}
           </h2>
@@ -139,7 +141,7 @@ export default function EmergencyCallModal({
 
         {/* Clarification & Safety Copy */}
         <div id="emergency-modal-desc" className="space-y-2 text-center">
-          <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed font-medium">
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
             {cleanNumber === "999"
               ? t.emergency_modal_body
               : currentLang === "bn"
@@ -147,9 +149,10 @@ export default function EmergencyCallModal({
               : `You are about to call ${displayName}.`}
           </p>
 
-          <div className="rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900/40 p-3 text-left">
+          <div className="rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900/40 p-3 text-left flex items-start gap-2">
+            <TriangleAlert className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" aria-hidden="true" />
             <p className="text-[11px] sm:text-xs text-amber-900 dark:text-amber-200/90 leading-relaxed">
-              ⚠️ <span className="font-semibold">{t.emergency_modal_disclaimer}</span>
+              <span className="font-semibold">{t.emergency_modal_disclaimer}</span>
             </p>
           </div>
         </div>
@@ -172,7 +175,7 @@ export default function EmergencyCallModal({
             disabled={hasLaunched}
             className="min-h-[48px] px-4 py-3 rounded-2xl bg-red-600 hover:bg-red-700 active:bg-red-800 disabled:opacity-75 text-white text-xs sm:text-sm font-black shadow-md shadow-red-600/30 transition active:scale-98 text-center flex items-center justify-center gap-2 cursor-pointer"
           >
-            <span>📞</span>
+            <PhoneCall className="h-4 w-4" />
             <span>
               {hasLaunched
                 ? currentLang === "bn"
