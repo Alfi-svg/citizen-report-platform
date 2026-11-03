@@ -174,6 +174,8 @@ export interface PublicReport {
   media_count: number;
   has_evidence: boolean;
   review_status: string;
+  corroboration_count?: number;
+  is_corroborated?: boolean;
 }
 
 export interface PublicReportPagination {
@@ -1129,6 +1131,167 @@ export interface BloodDonationRecord {
   district: string;
   blood_group: string;
 }
+
+// ---------------------------------------------------------------------------
+// AI Features Payload Interfaces
+// ---------------------------------------------------------------------------
+
+export type RoadSafetyRiskLevel = "Low" | "Moderate" | "High" | "Critical";
+
+export interface AccidentHistoryItem {
+  report_id: string;
+  title: string;
+  location_text: string;
+  distance_km?: number | null;
+  incident_date?: string | null;
+  created_at: string;
+  is_verified: boolean;
+  severity: string;
+}
+
+export interface NearbySafetyAlert {
+  id: string;
+  report_id: string;
+  title: string;
+  location_text: string;
+  distance_meters: number;
+  distance_text: string;
+  incident_date_text: string;
+  alert_reason: string;
+  report_url: string;
+}
+
+export interface RoadSafetyExplanation {
+  summary: string;
+  contributing_factors: string[];
+  precautions: string[];
+  data_source: string;
+}
+
+export interface RoadSafetyMetrics {
+  total_accidents: number;
+  verified_accidents: number;
+  recent_accidents_7d: number;
+  recent_accidents_30d: number;
+  accident_density_per_sq_km: number;
+  repeated_hotspots_count: number;
+  data_confidence: string;
+}
+
+export interface RoadSafetyHotspotItem {
+  area_name: string;
+  latitude: number;
+  longitude: number;
+  accident_count: number;
+  risk_level: RoadSafetyRiskLevel;
+  recent_count_30d: number;
+}
+
+export interface RoadSafetyIntelligenceResponse {
+  center_latitude: number;
+  center_longitude: number;
+  radius_km: number;
+  area_name?: string | null;
+  risk_score: number;
+  risk_level: RoadSafetyRiskLevel;
+  metrics: RoadSafetyMetrics;
+  history: AccidentHistoryItem[];
+  nearby_alerts: NearbySafetyAlert[];
+  explanation: RoadSafetyExplanation;
+  hotspots: RoadSafetyHotspotItem[];
+}
+
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface DraftReportPreview {
+  title: string;
+  category_id?: string | null;
+  category_name?: string | null;
+  category_slug?: string | null;
+  description: string;
+  location_text: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  incident_date?: string | null;
+  injuries_reported?: string | null;
+  severity?: string | null;
+  is_anonymous: boolean;
+}
+
+export interface EmergencyAssistantResponse {
+  reply: string;
+  follow_up_question?: string | null;
+  missing_fields: string[];
+  is_ready_for_review: boolean;
+  draft_report?: DraftReportPreview | null;
+  action_plan_summary?: string[] | null;
+  emergency_notice: string;
+  conversation_id: string;
+}
+
+export interface EmergencyActionPlanResponse {
+  emergency_type: string;
+  title: string;
+  emergency_hotline: string;
+  immediate_steps: string[];
+  precautions_to_avoid: string[];
+  follow_up_steps: string[];
+  relevant_features: string[];
+  disclaimer: string;
+}
+
+export interface DuplicateCandidateItem {
+  report_id: string;
+  title: string;
+  category_name: string;
+  location_text: string;
+  incident_date?: string | null;
+  created_at: string;
+  distance_km?: number | null;
+  similarity_score: number;
+  match_reasons: string[];
+  is_confirmed_duplicate: boolean;
+}
+
+export interface DuplicateDetectionResponse {
+  is_potential_duplicate: boolean;
+  primary_report_id?: string | null;
+  suggested_action: "NONE" | "FLAG_DUPLICATE" | "CONFIRM_PRIMARY";
+  candidates: DuplicateCandidateItem[];
+  analysis_summary: string;
+}
+
+export interface BloodDonorResultItem {
+  donor_id: string;
+  display_name: string;
+  blood_group: string;
+  district: string;
+  area: string;
+  availability_status: string;
+  last_donation_date?: string | null;
+  eligible_to_donate: boolean;
+  contact_phone?: string | null;
+  preferred_contact_method: string;
+  distance_km?: number | null;
+}
+
+export interface BloodAssistantResponse {
+  parsed_blood_group?: string | null;
+  parsed_district?: string | null;
+  parsed_area?: string | null;
+  parsed_urgency?: string | null;
+  is_clarification_needed: boolean;
+  clarification_question?: string | null;
+  donors: BloodDonorResultItem[];
+  total_donors_found: number;
+  explanation: string;
+  disclaimer: string;
+  create_request_url: string;
+}
+
 
 
 

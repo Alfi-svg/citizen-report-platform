@@ -12,6 +12,7 @@ import {
   LocationError,
 } from "@/lib/location";
 import EmergencyCallModal from "@/components/EmergencyCallModal";
+import EmergencyActionPlanModal from "@/components/EmergencyActionPlanModal";
 
 export default function SafetyCenterPage() {
   const [lang, setLang] = useState<Language>("en");
@@ -47,6 +48,7 @@ export default function SafetyCenterPage() {
   const [emergencyModalOpen, setEmergencyModalOpen] = useState<boolean>(false);
   const [emergencyModalTarget, setEmergencyModalTarget] = useState<string>("999");
   const [emergencyModalTitle, setEmergencyModalTitle] = useState<string>("");
+  const [actionPlanOpen, setActionPlanOpen] = useState<boolean>(false);
 
   const handleInitiateEmergencyCall = (number: string = "999", title?: string) => {
     setEmergencyModalTarget(number);
@@ -271,7 +273,44 @@ export default function SafetyCenterPage() {
       </section>
 
       {/* 3. SAFETY CENTER QUICK LINKS HUB */}
-      <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <Link
+          href="/safety/road-intelligence"
+          className="p-3.5 sm:p-4 rounded-2xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/40 dark:bg-rose-950/20 hover:border-rose-500 transition shadow-2xs flex flex-col justify-between"
+        >
+          <div className="h-8 w-8 rounded-xl bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 flex items-center justify-center text-base mb-2">
+            🛡️
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1">
+              <span>{lang === "bn" ? "সড়ক নিরাপত্তা" : "Road Safety"}</span>
+              <span className="text-[9px] font-black uppercase px-1 py-0.2 rounded-full bg-rose-600 text-white">AI</span>
+            </h4>
+            <p className="text-[11px] text-zinc-400 mt-0.5 line-clamp-1">
+              {lang === "bn" ? "দুর্ঘটনা ও ঝুঁকি মূল্যায়ন" : "Accident risk assessment"}
+            </p>
+          </div>
+        </Link>
+
+        <button
+          type="button"
+          onClick={() => setActionPlanOpen(true)}
+          className="p-3.5 sm:p-4 rounded-2xl border border-red-200 dark:border-red-900/60 bg-red-50/40 dark:bg-red-950/20 hover:border-red-500 transition shadow-2xs flex flex-col justify-between text-left cursor-pointer"
+        >
+          <div className="h-8 w-8 rounded-xl bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300 flex items-center justify-center text-base mb-2">
+            📋
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1">
+              <span>{lang === "bn" ? "অ্যাকশন প্ল্যান" : "Action Plan"}</span>
+              <span className="text-[9px] font-black uppercase px-1 py-0.2 rounded-full bg-red-600 text-white">AI</span>
+            </h4>
+            <p className="text-[11px] text-zinc-400 mt-0.5 line-clamp-1">
+              {lang === "bn" ? "জরুরি পদক্ষেপ নির্দেশিকা" : "Emergency instructions"}
+            </p>
+          </div>
+        </button>
+
         <Link
           href="/safety-map"
           className="p-3.5 sm:p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-emerald-500 dark:hover:border-emerald-700 transition shadow-2xs flex flex-col justify-between"
@@ -342,7 +381,7 @@ export default function SafetyCenterPage() {
 
         <Link
           href="/notifications"
-          className="col-span-2 sm:col-span-4 p-3.5 sm:p-4 rounded-2xl border border-teal-200 dark:border-teal-800/60 bg-teal-50/40 dark:bg-teal-950/20 hover:border-teal-500 transition shadow-2xs flex items-center justify-between"
+          className="col-span-2 sm:col-span-3 lg:col-span-6 p-3.5 sm:p-4 rounded-2xl border border-teal-200 dark:border-teal-800/60 bg-teal-50/40 dark:bg-teal-950/20 hover:border-teal-500 transition shadow-2xs flex items-center justify-between"
         >
           <div className="flex items-center gap-3">
             <div className="h-9 w-9 rounded-xl bg-teal-100 dark:bg-teal-900/60 text-teal-800 dark:text-teal-300 flex items-center justify-center text-lg">
@@ -858,6 +897,13 @@ export default function SafetyCenterPage() {
         targetNumber={emergencyModalTarget}
         serviceTitle={emergencyModalTitle}
         lang={lang}
+      />
+
+      {/* Emergency Action Plan Modal */}
+      <EmergencyActionPlanModal
+        isOpen={actionPlanOpen}
+        onClose={() => setActionPlanOpen(false)}
+        emergencyType="road_accident"
       />
     </div>
   );

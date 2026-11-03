@@ -222,6 +222,19 @@ export default function PublicReportCard({ report }: PublicReportCardProps) {
             </div>
           </div>
 
+          {/* Corroborated / Duplicate reports badge */}
+          {(report.is_corroborated || (report.corroboration_count !== undefined && report.corroboration_count > 0)) && (
+            <div className="px-4 pt-2">
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/60">
+                <span>🔗</span>
+                <span>
+                  Corroborated by {report.corroboration_count} citizen report
+                  {(report.corroboration_count || 1) > 1 ? "s" : ""}
+                </span>
+              </span>
+            </div>
+          )}
+
           {/* 2. Title & Short Description */}
           <div className="p-4 space-y-2">
             <h3 className="text-sm sm:text-base font-bold text-zinc-900 dark:text-zinc-100 line-clamp-2 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition leading-snug">

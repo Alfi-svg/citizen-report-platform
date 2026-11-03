@@ -1,5 +1,9 @@
 from fastapi import APIRouter
-from app.api.v1.endpoints import health, auth, categories, reports, admin, public, comments, reactions, flags, notifications, safety, missing_person, safety_map, analytics, blood, reputation, guard
+from app.api.v1.endpoints import (
+    health, auth, categories, reports, admin, public, comments,
+    reactions, flags, notifications, safety, missing_person,
+    safety_map, analytics, blood, reputation, guard, ai_features
+)
 
 api_router = APIRouter()
 api_router.include_router(health.router, prefix="/health", tags=["health"])
@@ -20,6 +24,8 @@ api_router.include_router(analytics.router, prefix="/analytics", tags=["analytic
 api_router.include_router(blood.router, prefix="/blood", tags=["blood"])
 api_router.include_router(reputation.router, prefix="/reputation", tags=["reputation"])
 api_router.include_router(guard.router, prefix="/guard", tags=["guard"])
+api_router.include_router(ai_features.router, tags=["ai-features"])
+
 
 
 

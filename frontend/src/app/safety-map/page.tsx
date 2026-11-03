@@ -520,6 +520,15 @@ export default function SafetyMapPage() {
             <span>Live Sync</span>
           </button>
 
+          {/* Road Safety Intelligence Link */}
+          <Link
+            href="/safety/road-intelligence"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-blue-600/40 bg-blue-50 dark:bg-blue-950/60 px-3.5 py-2 text-xs font-bold text-blue-700 dark:text-blue-300 shadow-2xs hover:bg-blue-100 dark:hover:bg-blue-900/50 transition cursor-pointer"
+          >
+            <span>🛣️</span>
+            <span>{lang === "bn" ? "সড়ক ইন্টেলিজেন্স" : "Road Safety AI"}</span>
+          </Link>
+
           {/* View Mode Toggle: Map vs List */}
           <button
             onClick={() => setIsListView(!isListView)}

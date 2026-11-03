@@ -61,6 +61,12 @@ def _format_public_report(report: Report) -> PublicReportListItem:
                 )
             )
 
+    corroboration_count = 0
+    if report.cluster_memberships:
+        for mem in report.cluster_memberships:
+            if mem.cluster and mem.cluster.members:
+                corroboration_count = max(corroboration_count, len(mem.cluster.members) - 1)
+
     return PublicReportListItem(
         id=report.id,
         category_id=report.category_id,
@@ -79,6 +85,8 @@ def _format_public_report(report: Report) -> PublicReportListItem:
         media_count=len(public_media),
         has_evidence=len(public_media) > 0,
         review_status="Platform Reviewed",
+        corroboration_count=corroboration_count,
+        is_corroborated=(corroboration_count > 0),
     )
 
 

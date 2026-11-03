@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
-import { Category, Report } from "@/lib/types";
+import { Category, Report, DraftReportPreview, DuplicateCandidateItem, DuplicateDetectionResponse } from "@/lib/types";
 import EvidenceUploader, { SelectedFileItem } from "@/components/EvidenceUploader";
+import AIEmergencyAssistantModal from "@/components/AIEmergencyAssistantModal";
 import {
   captureCurrentLocation,
   approximateCoordinates,
@@ -50,6 +51,22 @@ export default function CreateReportPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+  const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false);
+  const [duplicateCandidate, setDuplicateCandidate] = useState<DuplicateCandidateItem | null>(null);
+
+  const handleApplyAIDraft = (draft: DraftReportPreview) => {
+    setFormData((prev) => ({
+      ...prev,
+      title: draft.title || prev.title,
+      categoryId: draft.category_id || prev.categoryId,
+      description: draft.description || prev.description,
+      locationText: draft.location_text || prev.locationText,
+      latitude: draft.latitude !== undefined && draft.latitude !== null ? draft.latitude : prev.latitude,
+      longitude: draft.longitude !== undefined && draft.longitude !== null ? draft.longitude : prev.longitude,
+    }));
+    setIsReviewMode(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   // 1. Android Back on Discard Dialog -> Closes the dialog
   useBackClose(showDiscardModal, () => setShowDiscardModal(false), "reportDiscardModal", BackPriority.OVERLAY);
@@ -227,11 +244,33 @@ export default function CreateReportPage() {
     return true;
   };
 
-  const handleProceedToReview = (e: React.FormEvent) => {
+  const handleProceedToReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
       setIsReviewMode(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
+
+      // Non-blocking duplicate detection scan
+      try {
+        const dupRes = await apiFetch<DuplicateDetectionResponse>("/reports/duplicate-check", {
+          method: "POST",
+          body: JSON.stringify({
+            title: formData.title.trim(),
+            description: formData.description.trim(),
+            category_id: formData.categoryId,
+            latitude: formData.latitude,
+            longitude: formData.longitude,
+            location_text: formData.locationText.trim(),
+          }),
+        });
+        if (dupRes.is_potential_duplicate && dupRes.candidates && dupRes.candidates.length > 0) {
+          setDuplicateCandidate(dupRes.candidates[0]);
+        } else {
+          setDuplicateCandidate(null);
+        }
+      } catch {
+        // Continue smoothly if duplicate endpoint fails
+      }
     }
   };
 
@@ -351,6 +390,34 @@ export default function CreateReportPage() {
 
       {!isReviewMode ? (
         <form onSubmit={handleProceedToReview} className="space-y-6">
+          {/* AI Emergency Assistant Banner */}
+          <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/30 border border-blue-200/80 dark:border-blue-900/60 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-blue-600/10 dark:bg-blue-400/20 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-lg shrink-0">
+                🤖
+              </div>
+              <div>
+                <h3 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                  <span>AI Emergency Assistant</span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300 font-semibold">
+                    Bangla + English
+                  </span>
+                </h3>
+                <p className="text-[11px] text-zinc-600 dark:text-zinc-400 mt-0.5">
+                  Describe what you saw naturally — AI structures your report and verifies key details.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsAIAssistantOpen(true)}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold rounded-xl shadow transition shrink-0 flex items-center justify-center gap-1.5"
+            >
+              <span>✨</span>
+              <span>Create with AI</span>
+            </button>
+          </div>
+
           {/* Incident Category */}
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-zinc-900 dark:text-zinc-100">
@@ -617,6 +684,19 @@ export default function CreateReportPage() {
             </h2>
           </div>
 
+          {/* Potential Corroborating Duplicate Notice */}
+          {duplicateCandidate && (
+            <div className="p-3.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/50 rounded-xl text-xs space-y-1">
+              <span className="font-bold text-blue-800 dark:text-blue-300 flex items-center gap-1.5">
+                <span>ℹ️</span>
+                <span>Corroboration Match: Similar incident reported nearby</span>
+              </span>
+              <p className="text-zinc-600 dark:text-zinc-400">
+                A similar report &quot;{duplicateCandidate.title}&quot; was recently submitted in this area. Submitting your report will corroborate this community event.
+              </p>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div>
               <span className="text-zinc-400 block font-medium">Category</span>
@@ -794,6 +874,16 @@ export default function CreateReportPage() {
           </div>
         </div>
       )}
+      {/* AI Emergency Assistant Modal */}
+      <AIEmergencyAssistantModal
+        isOpen={isAIAssistantOpen}
+        onClose={() => setIsAIAssistantOpen(false)}
+        onApplyDraft={handleApplyAIDraft}
+        categories={categories}
+        currentLatitude={formData.latitude}
+        currentLongitude={formData.longitude}
+        currentLocationText={formData.locationText}
+      />
     </div>
   );
 }

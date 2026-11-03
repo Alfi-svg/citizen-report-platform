@@ -35,6 +35,8 @@ class PublicReportListItem(BaseModel):
     media_count: int = 0
     has_evidence: bool = False
     review_status: str = "Platform Reviewed"
+    corroboration_count: int = 0
+    is_corroborated: bool = False
 
     model_config = ConfigDict(from_attributes=True)
 

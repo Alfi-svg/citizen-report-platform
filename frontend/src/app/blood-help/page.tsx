@@ -12,6 +12,7 @@ import {
 import { translations, Language } from "@/lib/i18n";
 import { useAuth } from "@/context/AuthContext";
 import DonorProfileModal from "@/components/DonorProfileModal";
+import AIBloodSearchCard from "@/components/AIBloodSearchCard";
 
 const BLOOD_GROUPS: BloodGroup[] = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
@@ -189,6 +190,11 @@ export default function BloodHelpPage() {
           </div>
         )}
       </div>
+
+      {/* ========================================================= */}
+      {/* 1.5 AI Blood Donation Assistant (Natural Language Search) */}
+      {/* ========================================================= */}
+      <AIBloodSearchCard lang={lang} />
 
       {/* ========================================================= */}
       {/* 2. Interactive Filter Strip */}
