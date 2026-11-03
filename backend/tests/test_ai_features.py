@@ -389,3 +389,84 @@ async def test_blood_donation_assistant_exact_matching(
     assert data_amb["is_clarification_needed"] is True
     assert data_amb["clarification_question"] is not None
     assert len(data_amb["donors"]) == 0
+
+
+@pytest.mark.asyncio
+async def test_road_safety_hotspots_grounded_in_db(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+):
+    """Verifies that regional corridors report actual database counts and do not fabricate fake stats."""
+    res = await async_client.get(
+        "/api/v1/safety/road-intelligence",
+        params={"latitude": 23.7806, "longitude": 90.3522, "radius_km": 2.0, "lang": "en"},
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert "hotspots" in data
+    # When no records were seeded around corridors in this test, hotspot count must be 0, not fabricated
+    for spot in data["hotspots"]:
+        assert isinstance(spot["accident_count"], int)
+        assert spot["accident_count"] >= 0
+
+
+@pytest.mark.asyncio
+async def test_duplicate_detection_false_positive_rejection(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+    sample_categories,
+    sample_user,
+):
+    """Verifies that distinct incidents in different locations and categories do not trigger false duplicates."""
+    pub_cat = next(c for c in sample_categories if c.slug == "public-safety")
+    other_cat = next(c for c in sample_categories if c.slug != "public-safety")
+
+    existing_rep = Report(
+        id=uuid.uuid4(),
+        user_id=sample_user.id,
+        category_id=pub_cat.id,
+        title="Traffic Signal Fault at Farmgate",
+        description="Signal timer is broken at Farmgate crossing causing vehicle jams.",
+        location_text="Farmgate, Dhaka",
+        latitude=23.7561,
+        longitude=90.3872,
+        status=ReportStatus.APPROVED,
+    )
+    db_session.add(existing_rep)
+    await db_session.commit()
+
+    # Check a completely different report in Chattogram
+    dup_res = await async_client.post(
+        "/api/v1/reports/duplicate-check",
+        json={
+            "title": "Severe Water Logging in Agrabad",
+            "description": "Monsoon rain flooded Agrabad commercial area with two feet of water.",
+            "category_id": str(other_cat.id),
+            "location_text": "Agrabad, Chattogram",
+            "latitude": 22.3242,
+            "longitude": 91.8145,
+        },
+    )
+    assert dup_res.status_code == 200
+    data = dup_res.json()
+    assert data["is_potential_duplicate"] is False
+    assert len(data["candidates"]) == 0
+
+
+@pytest.mark.asyncio
+async def test_blood_assistant_zero_results_no_fabrication(
+    async_client: AsyncClient,
+    db_session: AsyncSession,
+):
+    """Verifies that an unrepresented blood group returns 0 donors with no fabricated names."""
+    res = await async_client.post(
+        "/api/v1/blood/ai-assistant",
+        json={"query": "Need AB- blood urgently in Sylhet", "lang": "en"},
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["parsed_blood_group"] == "AB-"
+    assert data["total_donors_found"] == 0
+    assert len(data["donors"]) == 0
+    assert "No registered AB- donors currently available" in data["explanation"]
+

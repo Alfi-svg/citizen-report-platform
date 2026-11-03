@@ -493,6 +493,48 @@ export default function RoadSafetyIntelligencePage() {
                 </div>
               )}
             </div>
+
+            {/* Regional Highway Corridors */}
+            {data.hotspots && data.hotspots.length > 0 && (
+              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-6 shadow-2xs space-y-4">
+                <div>
+                  <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                    <span>🛣️</span>
+                    <span>{isBn ? "আঞ্চলিক সড়ক করিডোর (ডেটাবেস রেকর্ড অনুযায়ী)" : "Regional Highway Corridors (DB Grounded)"}</span>
+                  </h3>
+                  <p className="text-xs text-zinc-500 mt-0.5">
+                    {isBn
+                      ? "পরিচিত মহাসড়ক করিডোর সমূহের নিকট প্ল্যাটফর্ম ব্যবহারকারীদের প্রকৃত রিপোর্টের পরিসংখ্যান"
+                      : "Actual incident counts recorded in Nirapotta database around major regional highway corridors"}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {data.hotspots.map((spot, idx) => (
+                    <div
+                      key={idx}
+                      className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-100 dark:border-zinc-800 flex items-center justify-between"
+                    >
+                      <div>
+                        <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">{spot.area_name}</h4>
+                        <span className="text-[11px] text-zinc-500 mt-0.5 block">
+                          {spot.accident_count > 0
+                            ? (isBn ? `${spot.accident_count}টি দুর্ঘটনা রেকর্ড (বিগত ৩০ দিনে ${spot.recent_count_30d}টি)` : `${spot.accident_count} reports in DB (${spot.recent_count_30d} in past 30d)`)
+                            : (isBn ? "ডেটাবেসে কোনো দুর্ঘটনা রিপোর্ট নেই" : "0 accident reports in DB")}
+                        </span>
+                      </div>
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-[10px] font-black ${
+                          spot.accident_count > 0 ? getRiskBadgeColor(spot.risk_level) : "bg-zinc-200 text-zinc-700 dark:bg-zinc-700 dark:text-zinc-300"
+                        }`}
+                      >
+                        {spot.accident_count > 0 ? spot.risk_level : (isBn ? "স্বাভাবিক" : "Clear")}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </>
         ) : null}
       </div>

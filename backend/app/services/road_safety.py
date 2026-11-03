@@ -218,19 +218,43 @@ async def analyze_road_safety(
         lang=lang,
     )
 
-    # 6. Discover nearby or regional hotspots
+    # 6. Discover regional highway corridors and count ACTUAL database reports around each anchor
     hotspots: List[RoadSafetyHotspotItem] = []
     for anchor in BD_ACCIDENT_PRONE_CORRIDORS:
         d_anchor = calculate_haversine_distance(latitude, longitude, anchor["lat"], anchor["lng"])
         if d_anchor <= 35.0:  # Within regional proximity
+            # Count actual database accidents within 3.0 km of this corridor anchor
+            anchor_accidents = [
+                rep for rep in all_reports
+                if rep.latitude is not None
+                and rep.longitude is not None
+                and calculate_haversine_distance(anchor["lat"], anchor["lng"], rep.latitude, rep.longitude) <= 3.0
+                and is_road_incident(rep)
+            ]
+            count = len(anchor_accidents)
+            anchor_recent_30d = 0
+            for rep in anchor_accidents:
+                t_rep = rep.incident_date or rep.created_at
+                if t_rep.tzinfo is None:
+                    t_rep = t_rep.replace(tzinfo=timezone.utc)
+                if (now - t_rep).total_seconds() <= 30.0 * 86400.0:
+                    anchor_recent_30d += 1
+
+            if count >= 4:
+                anchor_risk = RoadSafetyRiskLevel.HIGH
+            elif count >= 2:
+                anchor_risk = RoadSafetyRiskLevel.MODERATE
+            else:
+                anchor_risk = RoadSafetyRiskLevel.LOW
+
             hotspots.append(
                 RoadSafetyHotspotItem(
                     area_name=anchor["name"],
                     latitude=anchor["lat"],
                     longitude=anchor["lng"],
-                    accident_count=max(3, int(total_accidents + 2)),
-                    risk_level=RoadSafetyRiskLevel.HIGH,
-                    recent_count_30d=max(1, recent_30d),
+                    accident_count=count,
+                    risk_level=anchor_risk,
+                    recent_count_30d=anchor_recent_30d,
                 )
             )
 
