@@ -13,7 +13,7 @@ import { translations, Language } from "@/lib/i18n";
 import { useAuth } from "@/context/AuthContext";
 import DonorProfileModal from "@/components/DonorProfileModal";
 import AIBloodSearchCard from "@/components/AIBloodSearchCard";
-import { Droplets, AlertTriangle, Map, Heart, Check, MapPin } from "lucide-react";
+import { Droplets, AlertTriangle, Map, Heart, Check, MapPin, Bot } from "lucide-react";
 
 const BLOOD_GROUPS: BloodGroup[] = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
@@ -132,16 +132,24 @@ export default function BloodHelpPage() {
           {/* Primary Action Buttons */}
           <div className="flex flex-wrap items-center gap-3 shrink-0">
             <Link
-              href="/blood-help/request"
-              className="inline-flex items-center gap-2 rounded-2xl bg-rose-600 hover:bg-rose-700 px-5 py-3 text-xs sm:text-sm font-bold text-white shadow-sm transition hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+              href="/blood-help/blood-ai"
+              className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-700 hover:to-rose-800 px-5 py-3 text-xs sm:text-sm font-black text-white shadow-sm transition hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
             >
-              <AlertTriangle className="h-4 w-4" />
+              <Bot className="h-4 w-4" />
+              <span>{lang === "bn" ? "ব্লাড এআই সহকারী" : "Blood AI Assistant"}</span>
+            </Link>
+
+            <Link
+              href="/blood-help/request"
+              className="inline-flex items-center gap-2 rounded-2xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/50 px-5 py-3 text-xs sm:text-sm font-bold text-rose-700 dark:text-rose-300 transition cursor-pointer shadow-2xs"
+            >
+              <AlertTriangle className="h-4 w-4 text-rose-600" />
               <span>{lang === "bn" ? "রক্ত প্রয়োজন (আবেদন)" : "Need Blood"}</span>
             </Link>
 
             <Link
               href="/blood-help/map"
-              className="inline-flex items-center gap-2 rounded-2xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 px-5 py-3 text-xs sm:text-sm font-bold text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/50 transition cursor-pointer shadow-2xs"
+              className="inline-flex items-center gap-2 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-5 py-3 text-xs sm:text-sm font-bold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-750 transition cursor-pointer shadow-2xs"
             >
               <Map className="h-4 w-4" />
               <span>{lang === "bn" ? "মানচিত্র ভিউ" : "Map View"}</span>
@@ -197,6 +205,37 @@ export default function BloodHelpPage() {
             </button>
           </div>
         )}
+      </div>
+
+      {/* ========================================================= */}
+      {/* 1.4 Blood AI — Nearby Hospital Stock & Emergency Assistant */}
+      {/* ========================================================= */}
+      <div className="rounded-3xl border border-rose-200 dark:border-rose-900/60 bg-gradient-to-r from-rose-600 via-rose-600 to-rose-700 text-white p-5 sm:p-7 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-5">
+        <div className="space-y-1.5 max-w-2xl">
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 rounded-full bg-white/20 text-white text-[10px] font-extrabold uppercase tracking-wider">
+              {lang === "bn" ? "নতুন: ব্লাড এআই ও হাসপাতাল" : "New: Blood AI & Hospitals"}
+            </span>
+          </div>
+          <h2 className="text-lg sm:text-xl font-black">
+            {lang === "bn"
+              ? "হাসপাতালের রক্তের স্টক ও ইমার্জেন্সি ব্লাড ব্যাংক অনুসন্ধান"
+              : "Nearby Hospital Blood Inventory & Emergency Hospital Finder"}
+          </h2>
+          <p className="text-xs sm:text-sm text-rose-100 leading-relaxed">
+            {lang === "bn"
+              ? "স্বাভাবিক বাংলায় বা ইংরেজিতে প্রশ্ন করুন: ঢাকা মেডিকেল, বিএসএমএমইউ, রেড ক্রিসেন্টসহ সারা দেশের হাসপাতালের রক্তের স্টক ও ভেরিফায়েড ইমার্জেন্সি নম্বর সরাসরি জানুন।"
+              : "Ask in plain English or Bangla: check verified blood stock across DMCH, BSMMU, Red Crescent, and hospitals across Bangladesh with instant telephone dials."}
+          </p>
+        </div>
+
+        <Link
+          href="/blood-help/blood-ai"
+          className="inline-flex items-center gap-2 rounded-2xl bg-white text-rose-700 hover:bg-rose-50 px-5 py-3 text-xs sm:text-sm font-black shadow-md transition hover:scale-[1.02] shrink-0"
+        >
+          <Bot className="h-4 w-4" />
+          <span>{lang === "bn" ? "ব্লাড এআই চালু করুন" : "Open Blood AI Assistant"}</span>
+        </Link>
       </div>
 
       {/* ========================================================= */}

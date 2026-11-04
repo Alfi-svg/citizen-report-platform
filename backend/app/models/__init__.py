@@ -50,6 +50,12 @@ from app.models.guard import (
     EmergencySession,
     EmergencyAlertRecipient,
 )
+from app.models.hospital import (
+    Hospital,
+    BloodInventory,
+    BloodInventoryStatus,
+    HospitalInventoryAudit,
+)
 
 __all__ = [
     "Base",
@@ -109,4 +115,8 @@ __all__ = [
     "GuardSettings",
     "EmergencySession",
     "EmergencyAlertRecipient",
+    "Hospital",
+    "BloodInventory",
+    "BloodInventoryStatus",
+    "HospitalInventoryAudit",
 ]

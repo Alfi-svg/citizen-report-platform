@@ -37,7 +37,20 @@ from app.schemas.blood import (
     BloodDonationRateRequest,
     BloodDonationResponse,
 )
+from app.schemas.hospital import (
+    HospitalSummary,
+    HospitalListResponse,
+    HospitalDetailResponse,
+    BloodInventoryItem,
+    BloodAIChatRequest,
+    BloodAIChatResponse,
+    AdminHospitalCreate,
+    AdminHospitalUpdate,
+    AdminInventoryUpdateRequest,
+)
 from app.services import blood as blood_service
+from app.services import hospital_service
+from app.services.blood_ai_assistant import chat_blood_ai
 
 router = APIRouter()
 
@@ -771,4 +784,270 @@ async def list_my_donations(
     res = await db.execute(stmt)
     donations = list(res.scalars().all())
     return [_to_donation_response(d) for d in donations]
+
+
+# ==============================================================================
+# HOSPITAL & BLOOD INVENTORY APIS (Blood AI Sector)
+# ==============================================================================
+
+@router.get(
+    "/hospitals/nearby",
+    response_model=HospitalListResponse,
+    summary="Search nearby hospitals and blood banks based on location, radius, or district",
+)
+async def get_nearby_hospitals_endpoint(
+    lat: Optional[float] = Query(None, description="User latitude"),
+    lng: Optional[float] = Query(None, description="User longitude"),
+    radius_km: float = Query(35.0, ge=1.0, le=300.0, description="Search radius in kilometers"),
+    district: Optional[str] = Query(None, description="Filter by Bangladesh district"),
+    blood_group: Optional[str] = Query(None, description="Filter/prioritize by blood group (e.g. O+, B+)"),
+    q: Optional[str] = Query(None, description="Text search by hospital name, area, or address"),
+    verified_only: bool = Query(False, description="Filter only verified hospitals"),
+    limit: int = Query(20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+):
+    items = await hospital_service.get_nearby_hospitals(
+        db=db,
+        latitude=lat,
+        longitude=lng,
+        radius_km=radius_km,
+        district=district,
+        blood_group=blood_group,
+        query=q,
+        verified_only=verified_only,
+        limit=limit,
+    )
+    return HospitalListResponse(items=items, total=len(items))
+
+
+@router.get(
+    "/hospitals/search",
+    response_model=HospitalListResponse,
+    summary="Search hospitals by name, area, or district",
+)
+async def search_hospitals_endpoint(
+    q: Optional[str] = Query(None, description="Search query string"),
+    district: Optional[str] = Query(None, description="Filter by district"),
+    blood_group: Optional[str] = Query(None, description="Filter by blood group"),
+    limit: int = Query(20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+):
+    items = await hospital_service.search_hospitals(
+        db=db,
+        query=q,
+        district=district,
+        blood_group=blood_group,
+        limit=limit,
+    )
+    return HospitalListResponse(items=items, total=len(items))
+
+
+@router.get(
+    "/hospitals/{hospital_id}",
+    response_model=HospitalDetailResponse,
+    summary="Get detailed hospital profile with full 8 blood groups inventory",
+)
+async def get_hospital_details_endpoint(
+    hospital_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    res = await hospital_service.get_hospital_details(db=db, hospital_id=hospital_id)
+    if not res:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Hospital not found",
+        )
+    return res
+
+
+@router.get(
+    "/hospitals/{hospital_id}/inventory",
+    response_model=List[BloodInventoryItem],
+    summary="Get hospital live blood inventory by blood groups",
+)
+async def get_hospital_inventory_endpoint(
+    hospital_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    res = await hospital_service.get_hospital_details(db=db, hospital_id=hospital_id)
+    if not res:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Hospital not found",
+        )
+    return res.inventories
+
+
+@router.get(
+    "/inventory/search",
+    response_model=HospitalListResponse,
+    summary="Search blood inventory across hospitals by blood group and location",
+)
+async def search_blood_inventory_endpoint(
+    blood_group: str = Query(..., description="Target blood group (e.g. O+, A-, B+)"),
+    district: Optional[str] = Query(None, description="Optional district filter"),
+    lat: Optional[float] = Query(None, description="Optional user latitude"),
+    lng: Optional[float] = Query(None, description="Optional user longitude"),
+    limit: int = Query(20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+):
+    items = await hospital_service.get_nearby_hospitals(
+        db=db,
+        latitude=lat,
+        longitude=lng,
+        district=district,
+        blood_group=blood_group,
+        limit=limit,
+    )
+    return HospitalListResponse(items=items, total=len(items))
+
+
+@router.post(
+    "/ai/chat",
+    response_model=BloodAIChatResponse,
+    summary="Natural-language conversational Blood AI & Nearby Hospital Assistant",
+)
+async def chat_blood_ai_endpoint(
+    request: BloodAIChatRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: Optional[User] = Depends(get_optional_current_user),
+):
+    """
+    Conversational AI assistant for emergency blood discovery, nearby hospital verification,
+    and blood bank stock inquiries in Bangla and English.
+    """
+    return await chat_blood_ai(
+        db=db,
+        request=request,
+        current_user=current_user,
+    )
+
+
+# ==============================================================================
+# ADMIN / STAFF HOSPITAL INVENTORY MANAGEMENT
+# ==============================================================================
+
+@router.post(
+    "/admin/hospitals",
+    response_model=HospitalDetailResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a new hospital entry (Authorized Admin only)",
+)
+async def admin_create_hospital_endpoint(
+    data: AdminHospitalCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only platform administrators can add new hospital entries.",
+        )
+    return await hospital_service.admin_create_hospital(
+        db=db,
+        data=data,
+        current_user=current_user,
+    )
+
+
+@router.patch(
+    "/admin/hospitals/{hospital_id}",
+    response_model=HospitalDetailResponse,
+    summary="Update hospital contact and location details (Authorized Admin only)",
+)
+async def admin_update_hospital_endpoint(
+    hospital_id: uuid.UUID,
+    data: AdminHospitalUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only platform administrators can update hospital details.",
+        )
+
+    stmt = select(Hospital).where(Hospital.id == hospital_id)
+    res = await db.execute(stmt)
+    hospital = res.scalar_one_or_none()
+    if not hospital:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Hospital not found")
+
+    if data.name is not None:
+        hospital.name = data.name.strip()
+    if data.name_bn is not None:
+        hospital.name_bn = data.name_bn.strip() if data.name_bn else None
+    if data.blood_bank_name is not None:
+        hospital.blood_bank_name = data.blood_bank_name.strip() if data.blood_bank_name else None
+    if data.emergency_phone is not None:
+        hospital.emergency_phone = data.emergency_phone.strip()
+    if data.alternate_phone is not None:
+        hospital.alternate_phone = data.alternate_phone.strip() if data.alternate_phone else None
+    if data.address is not None:
+        hospital.address = data.address.strip()
+    if data.district is not None:
+        hospital.district = data.district.strip()
+    if data.area is not None:
+        hospital.area = data.area.strip()
+    if data.latitude is not None:
+        hospital.latitude = data.latitude
+    if data.longitude is not None:
+        hospital.longitude = data.longitude
+    if data.has_blood_bank is not None:
+        hospital.has_blood_bank = data.has_blood_bank
+
+    await db.commit()
+    await db.refresh(hospital)
+    return await hospital_service.get_hospital_details(db, hospital_id)
+
+
+@router.patch(
+    "/admin/hospitals/{hospital_id}/inventory",
+    response_model=BloodInventoryItem,
+    summary="Update blood inventory for a specific blood group (Authorized Admin or Hospital Staff)",
+)
+async def admin_update_inventory_endpoint(
+    hospital_id: uuid.UUID,
+    data: AdminInventoryUpdateRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.role not in (UserRole.ADMIN, UserRole.MODERATOR):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Authorized hospital staff or admin privileges required to update blood inventory.",
+        )
+    try:
+        return await hospital_service.update_hospital_inventory(
+            db=db,
+            hospital_id=hospital_id,
+            update_data=data,
+            current_user=current_user,
+        )
+    except ValueError as val_err:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(val_err),
+        )
+
+
+@router.get(
+    "/admin/hospitals/{hospital_id}/inventory/history",
+    summary="View hospital blood inventory audit history (Authorized Admin or Hospital Staff)",
+)
+async def admin_inventory_history_endpoint(
+    hospital_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.role not in (UserRole.ADMIN, UserRole.MODERATOR):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Authorized staff or admin privileges required to view inventory audit history.",
+        )
+    details = await hospital_service.get_hospital_details(db=db, hospital_id=hospital_id)
+    if not details:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Hospital not found")
+    return details.audit_history or []
+
 

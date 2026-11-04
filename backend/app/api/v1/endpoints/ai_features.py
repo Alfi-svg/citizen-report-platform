@@ -45,6 +45,10 @@ from app.schemas.ai_features import (
     VoiceEmergencyIntakeRequest,
     VoiceEmergencyIntakeResponse,
 )
+from app.schemas.hospital import (
+    BloodAIChatRequest,
+    BloodAIChatResponse,
+)
 from app.services import (
     road_safety as road_safety_service,
     emergency_assistant as emergency_assistant_service,
@@ -475,6 +479,27 @@ async def query_blood_donors_ai(
     applies strict exact-match blood group compatibility, and returns privacy-filtered contact details.
     """
     return await blood_ai_service.search_blood_donors_ai(
+        db=db,
+        request=request,
+        current_user=current_user,
+    )
+
+
+@router.post(
+    "/blood-ai/chat",
+    response_model=BloodAIChatResponse,
+    summary="Natural-language conversational Blood AI & Nearby Hospital Assistant",
+)
+async def chat_blood_ai_features(
+    request: BloodAIChatRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: Optional[User] = Depends(get_optional_current_user),
+):
+    """
+    Conversational AI assistant for emergency blood discovery, nearby hospital verification,
+    and blood bank stock inquiries in Bangla and English.
+    """
+    return await blood_ai_service.chat_blood_ai(
         db=db,
         request=request,
         current_user=current_user,

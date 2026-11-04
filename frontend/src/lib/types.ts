@@ -1885,6 +1885,97 @@ export interface SafeRouteAnalysisResponse {
   disclaimer: string;
 }
 
+// ---------------------------------------------------------------------------
+// Blood AI & Hospital Inventory Types
+// ---------------------------------------------------------------------------
+
+export type BloodInventoryStatus = "AVAILABLE" | "LOW_STOCK" | "OUT_OF_STOCK" | "UNKNOWN";
+
+export interface BloodInventoryItem {
+  blood_group: string;
+  available_units: number;
+  availability_status: BloodInventoryStatus | string;
+  is_verified: boolean;
+  last_updated?: string | null;
+  updated_by_name?: string | null;
+}
+
+export interface HospitalSummary {
+  id: string;
+  name: string;
+  name_bn?: string | null;
+  blood_bank_name?: string | null;
+  district: string;
+  area: string;
+  address: string;
+  address_bn?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  emergency_phone: string;
+  alternate_phone?: string | null;
+  verification_status: "VERIFIED" | "UNVERIFIED" | string;
+  has_blood_bank: boolean;
+  distance_km?: number | null;
+  matching_inventory?: BloodInventoryItem | null;
+  available_groups: string[];
+  all_inventories: BloodInventoryItem[];
+  last_inventory_update?: string | null;
+  verification_label: string;
+  available_actions: string[];
+}
+
+export interface HospitalListResponse {
+  items: HospitalSummary[];
+  total: number;
+}
+
+export interface HospitalDetailResponse {
+  hospital: HospitalSummary;
+  inventories: BloodInventoryItem[];
+  audit_history?: Array<Record<string, unknown>> | null;
+}
+
+export interface BloodAIChatRequest {
+  message: string;
+  conversation_id?: string | null;
+  user_latitude?: number | null;
+  user_longitude?: number | null;
+  user_district?: string | null;
+  blood_group_preference?: string | null;
+  lang?: "en" | "bn" | string;
+}
+
+export interface BloodAIChatResponse {
+  reply: string;
+  conversation_id: string;
+  intent: string;
+  extracted_params: {
+    blood_group?: string | null;
+    quantity?: number | null;
+    district?: string | null;
+    area?: string | null;
+    hospital?: string | null;
+    urgency?: string | null;
+  };
+  is_clarification_needed: boolean;
+  follow_up_question?: string | null;
+  hospitals: HospitalSummary[];
+  donors: Array<{
+    donor_id: string;
+    name: string;
+    blood_group: string;
+    district: string;
+    area: string;
+    phone?: string;
+    availability: string;
+  }>;
+  total_hospitals_found: number;
+  tools_called: string[];
+  suggested_actions: string[];
+  disclaimer: string;
+}
+
+
 
 
 
