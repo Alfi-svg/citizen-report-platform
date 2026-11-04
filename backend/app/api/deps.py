@@ -90,6 +90,21 @@ async def get_current_active_admin(
     return current_user
 
 
+async def get_current_moderator_or_admin(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """
+    Validates that the currently authenticated user possesses MODERATOR or ADMIN role.
+    Raises 403 Forbidden otherwise.
+    """
+    if current_user.role not in (UserRole.ADMIN, UserRole.MODERATOR):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Moderator or administrative privileges required to access this resource.",
+        )
+    return current_user
+
+
 async def get_optional_current_user(
     token: Optional[str] = Depends(oauth2_scheme),
     db: AsyncSession = Depends(get_db),

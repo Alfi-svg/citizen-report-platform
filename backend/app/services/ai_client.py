@@ -48,31 +48,18 @@ def extract_json_from_text(text: str) -> Optional[Dict[str, Any]]:
     return None
 
 
-async def call_ai_completion(
-    prompt: str,
-    system_prompt: Optional[str] = None,
-    json_mode: bool = False,
-    temperature: float = 0.2,
-    max_tokens: int = 1000,
-    timeout_seconds: float = 12.0,
+async def _execute_chat_completion(
+    client: httpx.AsyncClient,
+    url: str,
+    headers: Dict[str, str],
+    model: str,
+    messages: List[Dict[str, str]],
+    json_mode: bool,
+    temperature: float,
+    max_tokens: int,
 ) -> Optional[str]:
-    """
-    Asynchronously invokes the configured OpenRouter / AI provider.
-    Returns the string response, or None if the provider is unconfigured,
-    times out, or errors, allowing safe deterministic fallback.
-    """
-    api_key = settings.OPENROUTER_API_KEY
-    if not api_key or not api_key.strip():
-        logger.debug("AI client: No OPENROUTER_API_KEY configured; utilizing deterministic fallback.")
-        return None
-
-    messages: List[Dict[str, str]] = []
-    if system_prompt:
-        messages.append({"role": "system", "content": system_prompt})
-    messages.append({"role": "user", "content": prompt})
-
     payload: Dict[str, Any] = {
-        "model": settings.OPENROUTER_MODEL,
+        "model": model,
         "messages": messages,
         "temperature": temperature,
         "max_tokens": max_tokens,
@@ -80,37 +67,101 @@ async def call_ai_completion(
     if json_mode:
         payload["response_format"] = {"type": "json_object"}
 
+    response = await client.post(url, json=payload, headers=headers)
+    if response.status_code == 200:
+        result = response.json()
+        choices = result.get("choices", [])
+        if choices and len(choices) > 0:
+            return choices[0].get("message", {}).get("content", "")
+        logger.warning(f"AI client: Received 200 OK from model '{model}' but empty choices: {result}")
+        return None
+    else:
+        logger.warning(
+            f"AI client model '{model}' returned HTTP {response.status_code}: {response.text[:200]}"
+        )
+        return None
+
+
+async def call_ai_completion(
+    prompt: str,
+    system_prompt: Optional[str] = None,
+    json_mode: bool = False,
+    temperature: float = 0.2,
+    max_tokens: int = 1000,
+    timeout_seconds: Optional[float] = None,
+    primary_model: Optional[str] = None,
+    fallback_model: Optional[str] = None,
+) -> Optional[str]:
+    """
+    Asynchronously invokes the configured OpenRouter / AI provider.
+    Tries the primary model first; if it times out, encounters a rate limit, or fails,
+    tries the fallback model before reverting to None (allowing deterministic fallback).
+    """
+    api_key = settings.OPENROUTER_API_KEY
+    if not api_key or not api_key.strip():
+        logger.debug("AI client: No OPENROUTER_API_KEY configured; utilizing deterministic fallback.")
+        return None
+
+    actual_timeout = timeout_seconds if timeout_seconds is not None else settings.AI_REQUEST_TIMEOUT_SECONDS
+    main_model = primary_model or settings.OPENROUTER_MODEL
+    alt_model = fallback_model if fallback_model is not None else settings.OPENROUTER_FALLBACK_MODEL
+
+    messages: List[Dict[str, str]] = []
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+    messages.append({"role": "user", "content": prompt})
+
     headers = {
         "Authorization": f"Bearer {api_key.strip()}",
         "Content-Type": "application/json",
         "HTTP-Referer": "https://nirapotta-citizen-platform.vercel.app",
         "X-Title": "Nirapotta Citizen Safety Platform",
     }
-
     url = f"{settings.OPENROUTER_BASE_URL.rstrip('/')}/chat/completions"
 
+    # Attempt primary model
     try:
-        async with httpx.AsyncClient(timeout=timeout_seconds) as client:
-            response = await client.post(url, json=payload, headers=headers)
-            if response.status_code == 200:
-                result = response.json()
-                choices = result.get("choices", [])
-                if choices and len(choices) > 0:
-                    content = choices[0].get("message", {}).get("content", "")
-                    return content
-                logger.warning(f"AI client: Received 200 OK but empty choices list: {result}")
-                return None
-            else:
-                logger.warning(
-                    f"AI client returned HTTP {response.status_code}: {response.text[:200]}"
-                )
-                return None
+        async with httpx.AsyncClient(timeout=actual_timeout) as client:
+            content = await _execute_chat_completion(
+                client=client,
+                url=url,
+                headers=headers,
+                model=main_model,
+                messages=messages,
+                json_mode=json_mode,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+            if content:
+                return content
     except httpx.TimeoutException:
-        logger.warning(f"AI client timed out after {timeout_seconds}s; falling back to deterministic engine.")
-        return None
+        logger.warning(f"AI client: Primary model '{main_model}' timed out after {actual_timeout}s.")
     except Exception as exc:
-        logger.warning(f"AI client request failed: {exc}; falling back to deterministic engine.")
-        return None
+        logger.warning(f"AI client: Primary model '{main_model}' error: {exc}")
+
+    # Attempt fallback model if different and configured
+    if alt_model and alt_model != main_model:
+        try:
+            logger.info(f"AI client: Retrying with fallback model '{alt_model}'...")
+            async with httpx.AsyncClient(timeout=actual_timeout) as client:
+                content = await _execute_chat_completion(
+                    client=client,
+                    url=url,
+                    headers=headers,
+                    model=alt_model,
+                    messages=messages,
+                    json_mode=json_mode,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                )
+                if content:
+                    return content
+        except httpx.TimeoutException:
+            logger.warning(f"AI client: Fallback model '{alt_model}' timed out after {actual_timeout}s.")
+        except Exception as exc:
+            logger.warning(f"AI client: Fallback model '{alt_model}' error: {exc}")
+
+    return None
 
 
 async def call_ai_json(
@@ -118,7 +169,9 @@ async def call_ai_json(
     system_prompt: Optional[str] = None,
     temperature: float = 0.1,
     max_tokens: int = 1000,
-    timeout_seconds: float = 12.0,
+    timeout_seconds: Optional[float] = None,
+    primary_model: Optional[str] = None,
+    fallback_model: Optional[str] = None,
 ) -> Optional[Dict[str, Any]]:
     """
     Convenience method to request and parse JSON from the AI provider.
@@ -130,6 +183,8 @@ async def call_ai_json(
         temperature=temperature,
         max_tokens=max_tokens,
         timeout_seconds=timeout_seconds,
+        primary_model=primary_model,
+        fallback_model=fallback_model,
     )
     if not raw:
         return None

@@ -6,7 +6,7 @@ from typing import Any, Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select, func, and_, or_, delete
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.api.deps import get_current_active_admin
+from app.api.deps import get_current_active_admin, get_current_moderator_or_admin
 from app.db.session import get_db
 from app.core.config import settings
 from app.models.notification import NotificationType
@@ -63,7 +63,13 @@ from app.services.reputation import (
     get_or_create_user_reputation,
     get_user_reputation_history,
 )
-from app.services import blood as blood_service
+from app.services import blood as blood_service, admin_copilot as admin_copilot_service
+from app.schemas.ai_features import (
+    AdminCopilotRequest,
+    AdminCopilotResponse,
+    AdminCopilotConfirmRequest,
+    AdminCopilotConfirmResponse,
+)
 from app.schemas.moderation import (
     AdminDashboardStats,
     ModerationActionRequest,
@@ -145,7 +151,7 @@ router = APIRouter()
     summary="Get aggregated platform and moderation metrics",
 )
 async def get_admin_dashboard(
-    current_admin: User = Depends(get_current_active_admin),
+    current_admin: User = Depends(get_current_moderator_or_admin),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """
@@ -3376,6 +3382,68 @@ async def moderate_blood_donation_admin(
             "blood_group": bg,
         },
     }
+
+
+# ---------------------------------------------------------------------------
+# Admin & Moderator Copilot Endpoints (Phase D Aliases)
+# ---------------------------------------------------------------------------
+
+@router.post(
+    "/copilot",
+    response_model=AdminCopilotResponse,
+    summary="Agentic Admin & Moderator Copilot (Phase D)",
+)
+async def chat_admin_copilot_alias(
+    request: AdminCopilotRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_moderator_or_admin),
+):
+    """
+    Authorized operational intelligence agent for administrators and safety moderators.
+    """
+    return await admin_copilot_service.process_admin_copilot_chat(
+        db=db,
+        request_data=request,
+        current_user=current_user,
+    )
+
+
+@router.post(
+    "/copilot/confirm",
+    response_model=AdminCopilotConfirmResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Explicit execution of confirmed moderation actions (Phase D)",
+)
+async def confirm_admin_copilot_action_alias(
+    request: AdminCopilotConfirmRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_moderator_or_admin),
+):
+    """
+    Human confirmation endpoint for state-changing moderation actions.
+    """
+    try:
+        return await admin_copilot_service.execute_admin_copilot_confirmation(
+            db=db,
+            confirm_data=request,
+            current_user=current_user,
+        )
+    except ValueError as val_err:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(val_err),
+        )
+    except PermissionError as perm_err:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(perm_err),
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(exc),
+        )
+
 
 
 

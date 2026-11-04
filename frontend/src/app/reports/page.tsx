@@ -7,8 +7,9 @@ import { apiFetch } from "@/lib/api";
 import { PublicCategory, PublicReportPagination } from "@/lib/types";
 import { Language } from "@/lib/i18n";
 import PublicReportCard from "@/components/PublicReportCard";
+import AIIncidentIntelligenceModal from "@/components/AIIncidentIntelligenceModal";
 import { useBackClose } from "@/lib/useBackClose";
-import { Settings, X, FileText } from "lucide-react";
+import { Settings, X, FileText, Sparkles } from "lucide-react";
 
 function PublicReportsContent() {
   const router = useRouter();
@@ -49,6 +50,7 @@ function PublicReportsContent() {
   const [sortOrder, setSortOrder] = useState<"latest" | "trending">(initialSort);
   const [page, setPage] = useState<number>(0);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+  const [aiIntelligenceOpen, setAiIntelligenceOpen] = useState(false);
   const [, startTransition] = useTransition();
 
   // Android back-button compatibility for mobile filter drawer
@@ -165,13 +167,24 @@ function PublicReportsContent() {
             </p>
           </div>
 
-          <Link
-            href="/reports/create"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-800 text-white text-xs font-bold shadow-sm transition shrink-0 min-h-[42px]"
-          >
-            <span>+</span>
-            <span>{lang === "bn" ? "নতুন রিপোর্ট জমা দিন" : "Submit a Report"}</span>
-          </Link>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setAiIntelligenceOpen(true)}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-purple-700 hover:bg-purple-600 active:bg-purple-800 text-white text-xs font-bold shadow-sm transition shrink-0 min-h-[42px] cursor-pointer"
+            >
+              <Sparkles className="h-4 w-4 text-purple-200" />
+              <span>{lang === "bn" ? "এআই ইনসিডেন্ট ইন্টেলিজেন্স" : "AI Incident Intelligence"}</span>
+            </button>
+
+            <Link
+              href="/reports/create"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-800 text-white text-xs font-bold shadow-sm transition shrink-0 min-h-[42px]"
+            >
+              <span>+</span>
+              <span>{lang === "bn" ? "নতুন রিপোর্ট জমা দিন" : "Submit a Report"}</span>
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -570,6 +583,14 @@ function PublicReportsContent() {
           </div>
         </div>
       )}
+
+      {/* AI Incident Intelligence Modal (Phase C) */}
+      <AIIncidentIntelligenceModal
+        isOpen={aiIntelligenceOpen}
+        onClose={() => setAiIntelligenceOpen(false)}
+        initialCategory={selectedCategory}
+        initialLocation={locationQuery}
+      />
     </div>
   );
 }

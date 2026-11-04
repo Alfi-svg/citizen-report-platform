@@ -7,16 +7,19 @@ import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
 import { AdminDashboardStats, AdminReportPagination } from "@/lib/types";
 import AdminNav from "@/components/AdminNav";
-import { Shield, FileText, Flag, Users, Tag, MessageSquare } from "lucide-react";
+import AdminCopilotModal from "@/components/AdminCopilotModal";
+import { Shield, FileText, Flag, Users, Tag, MessageSquare, Sparkles } from "lucide-react";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
-  const { user, isAuthenticated, isLoading, isAdmin } = useAuth();
+  const { user, isAuthenticated, isLoading, isAdmin, isModerator } = useAuth();
+  const isStaff = isAdmin || isModerator || user?.role === "MODERATOR";
 
   const [stats, setStats] = useState<AdminDashboardStats | null>(null);
   const [recentReports, setRecentReports] = useState<AdminReportPagination | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [copilotOpen, setCopilotOpen] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -26,7 +29,7 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     let isMounted = true;
-    if (isAuthenticated && isAdmin) {
+    if (isAuthenticated && isStaff) {
       Promise.all([
         apiFetch<AdminDashboardStats>("/admin/dashboard"),
         apiFetch<AdminReportPagination>("/admin/reports?status=SUBMITTED&limit=5"),
@@ -47,7 +50,7 @@ export default function AdminDashboardPage() {
     return () => {
       isMounted = false;
     };
-  }, [isAuthenticated, isAdmin]);
+  }, [isAuthenticated, isStaff]);
 
   if (isLoading || loading) {
     return (
@@ -61,7 +64,7 @@ export default function AdminDashboardPage() {
     return null;
   }
 
-  if (!isAdmin) {
+  if (!isStaff) {
     return (
       <div className="mx-auto max-w-xl px-4 py-16 text-center">
         <div className="rounded-2xl border border-red-200 bg-red-50 p-8 dark:border-red-900 dark:bg-red-950/40">
@@ -111,6 +114,14 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="flex items-center gap-2.5 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setCopilotOpen(true)}
+              className="rounded-xl bg-purple-700 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-purple-600 transition inline-flex items-center gap-1.5 cursor-pointer"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-purple-200" />
+              <span>Admin Copilot</span>
+            </button>
             <Link
               href="/admin/reports"
               className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-500 transition inline-flex items-center gap-1.5"
@@ -300,6 +311,11 @@ export default function AdminDashboardPage() {
           )}
         </div>
       </div>
+
+      <AdminCopilotModal
+        isOpen={copilotOpen}
+        onClose={() => setCopilotOpen(false)}
+      />
     </div>
   );
 }

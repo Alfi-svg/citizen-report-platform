@@ -1,9 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import AdminCopilotModal from "@/components/AdminCopilotModal";
 import {
   BarChart3,
   FileText,
@@ -18,6 +19,7 @@ import {
   ShieldCheck,
   Tag,
   ArrowLeft,
+  Sparkles,
 } from "lucide-react";
 
 interface AdminNavProps {
@@ -28,6 +30,7 @@ interface AdminNavProps {
 export default function AdminNav({ pendingReports, pendingFlags }: AdminNavProps) {
   const pathname = usePathname();
   const { user } = useAuth();
+  const [copilotOpen, setCopilotOpen] = useState(false);
 
   const links = [
     {
@@ -132,7 +135,16 @@ export default function AdminNav({ pendingReports, pendingFlags }: AdminNavProps
             </span>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => setCopilotOpen(true)}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-700 hover:bg-purple-600 text-white text-[11px] font-bold shadow-xs transition cursor-pointer"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-purple-200" />
+              <span>Copilot AI</span>
+            </button>
+
             <Link
               href="/"
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
@@ -181,6 +193,12 @@ export default function AdminNav({ pendingReports, pendingFlags }: AdminNavProps
           })}
         </nav>
       </div>
+
+      {/* Admin Copilot Assistant Modal (Phase D) */}
+      <AdminCopilotModal
+        isOpen={copilotOpen}
+        onClose={() => setCopilotOpen(false)}
+      />
     </div>
   );
 }

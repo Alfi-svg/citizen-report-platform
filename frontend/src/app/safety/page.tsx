@@ -13,7 +13,7 @@ import {
 } from "@/lib/location";
 import EmergencyCallModal from "@/components/EmergencyCallModal";
 import EmergencyActionPlanModal from "@/components/EmergencyActionPlanModal";
-import { Map, Phone, PhoneCall, Shield, ShieldCheck, FileText, Search, Plus, Bell, MapPin, LocateFixed, AlertTriangle, Check, Lock, Bike, Flag, ExternalLink } from "lucide-react";
+import { Map, Phone, PhoneCall, Shield, ShieldCheck, FileText, Search, Plus, Bell, MapPin, LocateFixed, AlertTriangle, Check, Lock, Bike, Flag, ExternalLink, Navigation } from "lucide-react";
 
 export default function SafetyCenterPage() {
   const [lang, setLang] = useState<Language>("en");
@@ -275,7 +275,25 @@ export default function SafetyCenterPage() {
       </section>
 
       {/* 3. SAFETY CENTER QUICK LINKS HUB */}
-      <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+      <section className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+        <Link
+          href="/safety/safe-route"
+          className="p-3.5 sm:p-4 rounded-2xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/40 dark:bg-emerald-950/20 hover:border-emerald-500 transition shadow-2xs flex flex-col justify-between"
+        >
+          <div className="h-8 w-8 rounded-xl bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-base mb-2">
+            <Navigation className="h-4 w-4" />
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1">
+              <span>{lang === "bn" ? "সেফ রুট" : "Safe Route"}</span>
+              <span className="text-[9px] font-black uppercase px-1 py-0.2 rounded-full bg-emerald-600 text-white">3D</span>
+            </h4>
+            <p className="text-[11px] text-zinc-400 mt-0.5 line-clamp-1">
+              {lang === "bn" ? "নিরাপদ যাতায়াত পরিকল্পনা" : "Route hazards & 3D safety"}
+            </p>
+          </div>
+        </Link>
+
         <Link
           href="/safety/road-intelligence"
           className="p-3.5 sm:p-4 rounded-2xl border border-rose-200 dark:border-rose-900/60 bg-rose-50/40 dark:bg-rose-950/20 hover:border-rose-500 transition shadow-2xs flex flex-col justify-between"
@@ -401,7 +419,7 @@ export default function SafetyCenterPage() {
 
         <Link
           href="/notifications"
-          className="col-span-2 sm:col-span-3 lg:col-span-7 p-3.5 sm:p-4 rounded-2xl border border-teal-200 dark:border-teal-800/60 bg-teal-50/40 dark:bg-teal-950/20 hover:border-teal-500 transition shadow-2xs flex items-center justify-between"
+          className="col-span-2 sm:col-span-4 lg:col-span-8 p-3.5 sm:p-4 rounded-2xl border border-teal-200 dark:border-teal-800/60 bg-teal-50/40 dark:bg-teal-950/20 hover:border-teal-500 transition shadow-2xs flex items-center justify-between"
         >
           <div className="flex items-center gap-3">
             <div className="h-9 w-9 rounded-xl bg-teal-100 dark:bg-teal-900/60 text-teal-800 dark:text-teal-300 flex items-center justify-center text-lg">

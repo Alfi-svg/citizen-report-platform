@@ -12,8 +12,9 @@ import ReactionControls from "@/components/ReactionControls";
 import CommentsSection from "@/components/CommentsSection";
 import FlagModal from "@/components/FlagModal";
 import ReportLocationMap from "@/components/ReportLocationMap";
+import AIIncidentIntelligenceModal from "@/components/AIIncidentIntelligenceModal";
 import { useBackClose } from "@/lib/useBackClose";
-import { FileText, Shield, MapPin, Clock, User, Map, Share2, Flag, Info, Link2, Edit3, MessageSquare } from "lucide-react";
+import { FileText, Shield, MapPin, Clock, User, Map, Share2, Flag, Info, Link2, Edit3, MessageSquare, Sparkles } from "lucide-react";
 
 const STATUS_BADGES: Record<
   ReportStatus,
@@ -77,6 +78,7 @@ export default function ReportDetailPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [deletingMediaId, setDeletingMediaId] = useState<string | null>(null);
   const [isFlagModalOpen, setIsFlagModalOpen] = useState(false);
+  const [isAiIntelligenceOpen, setIsAiIntelligenceOpen] = useState(false);
   const [relatedReports, setRelatedReports] = useState<PublicRelatedReportResponse[]>([]);
   const [copied, setCopied] = useState(false);
 
@@ -505,6 +507,15 @@ export default function ReportDetailPage() {
             <div className="flex items-center gap-2">
               <button
                 type="button"
+                onClick={() => setIsAiIntelligenceOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-700 hover:bg-purple-600 active:bg-purple-800 text-white text-xs font-bold transition shadow-2xs min-h-[40px] cursor-pointer"
+              >
+                <Sparkles className="h-3.5 w-3.5 text-purple-200" />
+                <span>AI Fact Analysis</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => handleShare(displayReport.title)}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-750 transition shadow-2xs min-h-[40px] cursor-pointer"
               >
@@ -894,6 +905,13 @@ export default function ReportDetailPage() {
           )}
         </div>
       )}
+
+      {/* AI Incident Intelligence Modal (Phase C) */}
+      <AIIncidentIntelligenceModal
+        isOpen={isAiIntelligenceOpen}
+        onClose={() => setIsAiIntelligenceOpen(false)}
+        initialReportId={reportId}
+      />
     </div>
   );
 }

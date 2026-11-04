@@ -69,6 +69,8 @@ class Settings(BaseSettings):
     OPENROUTER_API_KEY: Optional[str] = None
     OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
     OPENROUTER_MODEL: str = "meta-llama/llama-3.3-70b-instruct:free"
+    OPENROUTER_FALLBACK_MODEL: Optional[str] = "google/gemini-2.0-flash-001"
+    AI_REQUEST_TIMEOUT_SECONDS: float = 12.0
     AI_FALLBACK_DETERMINISTIC: bool = True
 
     @field_validator("DATABASE_URL", mode="before")

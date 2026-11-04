@@ -8,6 +8,7 @@ import { apiFetch } from "@/lib/api";
 import { Category, Report, DraftReportPreview, DuplicateCandidateItem, DuplicateDetectionResponse } from "@/lib/types";
 import EvidenceUploader, { SelectedFileItem } from "@/components/EvidenceUploader";
 import AIEmergencyAssistantModal from "@/components/AIEmergencyAssistantModal";
+import AIVoiceEmergencyModal from "@/components/AIVoiceEmergencyModal";
 import {
   captureCurrentLocation,
   approximateCoordinates,
@@ -18,7 +19,7 @@ import {
 import ReportLocationMap from "@/components/ReportLocationMap";
 import { useBackClose } from "@/lib/useBackClose";
 import { registerBackHandler, BackPriority } from "@/lib/backButton";
-import { Sparkles, Bot, AlertTriangle, MapPin, Map, Shield, X, Info, FileText, User, Paperclip, Check } from "lucide-react";
+import { Sparkles, Bot, AlertTriangle, MapPin, Map, Shield, X, Info, FileText, User, Paperclip, Check, Mic } from "lucide-react";
 
 export default function CreateReportPage() {
   const router = useRouter();
@@ -53,6 +54,7 @@ export default function CreateReportPage() {
   const [submitting, setSubmitting] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false);
+  const [isVoiceAssistantOpen, setIsVoiceAssistantOpen] = useState(false);
   const [duplicateCandidate, setDuplicateCandidate] = useState<DuplicateCandidateItem | null>(null);
 
   const handleApplyAIDraft = (draft: DraftReportPreview) => {
@@ -411,14 +413,24 @@ export default function CreateReportPage() {
                 </p>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={() => setIsAIAssistantOpen(true)}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold rounded-xl shadow transition shrink-0 flex items-center justify-center gap-1.5"
-            >
-              <Sparkles className="h-4 w-4" />
-              <span>Create with AI</span>
-            </button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setIsVoiceAssistantOpen(true)}
+                className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold rounded-xl shadow transition shrink-0 flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Mic className="h-4 w-4" />
+                <span>Report with Voice</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsAIAssistantOpen(true)}
+                className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold rounded-xl shadow transition shrink-0 flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Sparkles className="h-4 w-4" />
+                <span>Create with AI</span>
+              </button>
+            </div>
           </div>
 
           {/* Incident Category */}
@@ -905,6 +917,16 @@ export default function CreateReportPage() {
       <AIEmergencyAssistantModal
         isOpen={isAIAssistantOpen}
         onClose={() => setIsAIAssistantOpen(false)}
+        onApplyDraft={handleApplyAIDraft}
+        categories={categories}
+        currentLatitude={formData.latitude}
+        currentLongitude={formData.longitude}
+        currentLocationText={formData.locationText}
+      />
+      {/* AI Voice Emergency Assistant Modal (Phase E) */}
+      <AIVoiceEmergencyModal
+        isOpen={isVoiceAssistantOpen}
+        onClose={() => setIsVoiceAssistantOpen(false)}
         onApplyDraft={handleApplyAIDraft}
         categories={categories}
         currentLatitude={formData.latitude}

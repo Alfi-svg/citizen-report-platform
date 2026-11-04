@@ -1239,15 +1239,53 @@ export interface DraftReportPreview {
   is_anonymous: boolean;
 }
 
+export interface DraftBloodRequestPreview {
+  blood_group: string;
+  units_required: number;
+  hospital_name: string;
+  hospital_area: string;
+  district: string;
+  required_date?: string | null;
+  required_time?: string | null;
+  urgency: string;
+  contact_name?: string | null;
+  contact_phone?: string | null;
+  contact_method: string;
+  additional_information?: string | null;
+}
+
+export type EmergencyType = "INCIDENT" | "BLOOD_REQUEST";
+
 export interface EmergencyAssistantResponse {
   reply: string;
   follow_up_question?: string | null;
   missing_fields: string[];
   is_ready_for_review: boolean;
+  emergency_type?: EmergencyType;
+  extracted_fields?: Record<string, any>;
   draft_report?: DraftReportPreview | null;
+  draft_blood_request?: DraftBloodRequestPreview | null;
   action_plan_summary?: string[] | null;
   emergency_notice: string;
   conversation_id: string;
+  confirmation_token?: string | null;
+}
+
+export interface EmergencyConfirmationRequest {
+  conversation_id: string;
+  emergency_type: EmergencyType;
+  confirmation_token?: string | null;
+  draft_report?: DraftReportPreview | null;
+  draft_blood_request?: DraftBloodRequestPreview | null;
+}
+
+export interface EmergencyConfirmationResponse {
+  status: string;
+  emergency_type: EmergencyType;
+  record_id: string;
+  request_status: string;
+  redirect_url: string;
+  message: string;
 }
 
 export interface EmergencyActionPlanResponse {
@@ -1294,6 +1332,9 @@ export interface BloodDonorResultItem {
   contact_phone?: string | null;
   preferred_contact_method: string;
   distance_km?: number | null;
+  approximate_latitude?: number | null;
+  approximate_longitude?: number | null;
+  match_explanation?: string | null;
 }
 
 export interface BloodAssistantResponse {
@@ -1382,6 +1423,471 @@ export interface ActiveSafeRideState {
   helmet_verified: boolean;
   active: boolean;
 }
+
+// ---------------------------------------------------------------------------
+// Phase B: AI Donor Coordination Types
+// ---------------------------------------------------------------------------
+
+export type DonorCoordinationIntent =
+  | "VIEW_REQUEST_STATUS"
+  | "FIND_MATCHING_DONORS"
+  | "EXPLAIN_DONOR_MATCH"
+  | "VIEW_DONOR_RESPONSES"
+  | "REQUEST_OUTREACH"
+  | "EXPRESS_DONOR_INTEREST"
+  | "UPDATE_DONOR_RESPONSE"
+  | "CLARIFY_REQUEST"
+  | "SEARCH_BLOOD_DONORS";
+
+export interface ActionPreview {
+  action_type: "EXPRESS_INTEREST" | "TRIGGER_OUTREACH" | "UPDATE_RESPONSE" | string;
+  action_title: string;
+  action_description: string;
+  request_id: string;
+  details: Record<string, any>;
+  confirmation_token: string;
+  requires_confirmation: boolean;
+}
+
+export interface DonorMatchingExplanation {
+  recipient_blood_group: string;
+  compatible_blood_groups: string[];
+  total_compatible_found: number;
+  district: string;
+  matching_criteria: string[];
+  privacy_notice: string;
+}
+
+export interface DonorCoordinationRequest {
+  message: string;
+  request_id?: string | null;
+  conversation_id?: string | null;
+  history?: ChatMessage[] | null;
+  lang?: string;
+}
+
+export interface DonorCoordinationResponse {
+  reply: string;
+  intent: DonorCoordinationIntent;
+  request_id?: string | null;
+  request_summary?: Record<string, any> | null;
+  matching_explanation?: DonorMatchingExplanation | null;
+  matched_donors: BloodDonorResultItem[];
+  action_preview?: ActionPreview | null;
+  follow_up_question?: string | null;
+  is_clarification_needed: boolean;
+  conversation_id: string;
+  disclaimer: string;
+}
+
+export interface DonorCoordinationConfirmRequest {
+  conversation_id: string;
+  confirmation_token: string;
+  action_type: string;
+  request_id: string;
+  message?: string | null;
+  contact_phone?: string | null;
+}
+
+export interface DonorCoordinationConfirmResponse {
+  status: string;
+  action_type: string;
+  record_id?: string | null;
+  message: string;
+  details: Record<string, any>;
+}
+
+// ---------------------------------------------------------------------------
+// Phase C: Incident Intelligence Agent Types
+// ---------------------------------------------------------------------------
+
+export type IncidentIntelligenceIntent =
+  | "SEARCH_INCIDENTS"
+  | "GET_INCIDENT_REPORT"
+  | "GET_INCIDENT_SUMMARY"
+  | "ANALYZE_INCIDENT"
+  | "FIND_DUPLICATES"
+  | "PREPARE_REVIEW"
+  | "CLARIFY_QUERY";
+
+export interface ReportItemResult {
+  id: string;
+  title: string;
+  category_name: string;
+  category_slug: string;
+  location_text: string;
+  district?: string | null;
+  area?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  incident_date?: string | null;
+  created_at: string;
+  status: string;
+  is_verified: boolean;
+  is_anonymous: boolean;
+  reporter_name?: string | null;
+  summary: string;
+  media_count: number;
+}
+
+export interface SearchIncidentReportsOutput {
+  reports: ReportItemResult[];
+  total_found: number;
+  criteria_applied: Record<string, any>;
+}
+
+export interface GetIncidentReportOutput {
+  report_id: string;
+  is_authorized: boolean;
+  error_message?: string | null;
+  report?: ReportItemResult | null;
+  description?: string | null;
+  is_own_report: boolean;
+  moderation_notes?: string | null;
+  media_urls: string[];
+  comments_count: number;
+  reactions_count: number;
+}
+
+export interface GetIncidentSummaryOutput {
+  total_reports: number;
+  by_category: Record<string, number>;
+  by_status: Record<string, number>;
+  by_district: Record<string, number>;
+  verified_count: number;
+  unverified_count: number;
+  date_range?: string | null;
+  summary_narrative: string;
+}
+
+export interface AnalyzeIncidentReportOutput {
+  report_id: string;
+  is_authorized: boolean;
+  error_message?: string | null;
+  title?: string | null;
+  category?: string | null;
+  location_text?: string | null;
+  verified_facts: string[];
+  missing_or_incomplete_info: string[];
+  safety_concerns: string[];
+  suggested_follow_ups: string[];
+  ai_interpretation: string;
+  confidence_score: number;
+  grounding_disclaimer: string;
+}
+
+export interface CandidateDuplicateItem {
+  report_id: string;
+  title: string;
+  category_name: string;
+  location_text: string;
+  incident_date?: string | null;
+  status: string;
+  similarity_score: number;
+  similarity_reasons: string[];
+}
+
+export interface FindPossibleDuplicatesOutput {
+  target_report_id?: string | null;
+  candidate_duplicates: CandidateDuplicateItem[];
+  total_candidates: number;
+  safe_notice: string;
+}
+
+export interface PrepareReportReviewOutput {
+  report_id: string;
+  is_authorized: boolean;
+  error_message?: string | null;
+  current_status?: string | null;
+  suggested_priority?: string | null;
+  suggested_action?: string | null;
+  ai_reasoning?: string | null;
+  checklist: Array<{ criterion: string; passed: boolean; detail: string }>;
+  review_preview: Record<string, any>;
+  disclaimer: string;
+}
+
+export interface IncidentIntelligenceRequest {
+  message: string;
+  conversation_id?: string | null;
+  report_id?: string | null;
+  history?: ChatMessage[] | null;
+  lang?: string;
+}
+
+export interface IncidentIntelligenceResponse {
+  reply: string;
+  intent: IncidentIntelligenceIntent;
+  report_id?: string | null;
+  tool_executed?: string | null;
+  search_results?: SearchIncidentReportsOutput | null;
+  report_details?: GetIncidentReportOutput | null;
+  summary?: GetIncidentSummaryOutput | null;
+  analysis?: AnalyzeIncidentReportOutput | null;
+  duplicate_candidates?: FindPossibleDuplicatesOutput | null;
+  review_preview?: PrepareReportReviewOutput | null;
+  follow_up_question?: string | null;
+  is_clarification_needed: boolean;
+  conversation_id: string;
+  disclaimer: string;
+}
+
+// ---------------------------------------------------------------------------
+// Phase D: Admin & Moderator Copilot Types
+// ---------------------------------------------------------------------------
+
+export type AdminCopilotIntent =
+  | "SEARCH_MODERATION_REPORTS"
+  | "GET_MODERATION_REPORT"
+  | "GET_MODERATION_SUMMARY"
+  | "SEARCH_BLOOD_REQUESTS"
+  | "GET_PLATFORM_ACTIVITY"
+  | "GET_PENDING_SUMMARY"
+  | "GET_RECENT_ACTIVITY"
+  | "IDENTIFY_ATTENTION_ITEMS"
+  | "PREPARE_MODERATION_REVIEW"
+  | "PREPARE_MODERATION_ACTION"
+  | "CLARIFY_QUERY";
+
+export interface SearchModerationReportsOutput {
+  reports: ReportItemResult[];
+  total_found: number;
+  criteria_applied: Record<string, any>;
+}
+
+export interface GetModerationReportOutput {
+  report_id: string;
+  title: string;
+  description: string;
+  category_name: string;
+  category_slug: string;
+  location_text: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  status: string;
+  is_anonymous: boolean;
+  reporter_username?: string | null;
+  reporter_email?: string | null;
+  incident_date?: string | null;
+  created_at: string;
+  moderation_history: Array<Record<string, any>>;
+  media_urls: string[];
+  flags_count: number;
+}
+
+export interface GetModerationSummaryOutput {
+  total_reports: number;
+  pending_review_count: number;
+  approved_count: number;
+  rejected_count: number;
+  needs_info_count: number;
+  by_category: Record<string, number>;
+  by_district: Record<string, number>;
+  summary_narrative: string;
+}
+
+export interface AdminBloodRequestItem {
+  id: string;
+  patient_name?: string | null;
+  blood_group: string;
+  units_required: number;
+  hospital_name: string;
+  district: string;
+  status: string;
+  urgency: string;
+  response_count: number;
+  created_at: string;
+}
+
+export interface SearchBloodRequestsAdminOutput {
+  requests: AdminBloodRequestItem[];
+  total_found: number;
+}
+
+export interface PlatformActivitySummaryOutput {
+  total_reports: number;
+  pending_reports: number;
+  approved_reports: number;
+  total_blood_requests: number;
+  active_blood_requests: number;
+  total_donors_registered: number;
+  total_safety_flags: number;
+  active_missing_persons: number;
+  summary_narrative: string;
+}
+
+export interface RecentModerationActivityOutput {
+  recent_records: Array<Record<string, any>>;
+  total_records: number;
+}
+
+export interface OperationalAttentionItem {
+  item_type: string;
+  record_id: string;
+  title: string;
+  severity: string;
+  reason: string;
+  recommended_action: string;
+  created_at: string;
+}
+
+export interface OperationalAttentionOutput {
+  items: OperationalAttentionItem[];
+  total_items: number;
+  summary: string;
+}
+
+export interface ModerationActionPreview {
+  action_type: string;
+  target_record_id: string;
+  target_title: string;
+  current_status: string;
+  proposed_status: string;
+  reason: string;
+  details: Record<string, any>;
+  confirmation_token: string;
+  requires_confirmation: boolean;
+  expires_at: string;
+}
+
+export interface AdminCopilotRequest {
+  message: string;
+  conversation_id?: string | null;
+  report_id?: string | null;
+  history?: ChatMessage[] | null;
+  lang?: string;
+}
+
+export interface AdminCopilotResponse {
+  reply: string;
+  intent: AdminCopilotIntent;
+  tool_executed?: string | null;
+  reports_result?: SearchModerationReportsOutput | null;
+  report_details?: GetModerationReportOutput | null;
+  moderation_summary?: GetModerationSummaryOutput | null;
+  blood_requests_result?: SearchBloodRequestsAdminOutput | null;
+  platform_activity?: PlatformActivitySummaryOutput | null;
+  recent_activity?: RecentModerationActivityOutput | null;
+  attention_items?: OperationalAttentionOutput | null;
+  review_preview?: PrepareReportReviewOutput | null;
+  action_preview?: ModerationActionPreview | null;
+  follow_up_question?: string | null;
+  is_clarification_needed: boolean;
+  conversation_id: string;
+  disclaimer: string;
+}
+
+export interface AdminCopilotConfirmRequest {
+  conversation_id: string;
+  confirmation_token: string;
+  action_type: string;
+  target_record_id: string;
+  user_message?: string | null;
+  internal_notes?: string | null;
+}
+
+export interface AdminCopilotConfirmResponse {
+  status: string;
+  action_type: string;
+  record_id: string;
+  previous_status: string;
+  new_status: string;
+  message: string;
+  details: Record<string, any>;
+}
+
+// ---------------------------------------------------------------------------
+// Phase E: Voice & Audio Emergency Intake Types
+// ---------------------------------------------------------------------------
+
+export interface VoiceEmergencyIntakeRequest {
+  transcript: string;
+  raw_transcript?: string | null;
+  audio_duration_seconds?: number | null;
+  conversation_id?: string | null;
+  current_latitude?: number | null;
+  current_longitude?: number | null;
+  current_location_text?: string | null;
+  lang?: string;
+  history?: ChatMessage[] | null;
+}
+
+export interface VoiceEmergencyIntakeResponse {
+  reply: string;
+  follow_up_question?: string | null;
+  missing_fields: string[];
+  is_ready_for_review: boolean;
+  emergency_type: EmergencyType;
+  extracted_fields: Record<string, any>;
+  draft_report?: DraftReportPreview | null;
+  draft_blood_request?: DraftBloodRequestPreview | null;
+  action_plan_summary?: string[] | null;
+  emergency_notice: string;
+  conversation_id: string;
+  confirmation_token?: string | null;
+  input_mode: string;
+  transcript: string;
+  raw_transcript?: string | null;
+  audio_duration_seconds?: number | null;
+  was_edited: boolean;
+  audio_retention_policy: string;
+  speech_synthesis_hint?: string | null;
+  disclaimer: string;
+}
+
+// ---------------------------------------------------------------------------
+// Phase F: Safe Route & Interactive Safety Map Types
+// ---------------------------------------------------------------------------
+
+export interface EmergencyServiceAlongRoute {
+  id: string;
+  name: string;
+  service_type: string;
+  phone_number?: string | null;
+  latitude: number;
+  longitude: number;
+  distance_meters: number;
+  distance_text: string;
+}
+
+export interface SafeRouteAnalysisRequest {
+  origin_latitude: number;
+  origin_longitude: number;
+  destination_latitude: number;
+  destination_longitude: number;
+  origin_name?: string | null;
+  destination_name?: string | null;
+  waypoints?: number[][] | null;
+  route_distance_km?: number | null;
+  route_duration_minutes?: number | null;
+  lang?: string;
+}
+
+export interface SafeRouteAnalysisResponse {
+  origin_name: string;
+  destination_name: string;
+  route_distance_km?: number | null;
+  route_duration_minutes?: number | null;
+  routing_mode?: "ROAD_NETWORK" | "DIRECT_CORRIDOR_FALLBACK" | string;
+  is_fallback?: boolean;
+  fallback_notice?: string | null;
+  route_risk_level: RoadSafetyRiskLevel;
+  route_risk_score: number;
+  total_hazards_count: number;
+  hazards_by_category: Record<string, number>;
+  hazards_along_route: NearbySafetyAlert[];
+  emergency_services_along_route: EmergencyServiceAlongRoute[];
+  high_risk_corridors_crossed: RoadSafetyHotspotItem[];
+  safety_advisory: string;
+  ai_interpretation: string;
+  data_limitations: string;
+  emergency_notice: string;
+  disclaimer: string;
+}
+
+
+
+
 
 
 

@@ -5,18 +5,13 @@ import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import {
   RoadSafetyIntelligenceResponse,
-  RoadSafetyRiskLevel,
   NearbySafetyAlert,
   AccidentHistoryItem,
-  RoadSafetyHotspotItem,
   RouteRiskEvaluationResponse,
 } from "@/lib/types";
 import {
   watchLiveLocation,
   LivePosition,
-  captureCurrentLocation,
-  LocationError,
-  calculateBearingDegrees,
 } from "@/lib/location";
 import { Language } from "@/lib/i18n";
 import { MapPin, X, Siren, TrafficCone, Shield, Check, Square, CarFront } from "lucide-react";
@@ -47,7 +42,6 @@ const BD_DESTINATION_PRESETS: DestinationPreset[] = [
 export default function LiveRoadSafety3DMap({
   initialLatitude = 23.7461,
   initialLongitude = 90.3742,
-  initialAreaName = "Dhanmondi, Dhaka",
   lang = "en",
 }: LiveRoadSafety3DMapProps) {
   const isBn = lang === "bn";
@@ -64,7 +58,7 @@ export default function LiveRoadSafety3DMap({
     accuracy: 15,
     heading: 0,
     speed: 0,
-    timestamp: Date.now(),
+    timestamp: 0,
   });
   const [isDriving, setIsDriving] = useState<boolean>(false);
   const [is3DMode, setIs3DMode] = useState<boolean>(true);
@@ -78,7 +72,7 @@ export default function LiveRoadSafety3DMap({
 
   // Road Safety Data
   const [roadData, setRoadData] = useState<RoadSafetyIntelligenceResponse | null>(null);
-  const [loadingRoadData, setLoadingRoadData] = useState<boolean>(false);
+  const [, setLoadingRoadData] = useState<boolean>(false);
   const [selectedIncident, setSelectedIncident] = useState<AccidentHistoryItem | NearbySafetyAlert | null>(null);
 
   // Proximity Driving Alerts
@@ -95,7 +89,7 @@ export default function LiveRoadSafety3DMap({
     geometry: any;
   } | null>(null);
   const [routeRisk, setRouteRisk] = useState<RouteRiskEvaluationResponse | null>(null);
-  const [routeError, setRouteError] = useState<string | null>(null);
+  const [, setRouteError] = useState<string | null>(null);
 
   // Play subtle safety audio alert chime
   const playAlertChime = useCallback(() => {
@@ -272,6 +266,7 @@ export default function LiveRoadSafety3DMap({
         mapRef.current = null;
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Map container mounts once on initial render
   }, []);
 
   // 3. Update User Marker & Camera when Location Changes
@@ -304,12 +299,6 @@ export default function LiveRoadSafety3DMap({
         const now = Date.now();
         for (const alert of roadData.nearby_alerts) {
           if (alert.latitude && alert.longitude) {
-            const d = calculateBearingDegrees(
-              currentPos.latitude,
-              currentPos.longitude,
-              alert.latitude,
-              alert.longitude
-            );
             // approximate Euclidean distance in meters
             const latDiff = (currentPos.latitude - alert.latitude) * 111000;
             const lngDiff = (currentPos.longitude - alert.longitude) * 111000 * Math.cos(currentPos.latitude * Math.PI / 180);

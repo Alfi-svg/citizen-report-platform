@@ -7,7 +7,8 @@ import { apiFetch } from "@/lib/api";
 import { PublicBloodRequest, BloodResponseItem, BloodDonationRecord } from "@/lib/types";
 import { useAuth } from "@/context/AuthContext";
 import { useBackClose } from "@/lib/useBackClose";
-import { AlertTriangle, Droplets, Lightbulb, Building2, MapPin, Clock, Shield, Phone, Check, Star, Heart, Flag, X, Scale } from "lucide-react";
+import { AlertTriangle, Droplets, Lightbulb, Building2, MapPin, Clock, Shield, Phone, Check, Star, Heart, Flag, X, Scale, Bot } from "lucide-react";
+import AIDonorCoordinationModal from "@/components/AIDonorCoordinationModal";
 
 export default function BloodRequestDetailPage() {
   const router = useRouter();
@@ -21,6 +22,9 @@ export default function BloodRequestDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  // AI Donor Coordination Assistant Modal State
+  const [isAICoordinatorOpen, setIsAICoordinatorOpen] = useState(false);
 
   // Response Modal State ("I Can Help")
   const [isResponseModalOpen, setIsResponseModalOpen] = useState(false);
@@ -51,22 +55,24 @@ export default function BloodRequestDetailPage() {
   const [submittingFlag, setSubmittingFlag] = useState(false);
 
   // Android back-button compatibility for modals
+  useBackClose(isAICoordinatorOpen, () => setIsAICoordinatorOpen(false), "bloodAICoordinatorModal");
   useBackClose(isResponseModalOpen, () => setIsResponseModalOpen(false), "bloodResponseModal");
   useBackClose(isFlagModalOpen, () => setIsFlagModalOpen(false), "bloodFlagModal");
   useBackClose(!!disputeDonation, () => setDisputeDonation(null), "bloodDisputeModal");
   useBackClose(!!ratingDonation, () => setRatingDonation(null), "bloodRatingModal");
 
   useEffect(() => {
-    if (!isResponseModalOpen && !isFlagModalOpen) return;
+    if (!isResponseModalOpen && !isFlagModalOpen && !isAICoordinatorOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        setIsAICoordinatorOpen(false);
         setIsResponseModalOpen(false);
         setIsFlagModalOpen(false);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isResponseModalOpen, isFlagModalOpen]);
+  }, [isResponseModalOpen, isFlagModalOpen, isAICoordinatorOpen]);
 
   // Status updating
   const [updatingStatus, setUpdatingStatus] = useState(false);
@@ -326,6 +332,16 @@ export default function BloodRequestDetailPage() {
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsAICoordinatorOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/80 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 transition shadow-2xs cursor-pointer"
+              title="Open AI Donor Coordination Assistant"
+            >
+              <Bot className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+              <span>AI Coordinator</span>
+            </button>
+
             <span
               className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold border ${
                 request.urgency === "EMERGENCY"
@@ -532,7 +548,15 @@ export default function BloodRequestDetailPage() {
                 <Shield className="h-4 w-4" />
                 <span>You are the author of this request</span>
               </span>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsAICoordinatorOpen(true)}
+                  className="rounded-xl bg-indigo-600 hover:bg-indigo-700 px-3.5 py-1.5 text-xs font-bold text-white shadow-2xs transition cursor-pointer inline-flex items-center gap-1.5"
+                >
+                  <Bot className="h-3.5 w-3.5" />
+                  <span>AI Matching & Coordination</span>
+                </button>
                 {request.status !== "FULFILLED" && (
                   <button
                     type="button"
@@ -801,6 +825,15 @@ export default function BloodRequestDetailPage() {
                         <span>{claimingDonation ? "Submitting Claim..." : "I Donated Blood"}</span>
                       </button>
                     )}
+
+                    <button
+                      type="button"
+                      onClick={() => setIsAICoordinatorOpen(true)}
+                      className="inline-flex items-center gap-2 rounded-2xl border border-indigo-200 dark:border-indigo-900 bg-indigo-50/80 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/60 px-5 py-3 text-xs sm:text-sm font-bold text-indigo-700 dark:text-indigo-300 shadow-2xs transition cursor-pointer"
+                    >
+                      <Bot className="h-4 w-4" />
+                      <span>Coordinate with AI</span>
+                    </button>
                   </>
                 ) : (
                   <Link
@@ -1127,6 +1160,18 @@ export default function BloodRequestDetailPage() {
           </div>
         </div>
       )}
+
+      {/* AI Donor Coordination Assistant Modal */}
+      <AIDonorCoordinationModal
+        isOpen={isAICoordinatorOpen}
+        onClose={() => setIsAICoordinatorOpen(false)}
+        requestId={request.id}
+        isOwner={request.is_own_request || false}
+        bloodGroup={request.blood_group}
+        hospitalName={request.hospital_name}
+        district={request.district}
+        onActionCompleted={fetchRequestDetails}
+      />
     </div>
   );
 }

@@ -13,6 +13,11 @@ from app.schemas.emergency_service import (
     AreaReference,
     PublicEmergencyServiceResponse,
 )
+from app.schemas.ai_features import (
+    SafeRouteAnalysisRequest,
+    SafeRouteAnalysisResponse,
+)
+from app.services.safe_route import analyze_safe_route
 
 router = APIRouter()
 
@@ -291,3 +296,33 @@ async def get_nearby_emergency_services(
         total_found=len(scored_services),
         warning_message=warning,
     )
+
+
+# ==============================================================================
+# Phase F: Safe Route Analysis Endpoint
+# ==============================================================================
+
+@router.post(
+    "/safe-route/analyze",
+    response_model=SafeRouteAnalysisResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Evaluate road hazards and emergency services along a transit route",
+)
+async def analyze_route_safety_endpoint(
+    request: SafeRouteAnalysisRequest,
+    db: AsyncSession = Depends(get_db),
+) -> SafeRouteAnalysisResponse:
+    """
+    Phase F: Safe Route & Interactive Safety Map.
+    Evaluates real approved incident hazards, high-risk corridor crossings,
+    and verified emergency services along a route geometry.
+    Strictly grounded in database records; does not claim routes are 100% safe.
+    """
+    try:
+        return await analyze_safe_route(db=db, request=request)
+    except ValueError as ve:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(ve),
+        )
+
