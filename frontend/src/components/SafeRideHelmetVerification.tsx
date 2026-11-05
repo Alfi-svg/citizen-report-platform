@@ -6,7 +6,6 @@ import {
   HardHat,
   Camera,
   ShieldCheck,
-  ShieldAlert,
   CircleAlert,
   Loader2,
   RefreshCw,
@@ -47,7 +46,6 @@ export const SafeRideHelmetVerification: React.FC<SafeRideHelmetVerificationProp
   // Camera & Permission States
   const [showPermissionDialog, setShowPermissionDialog] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
-  const [isCameraActive, setIsCameraActive] = useState(false);
 
   // Verification Data
   const [verificationStatus, setVerificationStatus] = useState<HelmetDetectionStatus | "DETECTING" | "IDLE">("IDLE");
@@ -60,7 +58,6 @@ export const SafeRideHelmetVerification: React.FC<SafeRideHelmetVerificationProp
   const [destinationText, setDestinationText] = useState("");
   const [activeRide, setActiveRide] = useState<ActiveSafeRideState | null>(null);
   const [currentCoords, setCurrentCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [currentSpeedKmh, setCurrentSpeedKmh] = useState<number>(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
 
@@ -80,7 +77,6 @@ export const SafeRideHelmetVerification: React.FC<SafeRideHelmetVerificationProp
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
-    setIsCameraActive(false);
   }, []);
 
   // Countdown timer for 120s verification token validity
@@ -108,13 +104,15 @@ export const SafeRideHelmetVerification: React.FC<SafeRideHelmetVerificationProp
 
   // Clean up resources on unmount
   useEffect(() => {
+    const unwatch = unwatchLocationRef.current;
+    const timer = verificationTimerRef.current;
     return () => {
       stopCameraStream();
-      if (unwatchLocationRef.current) {
-        unwatchLocationRef.current();
+      if (unwatch) {
+        unwatch();
       }
-      if (verificationTimerRef.current) {
-        clearInterval(verificationTimerRef.current);
+      if (timer) {
+        clearInterval(timer);
       }
     };
   }, [stopCameraStream]);
@@ -141,7 +139,6 @@ export const SafeRideHelmetVerification: React.FC<SafeRideHelmetVerificationProp
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
       }
-      setIsCameraActive(true);
       setPhase("CAMERA_CHECK");
       setVerificationStatus("DETECTING");
       setShowPermissionDialog(false);
@@ -285,7 +282,6 @@ export const SafeRideHelmetVerification: React.FC<SafeRideHelmetVerificationProp
       const unwatch = watchLiveLocation(
         (pos: LivePosition) => {
           setCurrentCoords({ lat: pos.latitude, lng: pos.longitude });
-          setCurrentSpeedKmh(pos.speed || 0);
           setActiveRide((prev) =>
             prev
               ? {

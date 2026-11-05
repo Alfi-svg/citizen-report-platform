@@ -8,7 +8,7 @@ import { translations, Language } from "@/lib/i18n";
 import EmergencyCallModal from "@/components/EmergencyCallModal";
 import { captureCurrentLocation } from "@/lib/location";
 import { useBackClose } from "@/lib/useBackClose";
-import { Shield, ShieldAlert, AlertTriangle, Settings, Phone, X, Siren, MapPin, Check, AlertOctagon, FlaskConical, Users, Pencil, Trash2, FileText, Lock, MessageSquare, CheckCircle2, Circle } from "lucide-react";
+import { Shield, AlertTriangle, Settings, Phone, X, Siren, MapPin, Check, AlertOctagon, FlaskConical, Users, Pencil, Trash2, FileText, Lock, MessageSquare, CheckCircle2 } from "lucide-react";
 
 interface TrustedContactItem {
   id: string;

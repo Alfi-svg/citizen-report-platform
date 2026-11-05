@@ -56,6 +56,10 @@ from app.models.hospital import (
     BloodInventoryStatus,
     HospitalInventoryAudit,
 )
+from app.models.accident_zone import (
+    AccidentZone,
+    RoadRiskLevel,
+)
 
 __all__ = [
     "Base",
@@ -119,4 +123,6 @@ __all__ = [
     "BloodInventory",
     "BloodInventoryStatus",
     "HospitalInventoryAudit",
+    "AccidentZone",
+    "RoadRiskLevel",
 ]

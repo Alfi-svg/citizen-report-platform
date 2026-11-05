@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.db.session import get_db
 from app.models.emergency_service import EmergencyService, ServiceType, VerificationStatus
+from app.models.accident_zone import AccidentZone
 from app.schemas.emergency_service import (
     NearbyEmergencyServicesResult,
     NearbyServiceResponse,
@@ -16,6 +17,7 @@ from app.schemas.emergency_service import (
 from app.schemas.ai_features import (
     SafeRouteAnalysisRequest,
     SafeRouteAnalysisResponse,
+    AccidentZoneItem,
 )
 from app.services.safe_route import analyze_safe_route
 
@@ -325,4 +327,52 @@ async def analyze_route_safety_endpoint(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(ve),
         )
+
+
+@router.get(
+    "/accident-zones",
+    response_model=List[AccidentZoneItem],
+    status_code=status.HTTP_200_OK,
+    summary="List documented accident-prone highway corridors and blackspots",
+)
+async def list_accident_zones(
+    district: Optional[str] = Query(None, description="Filter by Bangladesh district"),
+    risk_level: Optional[str] = Query(None, description="CRITICAL, HIGH, MODERATE, LOW"),
+    limit: int = Query(50, ge=1, le=200),
+    db: AsyncSession = Depends(get_db),
+) -> List[AccidentZoneItem]:
+    """
+    Returns documented accident-prone zones in Bangladesh.
+    Sourced from Accident Research Institute (ARI) BUET, BRTA, Highway Police, and RSF.
+    """
+    stmt = select(AccidentZone)
+    if district:
+        stmt = stmt.where(AccidentZone.district.ilike(f"%{district}%"))
+    if risk_level:
+        stmt = stmt.where(AccidentZone.risk_level == risk_level.upper())
+    stmt = stmt.order_by(AccidentZone.accident_count.desc().nullslast()).limit(limit)
+    res = await db.execute(stmt)
+    zones = res.scalars().all()
+
+    return [
+        AccidentZoneItem(
+            id=str(z.id),
+            zone_name=z.zone_name,
+            zone_name_bn=z.zone_name_bn,
+            road_name=z.road_name,
+            district=z.district,
+            division=z.division,
+            latitude=z.latitude,
+            longitude=z.longitude,
+            radius_meters=z.radius_meters,
+            accident_count=z.accident_count,
+            observation_period=z.observation_period,
+            data_source=z.data_source,
+            source_url=z.source_url,
+            verification_status=z.verification_status.value if hasattr(z.verification_status, "value") else str(z.verification_status),
+            risk_level=z.risk_level,
+            description=z.description,
+        )
+        for z in zones
+    ]
 

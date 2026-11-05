@@ -51,15 +51,28 @@ DISTRICT_ALIASES = {
 
 def _serialize_inventory_item(inv: BloodInventory) -> BloodInventoryItem:
     updater_name = None
-    if inv.updater:
-        updater_name = inv.updater.full_name or inv.updater.username
+    is_staff_verified = False
+    last_staff_update = None
+    source_label = "Baseline Demo Stock (Awaiting Staff Verification)"
+
+    if inv.updated_by is not None:
+        is_staff_verified = True
+        last_staff_update = inv.last_updated
+        source_label = "Staff Verified Stock"
+        if inv.updater:
+            updater_name = inv.updater.full_name or inv.updater.username
+        else:
+            updater_name = "Authorized Hospital Staff"
 
     return BloodInventoryItem(
         blood_group=inv.blood_group.value if hasattr(inv.blood_group, "value") else str(inv.blood_group),
         available_units=inv.available_units,
         availability_status=inv.availability_status.value if hasattr(inv.availability_status, "value") else str(inv.availability_status),
-        is_verified=inv.is_verified,
+        is_verified=is_staff_verified,
+        is_baseline_demo=not is_staff_verified,
+        stock_source_label=source_label,
         last_updated=inv.last_updated,
+        last_staff_update=last_staff_update,
         updated_by_name=updater_name,
     )
 

@@ -17,9 +17,9 @@ from app.services.blood_ai_assistant import chat_blood_ai
 
 @pytest.fixture
 async def seeded_hospitals(db_session: AsyncSession):
-    """Fixture that seeds the 12 verified hospitals and inventories."""
+    """Fixture that seeds the 14 verified hospitals and inventories across all 8 divisions."""
     result = await seed_hospitals_and_inventory(db_session)
-    assert result["total_hospitals_defined"] == 12
+    assert result["total_hospitals_defined"] == 14
     return result
 
 
@@ -59,7 +59,7 @@ async def regular_user(db_session: AsyncSession) -> User:
 async def test_seed_hospitals_idempotency(db_session: AsyncSession):
     """Test that seeding hospitals and inventory runs cleanly and idempotently."""
     res1 = await seed_hospitals_and_inventory(db_session)
-    assert res1["hospitals_created"] == 12
+    assert res1["hospitals_created"] == 14
 
     # Second run should be idempotent and not create duplicate hospitals
     res2 = await seed_hospitals_and_inventory(db_session)
@@ -67,7 +67,7 @@ async def test_seed_hospitals_idempotency(db_session: AsyncSession):
 
     stmt = select(Hospital)
     hospitals = list((await db_session.execute(stmt)).scalars().all())
-    assert len(hospitals) == 12
+    assert len(hospitals) == 14
 
 
 @pytest.mark.asyncio

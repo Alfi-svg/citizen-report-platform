@@ -9,7 +9,6 @@ import {
   MapPin,
   Square,
   PhoneCall,
-  AlertTriangle,
 } from "lucide-react";
 import { Button } from "./Button";
 import { ActiveSafeRideState } from "@/lib/types";

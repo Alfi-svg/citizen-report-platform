@@ -121,8 +121,8 @@ export default function BloodAIPage() {
   // Initial welcome message
   useEffect(() => {
     const welcomeText = isBn
-      ? "স্বাগতম! আমি নিরাপদ্তা ব্লাড এআই (Blood AI)। জরুরি রক্তের গ্রুপ অনুসন্ধান, নিকটস্থ হাসপাতাল ও ব্লাড ব্যাংকের লাইভ স্টক এবং ভেরিফায়েড ইমার্জেন্সি নম্বরের জন্য সাহায্য করতে প্রস্তুত। আপনার জিজ্ঞাসা স্বাভাবিক ভাষায় লিখুন।"
-      : "Welcome! I am Nirapotta Blood AI. I can help you locate nearby hospitals, verified blood banks, live blood group stock, and emergency contact numbers across Bangladesh. Ask in plain English or Bangla.";
+      ? "স্বাগতম! আমি নিরাপদ্তা ব্লাড এআই (Blood AI)। জরুরি রক্তের গ্রুপ অনুসন্ধান, নিকটস্থ হাসপাতাল ও ব্লাড ব্যাংকের বেসলাইন স্টক এবং ভেরিফায়েড ইমার্জেন্সি নম্বরের জন্য সাহায্য করতে প্রস্তুত। আপনার জিজ্ঞাসা স্বাভাবিক ভাষায় লিখুন।"
+      : "Welcome! I am Nirapotta Blood AI. I can help you locate nearby hospitals, verified blood banks, baseline blood group stock estimates, and emergency contact numbers across Bangladesh. Ask in plain English or Bangla.";
 
     setMessages([
       {
@@ -131,8 +131,8 @@ export default function BloodAIPage() {
         text: welcomeText,
         timestamp: new Date(),
         disclaimer: isBn
-          ? "জরুরি সতর্কতা: হাসপাতালে যাওয়ার পূর্বে ফোনে রক্তের স্টক নিশ্চিত করুন।"
-          : "Emergency Notice: Confirm blood availability by telephone before traveling to the hospital.",
+          ? "জরুরি সতর্কতা: বেসলাইন স্টক তথ্যের সত্যতা নিশ্চিত করতে হাসপাতালে যাওয়ার পূর্বে সরাসরি ফোনে যোগাযোগ করুন।"
+          : "Emergency Notice: Listed blood units represent baseline demo estimates. Always confirm availability by phone before dispatching.",
       },
     ]);
   }, [isBn]);

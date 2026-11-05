@@ -303,6 +303,54 @@ VERIFIED_HOSPITALS_DATA: List[Dict[str, Any]] = [
             BloodGroup.AB_NEG: (1, BloodInventoryStatus.LOW_STOCK),
         },
     },
+    {
+        "name": "Sher-e-Bangla Medical College Hospital (SBMCH)",
+        "name_bn": "শের-ই-বাংলা মেডিকেল কলেজ হাসপাতাল (এসবিএমসিএইচ)",
+        "blood_bank_name": "SBMCH Blood Transfusion Department",
+        "district": "Barishal",
+        "area": "Band Road",
+        "address": "Band Road, Barishal 8200",
+        "address_bn": "ব্যান্ড রোড, বরিশাল ৮২০০",
+        "latitude": 22.6896,
+        "longitude": 90.3585,
+        "emergency_phone": "+8804312173541",
+        "alternate_phone": "+8804312173542",
+        "verification_status": VerificationStatus.VERIFIED,
+        "inventory": {
+            BloodGroup.O_POS: (12, BloodInventoryStatus.AVAILABLE),
+            BloodGroup.O_NEG: (2, BloodInventoryStatus.LOW_STOCK),
+            BloodGroup.A_POS: (8, BloodInventoryStatus.AVAILABLE),
+            BloodGroup.A_NEG: (1, BloodInventoryStatus.LOW_STOCK),
+            BloodGroup.B_POS: (9, BloodInventoryStatus.AVAILABLE),
+            BloodGroup.B_NEG: (2, BloodInventoryStatus.LOW_STOCK),
+            BloodGroup.AB_POS: (4, BloodInventoryStatus.AVAILABLE),
+            BloodGroup.AB_NEG: (0, BloodInventoryStatus.OUT_OF_STOCK),
+        },
+    },
+    {
+        "name": "Rangpur Medical College Hospital (RpMCH)",
+        "name_bn": "রংপুর মেডিকেল কলেজ হাসপাতাল (আরপিএমসিএইচ)",
+        "blood_bank_name": "RpMCH Blood Transfusion Department",
+        "district": "Rangpur",
+        "area": "Dhap",
+        "address": "Medical East Gate, Dhap, Rangpur 5400",
+        "address_bn": "মেডিকেল পূর্ব গেট, ধাপ, রংপুর ৫৪০০",
+        "latitude": 25.7628,
+        "longitude": 89.2369,
+        "emergency_phone": "+88052162234",
+        "alternate_phone": "+88052162235",
+        "verification_status": VerificationStatus.VERIFIED,
+        "inventory": {
+            BloodGroup.O_POS: (10, BloodInventoryStatus.AVAILABLE),
+            BloodGroup.O_NEG: (1, BloodInventoryStatus.LOW_STOCK),
+            BloodGroup.A_POS: (6, BloodInventoryStatus.AVAILABLE),
+            BloodGroup.A_NEG: (1, BloodInventoryStatus.LOW_STOCK),
+            BloodGroup.B_POS: (8, BloodInventoryStatus.AVAILABLE),
+            BloodGroup.B_NEG: (2, BloodInventoryStatus.LOW_STOCK),
+            BloodGroup.AB_POS: (3, BloodInventoryStatus.AVAILABLE),
+            BloodGroup.AB_NEG: (1, BloodInventoryStatus.LOW_STOCK),
+        },
+    },
 ]
 
 
@@ -368,15 +416,19 @@ async def seed_hospitals_and_inventory(db: AsyncSession) -> Dict[str, int]:
                     blood_group=bg,
                     available_units=units,
                     availability_status=status_val,
-                    is_verified=True,
+                    is_verified=False,  # Baseline demo stock (unverified until hospital staff update)
                     last_updated=record_time,
+                    updated_by=None,
                 )
                 db.add(new_inv)
                 inventories_created += 1
             else:
-                inv_record.available_units = units
-                inv_record.availability_status = status_val
-                inv_record.last_updated = record_time
+                # Only update demo baseline if no human staff user has taken over this inventory item
+                if inv_record.updated_by is None:
+                    inv_record.available_units = units
+                    inv_record.availability_status = status_val
+                    inv_record.is_verified = False
+                    inv_record.last_updated = record_time
 
     await db.commit()
     logger.info("Hospital seeding complete: %d hospitals, %d inventories", hospitals_created, inventories_created)

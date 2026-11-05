@@ -1850,6 +1850,44 @@ export interface EmergencyServiceAlongRoute {
   distance_text: string;
 }
 
+export interface AccidentZoneItem {
+  id: string;
+  zone_name: string;
+  zone_name_bn?: string | null;
+  road_name: string;
+  district: string;
+  division: string;
+  latitude: number;
+  longitude: number;
+  radius_meters: number;
+  accident_count?: number | null;
+  observation_period?: string | null;
+  data_source: string;
+  source_url?: string | null;
+  verification_status: string;
+  risk_level: string;
+  description?: string | null;
+  distance_meters?: number | null;
+  data_type?: string;
+  is_estimated?: boolean;
+  hazard_density_label?: string;
+  data_limitation_notice?: string;
+}
+
+export interface RouteAlternativeComparison {
+  route_id: string;
+  label: string;
+  distance_km: number;
+  duration_minutes: number;
+  risk_level: RoadSafetyRiskLevel;
+  risk_score: number;
+  accident_zones_count: number;
+  hazards_count: number;
+  is_safest: boolean;
+  is_shortest: boolean;
+  recommendation_summary: string;
+}
+
 export interface SafeRouteAnalysisRequest {
   origin_latitude: number;
   origin_longitude: number;
@@ -1860,6 +1898,13 @@ export interface SafeRouteAnalysisRequest {
   waypoints?: number[][] | null;
   route_distance_km?: number | null;
   route_duration_minutes?: number | null;
+  vehicle_type?: "MOTORCYCLE" | "CAR" | string;
+  safety_confirmed?: boolean;
+  alternative_geometries?: Array<{
+    distance_km: number;
+    duration_minutes: number;
+    coordinates: number[][];
+  }> | null;
   lang?: string;
 }
 
@@ -1878,6 +1923,11 @@ export interface SafeRouteAnalysisResponse {
   hazards_along_route: NearbySafetyAlert[];
   emergency_services_along_route: EmergencyServiceAlongRoute[];
   high_risk_corridors_crossed: RoadSafetyHotspotItem[];
+  accident_zones_along_route?: AccidentZoneItem[];
+  route_alternatives?: RouteAlternativeComparison[];
+  vehicle_type?: string | null;
+  safety_verification_status?: "VERIFIED" | "PENDING_CONFIRMATION" | string | null;
+  road_ai_guidance?: string | null;
   safety_advisory: string;
   ai_interpretation: string;
   data_limitations: string;
@@ -1896,7 +1946,10 @@ export interface BloodInventoryItem {
   available_units: number;
   availability_status: BloodInventoryStatus | string;
   is_verified: boolean;
+  is_baseline_demo?: boolean;
+  stock_source_label?: string;
   last_updated?: string | null;
+  last_staff_update?: string | null;
   updated_by_name?: string | null;
 }
 

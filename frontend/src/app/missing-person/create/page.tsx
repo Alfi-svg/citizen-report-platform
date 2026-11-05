@@ -9,7 +9,7 @@ import { captureCurrentLocation } from "@/lib/location";
 import { useRouter } from "next/navigation";
 import { useBackClose } from "@/lib/useBackClose";
 import { registerBackHandler, BackPriority } from "@/lib/backButton";
-import { AlertTriangle, Check, MapPin, Map, User, Camera, Phone, Clock, Plus } from "lucide-react";
+import { AlertTriangle, Check, MapPin, Map, User, Camera, Phone } from "lucide-react";
 
 export default function CreateMissingPersonPage() {
   const router = useRouter();

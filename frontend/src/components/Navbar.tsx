@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import NotificationBell from "@/components/NotificationBell";
 import { useBackClose } from "@/lib/useBackClose";
-import { Shield, BarChart3, FileText, Bell, AlertTriangle, LogOut, Search, X, Bike } from "lucide-react";
+import { Shield, BarChart3, FileText, Bell, AlertTriangle, LogOut, Search, X } from "lucide-react";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -98,7 +98,7 @@ export default function Navbar() {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      router.push(`/?q=${encodeURIComponent(searchQuery.trim())}`);
+      router.push(`/reports?q=${encodeURIComponent(searchQuery.trim())}`);
       setSearchModalOpen(false);
     }
   };

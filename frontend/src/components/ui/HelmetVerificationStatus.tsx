@@ -8,13 +8,12 @@ import {
   User,
   CircleAlert,
   Loader2,
-  CheckCircle2,
 } from "lucide-react";
 import { HelmetDetectionStatus } from "@/lib/types";
 
 export interface HelmetVerificationStatusProps {
   status: HelmetDetectionStatus | "DETECTING" | "IDLE";
-  isVerified: boolean;
+  isVerified?: boolean;
   confidence?: number;
   message?: string;
   isBn?: boolean;
@@ -23,7 +22,6 @@ export interface HelmetVerificationStatusProps {
 
 export const HelmetVerificationStatus: React.FC<HelmetVerificationStatusProps> = ({
   status,
-  isVerified,
   confidence,
   message,
   isBn = false,

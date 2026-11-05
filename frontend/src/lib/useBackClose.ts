@@ -48,8 +48,6 @@ export function useBackClose(
     }
 
     // 2. Web Browser: Use History API pushState / popstate
-    const initialPath = window.location.pathname;
-
     if (!pushedRef.current) {
       window.history.pushState(
         { ...window.history.state, modalOverlay: id },
@@ -83,7 +81,8 @@ export function useBackClose(
       ) {
         pushedRef.current = false;
         // Replace current state to remove the overlay marker — does NOT navigate back.
-        const { modalOverlay: _removed, ...cleanState } = window.history.state || {};
+        const cleanState = { ...(window.history.state || {}) };
+        delete cleanState.modalOverlay;
         window.history.replaceState(cleanState, "");
       }
     };

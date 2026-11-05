@@ -163,3 +163,61 @@ async def test_admin_emergency_services_crud_and_rbac(
     )
     assert r_delete.status_code == 200
     assert r_delete.json()["is_active"] is False
+
+
+@pytest.mark.asyncio
+async def test_accident_zones_and_safe_route_analysis(async_client: AsyncClient, db_session: AsyncSession):
+    """Test accident zones querying and comprehensive route safety analysis with compliance checks."""
+    from app.db.seed_accident_zones import seed_accident_zones
+    await seed_accident_zones(db_session)
+
+    # 1. Query accident zones
+    res = await async_client.get("/api/v1/safety/accident-zones?risk_level=CRITICAL")
+    assert res.status_code == 200
+    critical_zones = res.json()
+    assert len(critical_zones) >= 1
+    assert any("Kanchpur" in z["zone_name"] or "Hatikumrul" in z["zone_name"] for z in critical_zones)
+
+    # 2. Analyze Safe Route with Motorcycle Helmet Verification
+    payload = {
+        "origin_latitude": 23.7042,
+        "origin_longitude": 90.5098,
+        "destination_latitude": 23.7845,
+        "destination_longitude": 90.3538,
+        "origin_name": "Jatrabari - Kanchpur",
+        "destination_name": "Gabtoli Terminal",
+        "vehicle_type": "MOTORCYCLE",
+        "safety_confirmed": True,
+        "waypoints": [
+            [23.7042, 90.5098],
+            [23.7400, 90.4300],
+            [23.7845, 90.3538],
+        ],
+        "route_distance_km": 18.5,
+        "route_duration_minutes": 45.0,
+        "alternative_geometries": [
+            {
+                "distance_km": 18.5,
+                "duration_minutes": 45.0,
+                "coordinates": [[90.5098, 23.7042], [90.4300, 23.7400], [90.3538, 23.7845]],
+            },
+            {
+                "distance_km": 21.0,
+                "duration_minutes": 52.0,
+                "coordinates": [[90.5098, 23.7042], [90.4500, 23.7200], [90.3538, 23.7845]],
+            },
+        ],
+        "lang": "en",
+    }
+
+    r_analysis = await async_client.post("/api/v1/safety/safe-route/analyze", json=payload)
+    assert r_analysis.status_code == 200
+    data = r_analysis.json()
+    assert data["origin_name"] == "Jatrabari - Kanchpur"
+    assert data["destination_name"] == "Gabtoli Terminal"
+    assert data["safety_verification_status"] == "VERIFIED"
+    assert len(data["accident_zones_along_route"]) >= 1
+    assert len(data["route_alternatives"]) == 2
+    assert any(alt["is_shortest"] for alt in data["route_alternatives"])
+    assert any(alt["is_safest"] for alt in data["route_alternatives"])
+    assert data["road_ai_guidance"] is not None

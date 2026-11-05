@@ -930,6 +930,44 @@ class EmergencyServiceAlongRoute(BaseModel):
     distance_text: str
 
 
+class AccidentZoneItem(BaseModel):
+    id: str
+    zone_name: str
+    zone_name_bn: Optional[str] = None
+    road_name: str
+    district: str
+    division: str
+    latitude: float
+    longitude: float
+    radius_meters: int
+    accident_count: Optional[int] = None
+    observation_period: Optional[str] = None
+    data_source: str
+    source_url: Optional[str] = None
+    verification_status: str
+    risk_level: str
+    description: Optional[str] = None
+    distance_meters: Optional[int] = None
+    data_type: str = "ESTIMATED_HAZARD_DATA"
+    is_estimated: bool = True
+    hazard_density_label: str = "Estimated Hazard Index"
+    data_limitation_notice: str = "Estimated corridor density based on historical road safety models. Not live telematics or certified casualty statistics."
+
+
+class RouteAlternativeComparison(BaseModel):
+    route_id: str  # "route_0", "route_1", etc.
+    label: str  # "Shortest Route", "Safest Available Route"
+    distance_km: float
+    duration_minutes: float
+    risk_level: RoadSafetyRiskLevel
+    risk_score: float
+    accident_zones_count: int
+    hazards_count: int
+    is_safest: bool
+    is_shortest: bool
+    recommendation_summary: str
+
+
 class SafeRouteAnalysisRequest(BaseModel):
     origin_latitude: float = Field(..., ge=-90.0, le=90.0, description="Origin latitude")
     origin_longitude: float = Field(..., ge=-180.0, le=180.0, description="Origin longitude")
@@ -943,6 +981,12 @@ class SafeRouteAnalysisRequest(BaseModel):
     )
     route_distance_km: Optional[float] = Field(None, ge=0.0, le=2000.0)
     route_duration_minutes: Optional[float] = Field(None, ge=0.0, le=10000.0)
+    vehicle_type: Optional[str] = Field("MOTORCYCLE", description="MOTORCYCLE or CAR")
+    safety_confirmed: Optional[bool] = Field(False, description="Helmet or seatbelt safety confirmation")
+    alternative_geometries: Optional[List[Dict[str, Any]]] = Field(
+        None,
+        description="List of alternative routes geometry and metrics from OSRM",
+    )
     lang: str = "en"
 
 
@@ -961,12 +1005,17 @@ class SafeRouteAnalysisResponse(BaseModel):
     hazards_along_route: List[NearbySafetyAlert] = Field(default_factory=list)
     emergency_services_along_route: List[EmergencyServiceAlongRoute] = Field(default_factory=list)
     high_risk_corridors_crossed: List[RoadSafetyHotspotItem] = Field(default_factory=list)
+    accident_zones_along_route: List[AccidentZoneItem] = Field(default_factory=list)
+    route_alternatives: List[RouteAlternativeComparison] = Field(default_factory=list)
+    vehicle_type: Optional[str] = None
+    safety_verification_status: Optional[str] = None  # "VERIFIED" | "PENDING" | "WARNING"
+    road_ai_guidance: Optional[str] = None
     safety_advisory: str
     ai_interpretation: str
     data_limitations: str
     emergency_notice: str = "In life-threatening emergencies, dial National Emergency 999 directly."
     disclaimer: str = (
-        "Safe Route recommendations are informational advisories calculated from verified database incidents. "
+        "Safe Route recommendations are informational advisories calculated from verified database incidents and documented accident-prone zones. "
         "Road conditions change dynamically; routes cannot be guaranteed 100% safe."
     )
 

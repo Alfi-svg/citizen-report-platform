@@ -4,10 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import {
   Bike,
-  ShieldCheck,
-  MapPin,
   CarFront,
-  HardHat,
   ArrowRight,
   ShieldAlert,
 } from "lucide-react";

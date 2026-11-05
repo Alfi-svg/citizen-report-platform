@@ -6,7 +6,6 @@ import { apiFetch } from "@/lib/api";
 import {
   RoadSafetyIntelligenceResponse,
   RoadSafetyRiskLevel,
-  RoadSafetyHotspotItem,
 } from "@/lib/types";
 import { Language } from "@/lib/i18n";
 import { captureCurrentLocation } from "@/lib/location";

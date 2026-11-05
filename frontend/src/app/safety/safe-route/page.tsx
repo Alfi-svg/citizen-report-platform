@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useCallback, Suspense } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import {
@@ -8,24 +8,26 @@ import {
   SafeRouteAnalysisResponse,
   RoadSafetyRiskLevel,
   NearbySafetyAlert,
+  AccidentZoneItem,
+  HelmetVerificationResponse,
 } from "@/lib/types";
 import { Language } from "@/lib/i18n";
 import { captureCurrentLocation } from "@/lib/location";
 import {
-  Shield,
   Navigation,
   CarFront,
-  PhoneCall,
   AlertTriangle,
-  Layers,
   Compass,
-  Info,
-  ExternalLink,
   LocateFixed,
   RotateCcw,
   Clock,
   X,
-  Phone,
+  Bike,
+  CheckCircle2,
+  Camera,
+  Bot,
+  ShieldCheck,
+  Info,
 } from "lucide-react";
 
 interface LocationPreset {
@@ -44,9 +46,11 @@ const ROUTE_PRESETS: LocationPreset[] = [
   { nameEn: "Gabtoli Bus Terminal", nameBn: "গাবতলী বাস টার্মিনাল", lat: 23.7806, lng: 90.3522 },
   { nameEn: "Jatrabari - Kanchpur Stretch", nameBn: "যাত্রাবাড়ী - কাঁচপুর মহাসড়ক", lat: 23.7042, lng: 90.5098 },
   { nameEn: "Agrabad Commercial Area, Ctg", nameBn: "আগ্রাবাদ বাণিজ্যিক এলাকা, চট্টগ্রাম", lat: 22.3168, lng: 91.7981 },
+  { nameEn: "Hatikumrul Roundabout (Sirajganj)", nameBn: "হাটিকুমরুল গোলচত্বর (সিরাজগঞ্জ)", lat: 24.4215, lng: 89.5518 },
+  { nameEn: "Sherpur Highway Bypass (Bogura)", nameBn: "শেরপুর মহাসড়ক বাইপাস (বগুড়া)", lat: 24.6713, lng: 89.4182 },
 ];
 
-function SafeRouteContent() {
+export default function SafeRoutePage() {
   const [lang, setLang] = useState<Language>("en");
   const isBn = lang === "bn";
 
@@ -55,17 +59,37 @@ function SafeRouteContent() {
   const [destination, setDestination] = useState<LocationPreset>(ROUTE_PRESETS[1]);
   const [isLocatingOrigin, setIsLocatingOrigin] = useState(false);
 
+  // Vehicle Type & Safety Verification State
+  const [vehicleType, setVehicleType] = useState<"MOTORCYCLE" | "CAR">("MOTORCYCLE");
+  const [isSafetyConfirmed, setIsSafetyConfirmed] = useState(false);
+  const [helmetToken, setHelmetToken] = useState<string | null>(null);
+  const [helmetTokenExpiresAt, setHelmetTokenExpiresAt] = useState<number | null>(null);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [verificationWarning, setVerificationWarning] = useState<string | null>(null);
+  const [routingNotice, setRoutingNotice] = useState<string | null>(null);
+
+  // Camera Verification State (Mandatory for Motorcycle Ride Initiation)
+  const [cameraActive, setCameraActive] = useState(false);
+  const [isVerifyingCamera, setIsVerifyingCamera] = useState(false);
+  const [cameraResult, setCameraResult] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
   // Map & Visualizer State
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [is3DMode, setIs3DMode] = useState(true);
 
+  // Active Route Option: "route_0" (Primary) vs "route_1" (Alternative)
+  const [selectedRouteId, setSelectedRouteId] = useState<string>("route_0");
+  const [osrmRoutesData, setOsrmRoutesData] = useState<any[]>([]);
+
   // Routing & Risk Analysis State
   const [isRouting, setIsRouting] = useState(false);
   const [routeError, setRouteError] = useState<string | null>(null);
   const [routeAnalysis, setRouteAnalysis] = useState<SafeRouteAnalysisResponse | null>(null);
   const [selectedHazard, setSelectedHazard] = useState<NearbySafetyAlert | null>(null);
+  const [selectedAccidentZone, setSelectedAccidentZone] = useState<AccidentZoneItem | null>(null);
 
   // Sync language with localStorage
   useEffect(() => {
@@ -81,7 +105,7 @@ function SafeRouteContent() {
     }
   }, []);
 
-  // Initialize MapLibre GL JS
+  // Initialize MapLibre GL JS with 3D buildings
   useEffect(() => {
     if (typeof window === "undefined" || !mapContainerRef.current) return;
     let isMounted = true;
@@ -111,6 +135,7 @@ function SafeRouteContent() {
         center: [origin.lng, origin.lat],
         zoom: 13.5,
         pitch: is3DMode ? 55 : 0,
+        bearing: -15,
         antialias: true,
       });
 
@@ -144,21 +169,21 @@ function SafeRouteContent() {
                     ["get", "render_height"],
                     0, "#27272a",
                     30, "#18181b",
-                    60, "#09090b"
+                    60, "#09090b",
                   ],
                   "fill-extrusion-height": [
                     "interpolate",
                     ["linear"],
                     ["zoom"],
                     14, 0,
-                    14.5, ["get", "render_height"]
+                    14.5, ["get", "render_height"],
                   ],
                   "fill-extrusion-base": [
                     "interpolate",
                     ["linear"],
                     ["zoom"],
                     14, 0,
-                    14.5, ["get", "render_min_height"]
+                    14.5, ["get", "render_min_height"],
                   ],
                   "fill-extrusion-opacity": 0.8,
                 },
@@ -192,7 +217,7 @@ function SafeRouteContent() {
         mapRef.current = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Map container mounts once on initial render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Request browser geolocation for Origin
@@ -239,89 +264,234 @@ function SafeRouteContent() {
     setIs3DMode(next);
     mapRef.current.easeTo({
       pitch: next ? 55 : 0,
+      bearing: next ? -15 : 0,
       duration: 800,
     });
   };
 
-  // Calculate route using OSRM + Backend Safe Route Intelligence
+  // Draw accident-prone zones onto MapLibre map
+  const renderAccidentZoneMarkers = useCallback((zones: AccidentZoneItem[]) => {
+    const map = mapRef.current;
+    const maplibregl = (window as any).maplibregl;
+    if (!map || !maplibregl || !zones) return;
+
+    // Remove existing zone markers from DOM if any
+    const existing = document.querySelectorAll(".accident-zone-marker");
+    existing.forEach((el) => el.remove());
+
+    zones.forEach((zone) => {
+      const el = document.createElement("div");
+      el.className = "accident-zone-marker cursor-pointer select-none";
+
+      const isCritical = zone.risk_level === "CRITICAL";
+      const isHigh = zone.risk_level === "HIGH";
+      const color = isCritical ? "#dc2626" : isHigh ? "#ea580c" : "#eab308";
+      const pulseColor = isCritical ? "rgba(220, 38, 38, 0.4)" : "rgba(234, 88, 12, 0.4)";
+
+      el.innerHTML = `
+        <div style="position: relative; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;">
+          <span style="position: absolute; inset: -4px; border-radius: 9999px; background: ${pulseColor}; animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></span>
+          <div style="
+            position: relative;
+            width: 26px;
+            height: 26px;
+            border-radius: 9999px;
+            background: ${color};
+            border: 2.5px solid #ffffff;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-weight: 900;
+            font-size: 11px;
+          ">
+            !
+          </div>
+        </div>
+      `;
+
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        setSelectedAccidentZone(zone);
+        map.flyTo({
+          center: [zone.longitude, zone.latitude],
+          zoom: 15,
+          pitch: is3DMode ? 55 : 0,
+        });
+      });
+
+      new maplibregl.Marker({ element: el })
+        .setLngLat([zone.longitude, zone.latitude])
+        .addTo(map);
+    });
+  }, [is3DMode]);
+
+  // Render polyline geometry on map for selected route
+  const renderRouteGeometryOnMap = useCallback((activeIdx: number, allRoutes: any[]) => {
+    const map = mapRef.current;
+    if (!map || allRoutes.length === 0) return;
+
+    const primary = allRoutes[activeIdx] || allRoutes[0];
+
+    // Remove existing layers
+    try {
+      if (map.getLayer("alt-route-line")) map.removeLayer("alt-route-line");
+      if (map.getSource("alt-route-source")) map.removeSource("alt-route-source");
+      if (map.getLayer("safe-route-line")) map.removeLayer("safe-route-line");
+      if (map.getLayer("safe-route-glow")) map.removeLayer("safe-route-glow");
+      if (map.getSource("safe-route-source")) map.removeSource("safe-route-source");
+    } catch {}
+
+    // Add Inactive Alternative Routes in faint indigo
+    allRoutes.forEach((route, idx) => {
+      if (idx !== activeIdx) {
+        try {
+          map.addSource("alt-route-source", {
+            type: "geojson",
+            data: { type: "Feature", geometry: route.geometry },
+          });
+          map.addLayer({
+            id: "alt-route-line",
+            type: "line",
+            source: "alt-route-source",
+            layout: { "line-join": "round", "line-cap": "round" },
+            paint: {
+              "line-color": "#818cf8",
+              "line-width": 4,
+              "line-opacity": 0.5,
+              "line-dasharray": [2, 2],
+            },
+          });
+        } catch {}
+      }
+    });
+
+    // Add Active Route with vivid cyan glow
+    try {
+      map.addSource("safe-route-source", {
+        type: "geojson",
+        data: { type: "Feature", geometry: primary.geometry },
+      });
+
+      map.addLayer({
+        id: "safe-route-glow",
+        type: "line",
+        source: "safe-route-source",
+        layout: { "line-join": "round", "line-cap": "round" },
+        paint: {
+          "line-color": "#0284c7",
+          "line-width": 9,
+          "line-opacity": 0.4,
+        },
+      });
+
+      map.addLayer({
+        id: "safe-route-line",
+        type: "line",
+        source: "safe-route-source",
+        layout: { "line-join": "round", "line-cap": "round" },
+        paint: {
+          "line-color": "#38bdf8",
+          "line-width": 5,
+          "line-opacity": 0.95,
+        },
+      });
+
+      // Fit map view to route bounds
+      const coords = primary.geometry.coordinates;
+      const maplibregl = (window as any).maplibregl;
+      if (maplibregl && coords.length > 0) {
+        const bounds = coords.reduce(
+          (b: any, coord: number[]) => b.extend(coord),
+          new maplibregl.LngLatBounds(coords[0], coords[0])
+        );
+        map.fitBounds(bounds, { padding: 90, maxZoom: 15.5 });
+      }
+    } catch {}
+  }, []);
+
+  // Calculate route alternatives using OSRM + Backend Safe Route Intelligence
   const calculateSafeRoute = useCallback(async () => {
     setIsRouting(true);
     setRouteError(null);
     setRouteAnalysis(null);
     setSelectedHazard(null);
+    setSelectedAccidentZone(null);
 
     try {
-      // 1. Fetch driving route from OSRM public router
-      const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?overview=full&geometries=geojson`;
-      const osrmRes = await fetch(osrmUrl);
-      if (!osrmRes.ok) {
-        throw new Error("Public routing service temporarily unreachable.");
-      }
+      // 1. Fetch driving route with alternatives from configurable OSRM endpoint
+      const osrmBase = (process.env.NEXT_PUBLIC_OSRM_URL || "https://router.project-osrm.org").replace(/\/$/, "");
+      const osrmUrl = `${osrmBase}/route/v1/driving/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?overview=full&geometries=geojson&alternatives=true`;
 
-      const osrmData = await osrmRes.json();
-      if (!osrmData.routes || osrmData.routes.length === 0) {
-        throw new Error(
-          isBn ? "কোনো উপযুক্ত সড়ক রুট পাওয়া যায়নি।" : "No viable road route found between selected points."
-        );
-      }
+      let routes: any[] = [];
+      let isFallbackRoute = false;
+      let routingWarningText: string | null = null;
 
-      const primary = osrmData.routes[0];
-      const distanceKm = Math.round((primary.distance / 1000) * 10) / 10;
-      const durationMin = Math.round(primary.duration / 60);
+      const controller = new AbortController();
+      const timeoutTimer = setTimeout(() => controller.abort(), 7500);
 
-      // 2. Render route polyline on MapLibre map
-      if (mapRef.current) {
-        const map = mapRef.current;
-        if (map.getLayer("safe-route-line")) map.removeLayer("safe-route-line");
-        if (map.getLayer("safe-route-glow")) map.removeLayer("safe-route-glow");
-        if (map.getSource("safe-route-source")) map.removeSource("safe-route-source");
+      try {
+        const osrmRes = await fetch(osrmUrl, { signal: controller.signal });
+        clearTimeout(timeoutTimer);
 
-        map.addSource("safe-route-source", {
-          type: "geojson",
-          data: {
-            type: "Feature",
-            geometry: primary.geometry,
-          },
-        });
-
-        map.addLayer({
-          id: "safe-route-glow",
-          type: "line",
-          source: "safe-route-source",
-          layout: { "line-join": "round", "line-cap": "round" },
-          paint: {
-            "line-color": "#0284c7",
-            "line-width": 9,
-            "line-opacity": 0.35,
-          },
-        });
-
-        map.addLayer({
-          id: "safe-route-line",
-          type: "line",
-          source: "safe-route-source",
-          layout: { "line-join": "round", "line-cap": "round" },
-          paint: {
-            "line-color": "#38bdf8",
-            "line-width": 5,
-            "line-opacity": 0.95,
-          },
-        });
-
-        // Fit map view to route bounds
-        const coords = primary.geometry.coordinates;
-        const maplibregl = (window as any).maplibregl;
-        if (maplibregl && coords.length > 0) {
-          const bounds = coords.reduce(
-            (b: any, coord: number[]) => b.extend(coord),
-            new maplibregl.LngLatBounds(coords[0], coords[0])
-          );
-          map.fitBounds(bounds, { padding: 90, maxZoom: 15.5 });
+        if (osrmRes.status === 429) {
+          throw new Error(isBn ? "পাবলিক রাউটিং সার্ভারে রিকোয়েস্টের সীমা অতিক্রম করেছে (HTTP 429 Rate Limit)।" : "Public routing engine rate limit reached (HTTP 429).");
         }
+        if (!osrmRes.ok) {
+          throw new Error(`Routing engine HTTP error (${osrmRes.status}).`);
+        }
+        const osrmData = await osrmRes.json();
+        if (osrmData.routes && osrmData.routes.length > 0) {
+          routes = osrmData.routes;
+        } else {
+          throw new Error(isBn ? "কোনো উপযুক্ত সড়ক রুট পাওয়া যায়নি।" : "No viable road route found between selected points.");
+        }
+      } catch {
+        clearTimeout(timeoutTimer);
+        isFallbackRoute = true;
+        routingWarningText = isBn
+          ? "সড়ক নেভিগেশন ইঞ্জিন সাময়িকভাবে অনুপলব্ধ। সরাসরি ভৌগোলিক করিডোর প্রাক্কলন দেখানো হচ্ছে (এটি টার্ন-বাই-টার্ন সড়ক নেভিগেশন নয়)।"
+          : "Routing engine unavailable or timed out. Evaluating hazards via direct corridor fallback (Note: This is an informational hazard scan, not turn-by-turn road navigation).";
       }
 
-      // 3. Call Nirapotta Backend Safe Route Evaluation
-      const waypoints = primary.geometry.coordinates.map((c: number[]) => [c[1], c[0]]); // [lat, lng]
+      setRoutingNotice(routingWarningText);
+
+      let distanceKm: number | null = null;
+      let durationMin: number | null = null;
+      let waypoints: number[][] = [];
+      let alternativeGeometries: any[] = [];
+
+      if (!isFallbackRoute && routes.length > 0) {
+        setOsrmRoutesData(routes);
+        const primary = routes[0];
+        distanceKm = Math.round((primary.distance / 1000) * 10) / 10;
+        durationMin = Math.round(primary.duration / 60);
+
+        // Render on MapLibre
+        renderRouteGeometryOnMap(0, routes);
+
+        // Prepare alternatives for backend comparison
+        alternativeGeometries = routes.map((r: any) => ({
+          distance_km: Math.round((r.distance / 1000) * 10) / 10,
+          duration_minutes: Math.round(r.duration / 60),
+          coordinates: r.geometry.coordinates,
+        }));
+        waypoints = primary.geometry.coordinates.map((c: number[]) => [c[1], c[0]]); // [lat, lng]
+      } else {
+        // Fallback straight corridor between endpoints
+        setOsrmRoutesData([]);
+        const directGeometry = {
+          coordinates: [
+            [origin.lng, origin.lat],
+            [destination.lng, destination.lat],
+          ],
+        };
+        renderRouteGeometryOnMap(0, [{ geometry: directGeometry, distance: 0, duration: 0 }]);
+        waypoints = []; // Empty waypoints signals backend to trigger direct corridor interpolation
+      }
+
+      // 3. Call Backend Safe Route Evaluation
       const payload: SafeRouteAnalysisRequest = {
         origin_latitude: origin.lat,
         origin_longitude: origin.lng,
@@ -332,6 +502,9 @@ function SafeRouteContent() {
         waypoints,
         route_distance_km: distanceKm,
         route_duration_minutes: durationMin,
+        vehicle_type: vehicleType,
+        safety_confirmed: isSafetyConfirmed,
+        alternative_geometries: alternativeGeometries,
         lang,
       };
 
@@ -344,6 +517,12 @@ function SafeRouteContent() {
       );
 
       setRouteAnalysis(analysisResp);
+      setSelectedRouteId("route_0");
+
+      // Render accident zone markers if returned
+      if (analysisResp.accident_zones_along_route) {
+        renderAccidentZoneMarkers(analysisResp.accident_zones_along_route);
+      }
     } catch (err: any) {
       setRouteError(
         err?.message ||
@@ -354,7 +533,7 @@ function SafeRouteContent() {
     } finally {
       setIsRouting(false);
     }
-  }, [origin, destination, isBn, lang]);
+  }, [origin, destination, vehicleType, isSafetyConfirmed, isBn, lang, renderRouteGeometryOnMap, renderAccidentZoneMarkers]);
 
   // Recalculate route whenever endpoints change
   useEffect(() => {
@@ -362,6 +541,154 @@ function SafeRouteContent() {
       calculateSafeRoute();
     }
   }, [mapLoaded, calculateSafeRoute]);
+
+  // Switch between route alternatives
+  const handleSelectRouteOption = (routeId: string) => {
+    setSelectedRouteId(routeId);
+    const idx = routeId === "route_1" ? 1 : 0;
+    renderRouteGeometryOnMap(idx, osrmRoutesData);
+  };
+
+  // Start Driving Safety Check Handlers
+  const handleInitiateDriving = () => {
+    if (vehicleType === "MOTORCYCLE") {
+      const now = Date.now();
+      const isHelmetVerifiedValid = Boolean(
+        helmetToken && helmetTokenExpiresAt && helmetTokenExpiresAt > now
+      );
+      if (!isHelmetVerifiedValid) {
+        setIsSafetyConfirmed(false);
+        const expired = Boolean(helmetTokenExpiresAt && helmetTokenExpiresAt <= now);
+        setVerificationWarning(
+          expired
+            ? (isBn
+                ? "হেলমেট যাচাইয়ের মেয়াদ (১২০ সেকেন্ড) শেষ হয়েছে। অনুগ্রহ করে ড্রাইভ শুরুর পূর্বে পুনরায় হেলমেট স্ক্যান করুন।"
+                : "Helmet verification token has expired. Please re-scan your helmet before starting your ride.")
+            : null
+        );
+        setShowVerificationModal(true);
+      } else {
+        alert(
+          isBn
+            ? "মোটরসাইকেল সেফ ড্রাইভ সক্রিয়। হেলমেট যাচাই নিশ্চিত হয়েছে। সাবধানে ড্রাইভ করুন এবং গতিসীমা মেনে চলুন।"
+            : "Motorcycle Safe Ride active. Helmet verification confirmed. Ride carefully and obey speed limits."
+        );
+      }
+    } else {
+      // CAR
+      if (!isSafetyConfirmed) {
+        setVerificationWarning(null);
+        setShowVerificationModal(true);
+      } else {
+        alert(
+          isBn
+            ? "গাড়ির সেফ ড্রাইভ সক্রিয়। সিটবেল্ট নিশ্চিত হয়েছে। নিরাপদ যাত্রা হোক।"
+            : "Car safe driving mode active. Seatbelt compliance confirmed. Have a safe journey."
+        );
+      }
+    }
+  };
+
+  const handleConfirmSafety = () => {
+    // Motorcycle riders CANNOT manually confirm safety without passing camera verification
+    if (vehicleType === "MOTORCYCLE") {
+      setVerificationWarning(
+        isBn
+          ? "সতর্কতা: মোটরসাইকেল আরোহীদের জন্য ক্যামেরা দিয়ে হেলমেট যাচাই বাধ্যতামূলক। ম্যানুয়ালি বাইপাস করা নিষিদ্ধ।"
+          : "Notice: Camera helmet verification is mandatory for motorcycle riders. Manual confirmation bypass is prohibited."
+      );
+      return;
+    }
+
+    setIsSafetyConfirmed(true);
+    setShowVerificationModal(false);
+    setVerificationWarning(null);
+    // Recalculate route with safety confirmation flag
+    setTimeout(() => {
+      calculateSafeRoute();
+    }, 100);
+  };
+
+  // Camera Verification (calls OpenCV /verify-helmet for motorcycle)
+  const handleStartCamera = async () => {
+    setCameraActive(true);
+    setCameraResult(null);
+    setVerificationWarning(null);
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("Camera API is not supported in this browser environment.");
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch {
+      setVerificationWarning(
+        isBn
+          ? "ক্যামেরা পারমিশন পাওয়া যায়নি বা ক্যামেরা অনুপলব্ধ। মোটরসাইকেল ড্রাইভ শুরুর জন্য ক্যামেরা এক্সেস প্রয়োজন।"
+          : "Camera permission denied or camera device unavailable. Camera access is required for helmet verification before ride initiation."
+      );
+      setCameraActive(false);
+    }
+  };
+
+  const handleCaptureFrame = async () => {
+    if (!videoRef.current) return;
+    setIsVerifyingCamera(true);
+    setVerificationWarning(null);
+
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = videoRef.current.videoWidth || 640;
+      canvas.height = videoRef.current.videoHeight || 480;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+        const base64 = canvas.toDataURL("image/jpeg", 0.85);
+
+        // Call backend OpenCV helmet verification
+        const resp = await apiFetch<HelmetVerificationResponse>("/safe-ride/verify-helmet", {
+          method: "POST",
+          body: JSON.stringify({ image_base64: base64 }),
+        });
+
+        if (resp.is_verified && resp.verification_token) {
+          setHelmetToken(resp.verification_token);
+          const expTime = resp.expires_at ? new Date(resp.expires_at).getTime() : Date.now() + 120000;
+          setHelmetTokenExpiresAt(expTime);
+          setIsSafetyConfirmed(true);
+          setCameraResult(
+            isBn
+              ? (resp.message_bn || "হেলমেট সফলভাবে শনাক্ত করা হয়েছে! (মেয়াদ: ১২০ সেকেন্ড)")
+              : (resp.message_en || "Helmet verified successfully! (Token valid for 120s)")
+          );
+          setTimeout(() => {
+            setShowVerificationModal(false);
+            setCameraActive(false);
+            calculateSafeRoute();
+          }, 1200);
+        } else {
+          setHelmetToken(null);
+          setHelmetTokenExpiresAt(null);
+          setIsSafetyConfirmed(false);
+          const failMsg = isBn
+            ? (resp.message_bn || "হেলমেট শনাক্ত করা যায়নি। অনুগ্রহ করে হেলমেট পরিধান করে মুখমণ্ডল ক্যামেরার দিকে সোজা রেখে পুনরায় স্ক্যান করুন।")
+            : (resp.message_en || "Helmet not detected. Please face the camera with your helmet properly worn and try again.");
+          setCameraResult(failMsg);
+          setVerificationWarning(failMsg);
+        }
+      }
+    } catch (err: any) {
+      setHelmetToken(null);
+      setHelmetTokenExpiresAt(null);
+      setIsSafetyConfirmed(false);
+      const errMsg = err?.message || (isBn ? "যাচাইকরণ সার্ভিসে ত্রুটি হয়েছে। পুনরায় চেষ্টা করুন।" : "Verification service error. Please try again.");
+      setCameraResult(errMsg);
+      setVerificationWarning(errMsg);
+    } finally {
+      setIsVerifyingCamera(false);
+    }
+  };
 
   const getRiskColor = (level: RoadSafetyRiskLevel) => {
     switch (level) {
@@ -394,15 +721,40 @@ function SafeRouteContent() {
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
             </span>
             <h1 className="text-sm font-black tracking-tight text-white flex items-center gap-1.5">
-              <span>{isBn ? "সেফ রুট ও ৩ডি ম্যাপ" : "Safe Route & 3D Safety Map"}</span>
-              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-600 text-white">
-                Phase F
-              </span>
+              <span>{isBn ? "সেফ রুট ও ৩ডি ম্যাপ" : "Safe Route & 3D Live Map"}</span>
             </h1>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Vehicle Selector */}
+          <div className="flex items-center bg-zinc-900 border border-zinc-750 p-0.5 rounded-xl">
+            <button
+              onClick={() => {
+                setVehicleType("MOTORCYCLE");
+                setIsSafetyConfirmed(false);
+              }}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition ${
+                vehicleType === "MOTORCYCLE" ? "bg-blue-600 text-white shadow-xs" : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              <Bike className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Motorcycle</span>
+            </button>
+            <button
+              onClick={() => {
+                setVehicleType("CAR");
+                setIsSafetyConfirmed(false);
+              }}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition ${
+                vehicleType === "CAR" ? "bg-blue-600 text-white shadow-xs" : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              <CarFront className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Car</span>
+            </button>
+          </div>
+
           {/* 2D / 3D Toggle */}
           <button
             type="button"
@@ -410,32 +762,24 @@ function SafeRouteContent() {
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
               is3DMode
                 ? "bg-cyan-600 text-white"
-                : "bg-zinc-850 hover:bg-zinc-800 text-zinc-300 border border-zinc-700"
+                : "bg-zinc-850 hover:bg-zinc-800 text-zinc-300 border border-zinc-750"
             }`}
           >
-            <Compass className="h-3.5 w-3.5" aria-hidden="true" />
+            <Compass className="h-3.5 w-3.5" />
             <span>{is3DMode ? "3D Buildings" : "2D Overhead"}</span>
           </button>
-
-          <Link
-            href="/safety-map"
-            className="hidden sm:inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition px-2.5 py-1.5 rounded-xl hover:bg-zinc-800"
-          >
-            <Layers className="h-3.5 w-3.5" aria-hidden="true" />
-            <span>{isBn ? "কমিউনিটি ম্যাপ" : "Community Map"}</span>
-          </Link>
         </div>
       </div>
 
       {/* Main Viewport: Map with Floating Sidebar & Drawers */}
       <div className="flex-1 relative overflow-hidden flex flex-col md:flex-row">
-        {/* Left Side: Route Controls & Safety Analysis Panel */}
-        <div className="w-full md:w-96 lg:w-[420px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md border-r border-zinc-200 dark:border-zinc-800 z-20 flex flex-col h-full overflow-y-auto shadow-2xl">
+        {/* Left Side: Route Controls, Road AI Assistant & Safety Analysis Panel */}
+        <div className="w-full md:w-96 lg:w-[440px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md border-r border-zinc-200 dark:border-zinc-800 z-20 flex flex-col h-full overflow-y-auto shadow-2xl">
           {/* Route Selector Card */}
           <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 space-y-3 shrink-0">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1">
-                <Navigation className="h-3.5 w-3.5 text-blue-500" aria-hidden="true" />
+                <Navigation className="h-3.5 w-3.5 text-blue-500" />
                 <span>{isBn ? "রুট পরিকল্পনা" : "Route Endpoints"}</span>
               </span>
               <button
@@ -444,8 +788,8 @@ function SafeRouteContent() {
                 disabled={isRouting}
                 className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1"
               >
-                <RotateCcw className={`h-3 w-3 ${isRouting ? "animate-spin" : ""}`} aria-hidden="true" />
-                <span>{isBn ? "রিফ্রেশ" : "Recalculate"}</span>
+                <RotateCcw className={`h-3 w-3 ${isRouting ? "animate-spin" : ""}`} />
+                <span>{isBn ? "পুনরায় হিসেব" : "Recalculate"}</span>
               </button>
             </div>
 
@@ -462,7 +806,7 @@ function SafeRouteContent() {
                   disabled={isLocatingOrigin}
                   className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
                 >
-                  <LocateFixed className="h-3 w-3" aria-hidden="true" />
+                  <LocateFixed className="h-3 w-3" />
                   <span>{isLocatingOrigin ? "Detecting..." : isBn ? "আমার লোকেশন" : "My Location"}</span>
                 </button>
               </div>
@@ -506,9 +850,31 @@ function SafeRouteContent() {
                 ))}
               </select>
             </div>
+
+            {/* Start Driving Action Button */}
+            <button
+              onClick={handleInitiateDriving}
+              className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-2 shadow-xs transition active:scale-95 ${
+                isSafetyConfirmed
+                  ? "bg-emerald-600 hover:bg-emerald-500"
+                  : "bg-blue-600 hover:bg-blue-500"
+              }`}
+            >
+              {isSafetyConfirmed ? (
+                <>
+                  <ShieldCheck className="h-4 w-4" />
+                  <span>{isBn ? "ড্রাইভিং মোড সক্রিয় (নিরাপত্তা যাচাইকৃত)" : "Driving Mode Active (Safety Verified)"}</span>
+                </>
+              ) : (
+                <>
+                  <Navigation className="h-4 w-4" />
+                  <span>{isBn ? "ড্রাইভ শুরু করুন (নিরাপত্তা যাচাই)" : "Start Driving (Safety Verification)"}</span>
+                </>
+              )}
+            </button>
           </div>
 
-          {/* Safety Evaluation Results */}
+          {/* Safety Evaluation Results & Road AI Assistant */}
           <div className="flex-1 p-4 space-y-4 overflow-y-auto">
             {/* Error Message */}
             {routeError && (
@@ -516,171 +882,165 @@ function SafeRouteContent() {
                 role="alert"
                 className="rounded-2xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 p-3.5 text-xs text-red-800 dark:text-red-200 flex items-start gap-2.5"
               >
-                <AlertTriangle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" aria-hidden="true" />
+                <AlertTriangle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
                 <span>{routeError}</span>
               </div>
             )}
 
-            {/* Fallback Corridor Notice */}
-            {routeAnalysis?.is_fallback && (
-              <div className="rounded-xl border border-amber-300 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/60 p-3 space-y-1 text-xs text-amber-900 dark:text-amber-200">
-                <div className="flex items-center gap-1.5 font-bold">
-                  <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" aria-hidden="true" />
-                  <span>
-                    {isBn
-                      ? "সরাসরি করিডোর প্রাক্কলন (রোড নেভিগেশন নয়)"
-                      : "Direct Corridor Estimation (Not Road Navigation)"}
-                  </span>
-                </div>
-                <p className="text-[11px] leading-relaxed text-amber-800 dark:text-amber-300">
-                  {routeAnalysis.fallback_notice ||
-                    (isBn
-                      ? "বাস্তব সড়ক রুট পাওয়া যায়নি; আনুমানিক রৈখিক করিডোর দেখানো হচ্ছে।"
-                      : "Turn-by-turn road geometry is unavailable. A straight-line geographic corridor is displayed for hazard awareness only. Do not use for driving navigation.")}
-                </p>
+            {/* Routing Notice / Corridor Fallback Disclosure */}
+            {routingNotice && !routeError && (
+              <div
+                role="status"
+                className="rounded-2xl border border-amber-300 dark:border-amber-700/60 bg-amber-50 dark:bg-amber-950/30 p-3.5 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2.5 shadow-xs"
+              >
+                <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                <span className="leading-relaxed">{routingNotice}</span>
               </div>
             )}
 
-            {/* Route Score & Travel Metrics */}
+            {/* ROAD AI ASSISTANT CARD (Phase 4.8) */}
             {routeAnalysis && (
-              <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 p-4 space-y-3">
+              <div className="rounded-2xl border border-blue-500/40 bg-gradient-to-br from-blue-50/70 to-indigo-50/40 dark:from-blue-950/30 dark:to-zinc-900 p-4 space-y-2 text-xs shadow-xs">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <CarFront className="h-4 w-4 text-zinc-500" aria-hidden="true" />
-                    <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
-                      {routeAnalysis.route_distance_km ? `${routeAnalysis.route_distance_km} km` : "N/A"}
-                    </span>
-                    <span className="text-zinc-400">•</span>
-                    <span className="text-xs text-zinc-500 flex items-center gap-1">
-                      <Clock className="h-3 w-3" aria-hidden="true" />
-                      <span>{routeAnalysis.route_duration_minutes ? `~${routeAnalysis.route_duration_minutes} min` : "N/A"}</span>
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-white">
+                      <Bot className="h-4 w-4" />
+                    </div>
+                    <span className="font-extrabold text-blue-950 dark:text-blue-100 text-sm">
+                      {isBn ? "রোড এআই সহকারী" : "Road Safety AI Assistant"}
                     </span>
                   </div>
-
-                  <span
-                    className={`text-[11px] font-black uppercase px-2.5 py-0.5 rounded-full border ${getRiskColor(
-                      routeAnalysis.route_risk_level
-                    )}`}
-                  >
-                    {routeAnalysis.route_risk_level} Risk
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                    isSafetyConfirmed
+                      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-300"
+                      : "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-300"
+                  }`}>
+                    {isSafetyConfirmed
+                      ? (vehicleType === "MOTORCYCLE" ? "Helmet Verified" : "Seatbelt Confirmed")
+                      : "Safety Check Pending"}
                   </span>
                 </div>
 
-                {/* Score Bar */}
-                <div className="space-y-1">
-                  <div className="flex justify-between text-[11px] text-zinc-500">
-                    <span>Route Risk Score</span>
-                    <span className="font-bold">{routeAnalysis.route_risk_score} / 100</span>
-                  </div>
-                  <div className="w-full h-2 rounded-full bg-zinc-200 dark:bg-zinc-700 overflow-hidden">
-                    <div
-                      className={`h-full transition-all duration-500 ${
-                        routeAnalysis.route_risk_score >= 70
-                          ? "bg-red-600"
-                          : routeAnalysis.route_risk_score >= 45
-                          ? "bg-orange-500"
-                          : routeAnalysis.route_risk_score >= 20
-                          ? "bg-amber-500"
-                          : "bg-emerald-500"
-                      }`}
-                      style={{ width: `${Math.max(5, routeAnalysis.route_risk_score)}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Grounded Advisory */}
-                <p className="text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed pt-1">
-                  {routeAnalysis.safety_advisory}
+                <p className="text-zinc-700 dark:text-zinc-300 text-xs leading-relaxed">
+                  {routeAnalysis.road_ai_guidance || routeAnalysis.safety_advisory}
                 </p>
               </div>
             )}
 
-            {/* AI Interpretation Box */}
-            {routeAnalysis?.ai_interpretation && (
-              <div className="rounded-2xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/40 dark:bg-blue-950/20 p-3.5 space-y-1.5 text-xs">
-                <div className="flex items-center gap-1.5 font-bold text-blue-900 dark:text-blue-200">
-                  <Shield className="h-3.5 w-3.5 text-blue-600" aria-hidden="true" />
-                  <span>{isBn ? "এআই নিরাপত্তা বিশ্লেষণ" : "Safety Assessment"}</span>
-                </div>
-                <p className="text-zinc-700 dark:text-zinc-300 text-[11px] leading-relaxed">
-                  {routeAnalysis.ai_interpretation}
-                </p>
-              </div>
-            )}
-
-            {/* Hazards Along Route Section */}
-            {routeAnalysis && routeAnalysis.hazards_along_route.length > 0 && (
+            {/* ROUTE ALTERNATIVES COMPARISON (Shortest vs Safest Route - Phase 4.6) */}
+            {routeAnalysis?.route_alternatives && routeAnalysis.route_alternatives.length > 0 && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
-                    {isBn ? "রুটের আশপাশের ঘটনা" : "Hazards Along Corridor"} (
-                    {routeAnalysis.hazards_along_route.length})
+                    {isBn ? "রুট বিকল্পসমূহ (ক্ষুদ্রতম বনাম নিরাপদ)" : "Route Alternatives (Shortest vs Safest)"}
                   </span>
                 </div>
 
-                <div className="space-y-2">
-                  {routeAnalysis.hazards_along_route.map((hazard) => (
-                    <div
-                      key={hazard.id}
-                      onClick={() => {
-                        setSelectedHazard(hazard);
-                        if (mapRef.current) {
-                          mapRef.current.flyTo({
-                            center: [hazard.longitude, hazard.latitude],
-                            zoom: 16,
-                          });
-                        }
-                      }}
-                      className="p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:border-amber-400 dark:hover:border-amber-600 bg-white dark:bg-zinc-800/60 cursor-pointer transition space-y-1 text-xs"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-zinc-900 dark:text-zinc-100 truncate">
-                          {hazard.title}
-                        </span>
-                        <span className="text-[10px] text-amber-600 font-semibold shrink-0">
-                          {hazard.distance_text}
-                        </span>
+                <div className="grid grid-cols-1 gap-2.5">
+                  {routeAnalysis.route_alternatives.map((alt) => {
+                    const isSelected = selectedRouteId === alt.route_id;
+                    return (
+                      <div
+                        key={alt.route_id}
+                        onClick={() => handleSelectRouteOption(alt.route_id)}
+                        className={`p-3.5 rounded-2xl border transition cursor-pointer space-y-2 ${
+                          isSelected
+                            ? "border-cyan-500 bg-cyan-50/50 dark:bg-cyan-950/30 shadow-xs"
+                            : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-850 hover:border-zinc-300"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-extrabold text-xs sm:text-sm text-zinc-900 dark:text-zinc-100">
+                              {alt.label}
+                            </span>
+                            {alt.is_safest && (
+                              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-emerald-600 text-white">
+                                Safest Route
+                              </span>
+                            )}
+                            {alt.is_shortest && (
+                              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-blue-600 text-white">
+                                Shortest
+                              </span>
+                            )}
+                          </div>
+                          <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${getRiskColor(alt.risk_level)}`}>
+                            {alt.risk_level} Risk
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-3 text-xs text-zinc-600 dark:text-zinc-400">
+                          <span className="font-bold text-zinc-900 dark:text-zinc-100">
+                            {alt.distance_km} km
+                          </span>
+                          <span>•</span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            <span>~{alt.duration_minutes} min</span>
+                          </span>
+                          {alt.accident_zones_count > 0 && (
+                            <>
+                              <span>•</span>
+                              <span className="text-red-600 font-bold flex items-center gap-1">
+                                <AlertTriangle className="h-3 w-3" />
+                                <span>{alt.accident_zones_count} Accident Zone(s)</span>
+                              </span>
+                            </>
+                          )}
+                        </div>
+
+                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-snug">
+                          {alt.recommendation_summary}
+                        </p>
                       </div>
-                      <div className="text-[11px] text-zinc-500 flex items-center justify-between">
-                        <span className="truncate">{hazard.location_text}</span>
-                        <span>{hazard.incident_date_text}</span>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
 
-            {/* Emergency Services Along Route */}
-            {routeAnalysis && routeAnalysis.emergency_services_along_route.length > 0 && (
+            {/* DOCUMENTED ACCIDENT-PRONE ZONES ALONG ROUTE (Phase 4.2 & 4.3) */}
+            {routeAnalysis?.accident_zones_along_route && routeAnalysis.accident_zones_along_route.length > 0 && (
               <div className="space-y-2">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 block">
-                  {isBn ? "জরুরি সেবা (নিকটবর্তী)" : "Emergency Services Near Route"} (
-                  {routeAnalysis.emergency_services_along_route.length})
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-red-600 dark:text-red-400 flex items-center gap-1">
+                    <AlertTriangle className="h-3.5 w-3.5" />
+                    <span>{isBn ? "নথিভুক্ত দুর্ঘটনা ব্ল্যাকস্পট" : "Documented Accident Zones"} ({routeAnalysis.accident_zones_along_route.length})</span>
+                  </span>
+                </div>
 
                 <div className="space-y-2">
-                  {routeAnalysis.emergency_services_along_route.map((svc) => (
+                  {routeAnalysis.accident_zones_along_route.map((zone) => (
                     <div
-                      key={svc.id}
-                      className="p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-800/60 flex items-center justify-between gap-2 text-xs"
+                      key={zone.id}
+                      onClick={() => {
+                        setSelectedAccidentZone(zone);
+                        if (mapRef.current) {
+                          mapRef.current.flyTo({
+                            center: [zone.longitude, zone.latitude],
+                            zoom: 15.5,
+                            pitch: is3DMode ? 55 : 0,
+                          });
+                        }
+                      }}
+                      className="p-3 rounded-xl border border-red-200 dark:border-red-900/60 bg-red-50/40 dark:bg-red-950/20 hover:border-red-400 cursor-pointer transition space-y-1 text-xs"
                     >
-                      <div className="space-y-0.5">
-                        <span className="font-bold text-zinc-900 dark:text-zinc-100 block truncate">
-                          {svc.name}
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-red-950 dark:text-red-100 truncate">
+                          {zone.zone_name}
                         </span>
-                        <span className="text-[10px] text-zinc-400">
-                          {svc.service_type} • {svc.distance_text}
+                        <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-red-600 text-white">
+                          {zone.risk_level}
                         </span>
                       </div>
-                      {svc.phone_number && (
-                        <a
-                          href={`tel:${svc.phone_number}`}
-                          className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold shrink-0 inline-flex items-center gap-1"
-                        >
-                          <Phone className="h-3 w-3" aria-hidden="true" />
-                          <span>Call</span>
-                        </a>
+                      <div className="text-[11px] text-zinc-600 dark:text-zinc-400">
+                        {zone.road_name} • {zone.district}
+                      </div>
+                      {zone.accident_count && (
+                        <div className="text-[10px] text-red-700 dark:text-red-300 font-semibold pt-0.5">
+                          {zone.accident_count} accidents documented ({zone.observation_period})
+                        </div>
                       )}
                     </div>
                   ))}
@@ -688,118 +1048,251 @@ function SafeRouteContent() {
               </div>
             )}
 
-            {/* Data Limitations Disclosure */}
-            {routeAnalysis?.data_limitations && (
-              <div className="p-3 rounded-xl bg-zinc-100 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-800 text-[10px] text-zinc-500 space-y-1">
-                <span className="font-bold text-zinc-700 dark:text-zinc-300 block flex items-center gap-1">
-                  <Info className="h-3 w-3" aria-hidden="true" />
-                  <span>Coverage Limitations:</span>
+            {/* Nearby Verified Emergency Facilities */}
+            {routeAnalysis?.emergency_services_along_route && routeAnalysis.emergency_services_along_route.length > 0 && (
+              <div className="space-y-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
+                  {isBn ? "নিকটস্থ জরুরি সেবা" : "Emergency Units Near Route"}
                 </span>
-                <p>{routeAnalysis.data_limitations}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {routeAnalysis.emergency_services_along_route.slice(0, 4).map((svc) => (
+                    <div
+                      key={svc.id}
+                      className="p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-850 text-xs space-y-1"
+                    >
+                      <div className="font-bold text-zinc-900 dark:text-zinc-100 truncate">
+                        {svc.name}
+                      </div>
+                      <div className="text-[10px] text-zinc-500">
+                        {svc.service_type} • {svc.distance_text}
+                      </div>
+                      {svc.phone_number && (
+                        <a
+                          href={`tel:${svc.phone_number}`}
+                          className="inline-block text-[10px] font-bold text-emerald-600 hover:underline pt-0.5"
+                        >
+                          {svc.phone_number}
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
-
-          {/* Emergency 999 Hotline Banner */}
-          <div className="p-3 bg-red-50 dark:bg-red-950/40 border-t border-red-200 dark:border-red-900/60 flex items-center justify-between text-xs text-red-800 dark:text-red-200 shrink-0">
-            <span className="text-[11px]">
-              {isBn ? "তাৎক্ষণিক বিপদে ডায়াল করুন:" : "In immediate life danger, call:"}
-            </span>
-            <a
-              href="tel:999"
-              className="inline-flex items-center gap-1 px-3 py-1 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-xs"
-            >
-              <PhoneCall className="h-3 w-3" aria-hidden="true" />
-              <span>999</span>
-            </a>
-          </div>
         </div>
 
-        {/* Right Side: Map Canvas */}
+        {/* Right Side: Map Container Viewport */}
         <div className="flex-1 relative h-full">
           <div ref={mapContainerRef} className="w-full h-full" />
 
-          {/* Map Floating Controls */}
-          <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={handleToggle3D}
-              title={is3DMode ? "Switch to 2D flat mode" : "Switch to 3D buildings"}
-              className="p-2.5 rounded-xl bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 hover:border-emerald-500 shadow-md transition cursor-pointer"
-            >
-              <Compass className="h-4 w-4" aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (mapRef.current) {
-                  mapRef.current.flyTo({
-                    center: [origin.lng, origin.lat],
-                    zoom: 14,
-                  });
-                }
-              }}
-              title="Center on Origin"
-              className="p-2.5 rounded-xl bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 hover:border-blue-500 shadow-md transition cursor-pointer"
-            >
-              <LocateFixed className="h-4 w-4" aria-hidden="true" />
-            </button>
-          </div>
-
-          {/* Selected Incident Drawer / Popup */}
+          {/* Selected Hazard Detail Popover */}
           {selectedHazard && (
-            <div className="absolute bottom-6 left-6 right-6 md:left-auto md:right-6 md:w-80 rounded-2xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md border border-zinc-200 dark:border-zinc-800 p-4 shadow-2xl z-20 space-y-2 text-xs">
+            <div className="absolute top-4 left-4 z-30 max-w-sm w-80 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-3xl p-4 border border-zinc-200 dark:border-zinc-800 shadow-2xl space-y-2 animate-in fade-in duration-200">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-amber-600 flex items-center gap-1 text-[11px]">
-                  <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
-                  <span>Approved Incident Alert</span>
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-600 text-white">
+                  Reported Hazard
                 </span>
                 <button
-                  type="button"
                   onClick={() => setSelectedHazard(null)}
-                  className="p-1 rounded-md text-zinc-400 hover:text-zinc-600"
+                  className="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs font-bold h-7 w-7 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800"
                 >
-                  <X className="h-4 w-4" aria-hidden="true" />
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <h4 className="font-extrabold text-xs sm:text-sm text-zinc-900 dark:text-zinc-100">
+                {selectedHazard.title}
+              </h4>
+              <p className="text-xs text-zinc-500">
+                {selectedHazard.location_text} • {selectedHazard.distance_text}
+              </p>
+              <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 flex justify-between items-center text-xs">
+                <span className="text-[10px] text-zinc-400">{selectedHazard.incident_date_text}</span>
+                <Link
+                  href={selectedHazard.report_url}
+                  className="font-bold text-emerald-600 hover:underline inline-flex items-center gap-1"
+                >
+                  <span>View Details →</span>
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* Selected Accident Zone Detail Modal / Popover */}
+          {selectedAccidentZone && (
+            <div className="absolute top-4 right-4 z-30 max-w-sm w-85 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-3xl p-4.5 border border-zinc-200 dark:border-zinc-800 shadow-2xl space-y-2.5 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-red-600 text-white">
+                  {selectedAccidentZone.risk_level} Accident Blackspot
+                </span>
+                <button
+                  onClick={() => setSelectedAccidentZone(null)}
+                  className="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs font-bold h-7 w-7 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                >
+                  <X className="h-4 w-4" />
                 </button>
               </div>
 
-              <h4 className="font-bold text-zinc-900 dark:text-zinc-100">
-                {selectedHazard.title}
-              </h4>
-              <p className="text-[11px] text-zinc-500">
-                {selectedHazard.location_text} • {selectedHazard.distance_text}
-              </p>
+              <h3 className="font-extrabold text-sm text-zinc-900 dark:text-zinc-100">
+                {selectedAccidentZone.zone_name}
+              </h3>
 
-              <div className="pt-2">
-                <Link
-                  href={selectedHazard.report_url}
-                  className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 font-bold hover:underline text-xs"
-                >
-                  <span>View Full Report</span>
-                  <ExternalLink className="h-3 w-3" aria-hidden="true" />
-                </Link>
+              <div className="text-xs text-zinc-600 dark:text-zinc-400 space-y-1">
+                <p><strong>Road:</strong> {selectedAccidentZone.road_name}</p>
+                <p><strong>District:</strong> {selectedAccidentZone.district}, {selectedAccidentZone.division}</p>
+                {selectedAccidentZone.accident_count && (
+                  <p className="text-red-600 dark:text-red-400 font-bold">
+                    <strong>{selectedAccidentZone.hazard_density_label || "Estimated Hazard Index"}:</strong> {selectedAccidentZone.accident_count} ({selectedAccidentZone.observation_period || "Historical Study Model"})
+                  </p>
+                )}
+                <p className="text-[11px] text-zinc-500">
+                  <strong>Source Review:</strong> {selectedAccidentZone.data_source}
+                </p>
+                <p className="text-[10px] text-amber-600 dark:text-amber-400 italic">
+                  * Note: Estimated density based on historical corridor reviews. Not a live sensor stream or certified casualty census.
+                </p>
+                {selectedAccidentZone.description && (
+                  <p className="text-[11px] pt-1 text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                    {selectedAccidentZone.description}
+                  </p>
+                )}
               </div>
             </div>
           )}
         </div>
       </div>
-    </div>
-  );
-}
 
-export default function SafeRoutePage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="w-full h-screen bg-zinc-950 flex items-center justify-center text-white">
-          <div className="flex flex-col items-center gap-3">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent" />
-            <p className="text-xs text-zinc-400">Loading Safe Route & Safety Map...</p>
+      {/* ROAD AI SAFETY VERIFICATION MODAL (Mandatory Helmet Verification for Motorcycle) */}
+      {showVerificationModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-zinc-200 dark:border-zinc-800 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white">
+                  <Bot className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm sm:text-base text-zinc-900 dark:text-zinc-100">
+                    {isBn ? "রোড এআই নিরাপত্তা যাচাই" : "Road AI Safety Verification"}
+                  </h3>
+                  <p className="text-[11px] text-zinc-500">
+                    {vehicleType === "MOTORCYCLE" ? "Motorcycle Rider Protocol (Mandatory)" : "Car Driver Protocol"}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowVerificationModal(false);
+                  setCameraActive(false);
+                }}
+                className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Prompt Question */}
+            <div className="rounded-2xl bg-zinc-50 dark:bg-zinc-850 p-4 border border-zinc-200 dark:border-zinc-800 space-y-2">
+              <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                {vehicleType === "MOTORCYCLE"
+                  ? (isBn ? "মোটরসাইকেল আরোহীদের জন্য: ক্যামেরা দিয়ে হেলমেট যাচাইকরণ বাধ্যতামূলক" : "Motorcycle Protocol: Camera helmet verification is mandatory before ride initiation")
+                  : (isBn ? "গাড়ি চালকদের জন্য: আপনি কি সিটবেল্ট বেঁধেছেন?" : "For car users: Are you wearing your seatbelt?")}
+              </p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                {vehicleType === "MOTORCYCLE"
+                  ? (isBn
+                      ? "সড়ক পরিবহন আইন অনুযায়ী মোটরসাইকেল চালক ও আরোহীর হেলমেট পরিধান আইনিভাবে বাধ্যতামূলক। ড্রাইভ শুরুর পূর্বে ক্যামেরা স্ক্যান সম্পন্ন করুন।"
+                      : "Under Bangladesh road safety regulations, helmet wearing is mandatory for all motorcycle riders. Ride initiation requires successful camera verification.")
+                  : (isBn
+                      ? "সড়ক পরিবহন আইন অনুযায়ী সিটবেল্ট বাঁধা আইনত বাধ্যতামূলক। ড্রাইভ শুরুর পূর্বে নিশ্চিত করুন।"
+                      : "According to road transport legislation, fastening your seatbelt is mandatory for safe driving.")}
+              </p>
+              {vehicleType === "MOTORCYCLE" && (
+                <p className="text-[10px] text-zinc-400 dark:text-zinc-500 border-t border-zinc-200 dark:border-zinc-800 pt-1.5 leading-snug">
+                  {isBn
+                    ? "নোটিশ: ওপেনসিভি কম্পিউটার ভিশন অ্যালগরিদম ভিত্তিক একটি সহকারী টুল। এটি কোনো প্রাতিষ্ঠানিক সার্টিফিকেট নয়। সর্বদা সার্টিফাইড বিএসটিআই অনুমোদিত হেলমেট ব্যবহার করুন।"
+                    : "Disclosure: OpenCV computer vision helmet detection is an algorithmic safety aid, not an official certification. Always ensure your helmet meets certified safety standards."}
+                </p>
+              )}
+            </div>
+
+            {verificationWarning && (
+              <div className="rounded-xl border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/30 p-3 text-xs text-red-800 dark:text-red-200 flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-red-600 shrink-0" />
+                <span>{verificationWarning}</span>
+              </div>
+            )}
+
+            {/* Camera Frame Preview if Active */}
+            {cameraActive && (
+              <div className="space-y-2">
+                <div className="relative aspect-video rounded-2xl overflow-hidden bg-black border border-zinc-700">
+                  <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+                </div>
+                {cameraResult && (
+                  <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 text-center">
+                    {cameraResult}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={handleCaptureFrame}
+                  disabled={isVerifyingCamera}
+                  className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2"
+                >
+                  <Camera className="h-4 w-4" />
+                  <span>{isVerifyingCamera ? (isBn ? "ফ্রেম বিশ্লেষণ হচ্ছে..." : "Analyzing frame...") : (isBn ? "ক্যামেরা দিয়ে হেলমেট যাচাই করুন" : "Capture & Verify Helmet")}</span>
+                </button>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="space-y-2 pt-2">
+              {vehicleType === "CAR" && (
+                <button
+                  type="button"
+                  onClick={handleConfirmSafety}
+                  className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center justify-center gap-2"
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span>{isBn ? "হ্যাঁ, সিটবেল্ট নিশ্চিত করছি" : "Yes, I Confirm Seatbelt Fastened"}</span>
+                </button>
+              )}
+
+              {vehicleType === "MOTORCYCLE" && !cameraActive && (
+                <button
+                  type="button"
+                  onClick={handleStartCamera}
+                  className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center justify-center gap-2"
+                >
+                  <Camera className="h-4 w-4" />
+                  <span>{isBn ? "ক্যামেরা চালু করে হেলমেট স্ক্যান করুন" : "Start Camera & Scan Helmet"}</span>
+                </button>
+              )}
+
+              {vehicleType === "MOTORCYCLE" && (
+                <Link
+                  href="/safety/safe-ride"
+                  className="block text-center text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline py-1"
+                >
+                  {isBn ? "টার্ন-বাই-টার্ন লাইভ ট্র্যাকিংয়ের জন্য 'নিরাপত্তা সেফ রাইড' খুলুন →" : "Open Nirapotta Safe Ride for Live Speed Tracking →"}
+                </Link>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowVerificationModal(false);
+                  setCameraActive(false);
+                }}
+                className="w-full py-2 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 text-xs font-semibold"
+              >
+                {isBn ? "বাতিল / রুট প্রিভিউ দেখুন" : "Close / View Route Preview"}
+              </button>
+            </div>
           </div>
         </div>
-      }
-    >
-      <SafeRouteContent />
-    </Suspense>
+      )}
+    </div>
   );
 }

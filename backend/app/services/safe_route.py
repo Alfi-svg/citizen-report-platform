@@ -2,7 +2,8 @@
 Nirapotta AI — Phase F: Safe Route & Interactive Safety Map Service
 
 Performs deterministic road safety analysis along a planned driving or transit route.
-Grounded strictly in verified database records (approved incident reports and verified emergency services).
+Grounded strictly in verified database records (approved incident reports, verified emergency services,
+and documented accident-prone highway blackspots).
 Enforces privacy (no reporter contacts/identities or confidential notes exposed),
 and provides realistic coverage warnings (no false 100% safety guarantees).
 """
@@ -16,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.report import Report, ReportStatus
 from app.models.category import Category
 from app.models.emergency_service import EmergencyService, VerificationStatus
+from app.models.accident_zone import AccidentZone
 from app.schemas.ai_features import (
     RoadSafetyRiskLevel,
     NearbySafetyAlert,
@@ -23,6 +25,8 @@ from app.schemas.ai_features import (
     EmergencyServiceAlongRoute,
     SafeRouteAnalysisRequest,
     SafeRouteAnalysisResponse,
+    AccidentZoneItem,
+    RouteAlternativeComparison,
 )
 from app.services.road_safety import (
     calculate_haversine_distance,
@@ -53,14 +57,8 @@ async def analyze_safe_route(
     request: SafeRouteAnalysisRequest,
 ) -> SafeRouteAnalysisResponse:
     """
-    Evaluates safety hazards, incident density, high-risk corridors, and nearby emergency services along a route.
-
-    Safety & Privacy Rules:
-    1. Only APPROVED reports are evaluated. Unapproved, submitted, or rejected reports are strictly excluded.
-    2. Zero reporter identities, contact emails, phone numbers, or confidential moderation notes are exposed.
-    3. Emergency services (police, hospitals, fire) are pulled from verified database records.
-    4. Deterministic score calculation; AI interpretation is strictly separated and labeled.
-    5. Disclaims 100% safety guarantees and reminds citizens to call 999 in life-threatening danger.
+    Evaluates safety hazards, incident density, high-risk corridors, documented accident-prone zones,
+    vehicle safety compliance (helmet for motorcycle / seatbelt for car), and route alternatives.
     """
     is_bn = (request.lang == "bn")
     now = datetime.now(timezone.utc)
@@ -181,7 +179,59 @@ async def analyze_safe_route(
                 )
             )
 
-    # 3. Fetch verified Emergency Services within 2.0 km of route
+    # 3. Fetch Documented Accident-Prone Zones from DB
+    accident_zones_along_route: List[AccidentZoneItem] = []
+    zone_stmt = (
+        select(AccidentZone)
+        .where(
+            and_(
+                AccidentZone.latitude >= min_lat - 0.02,
+                AccidentZone.latitude <= max_lat + 0.02,
+                AccidentZone.longitude >= min_lng - 0.02,
+                AccidentZone.longitude <= max_lng + 0.02,
+            )
+        )
+    )
+    zone_res = await db.execute(zone_stmt)
+    candidate_zones = zone_res.scalars().all()
+
+    for zone in candidate_zones:
+        min_zone_dist_km = float("inf")
+        for pt in sampled_points:
+            d = calculate_haversine_distance(pt[0], pt[1], zone.latitude, zone.longitude)
+            if d < min_zone_dist_km:
+                min_zone_dist_km = d
+            if min_zone_dist_km <= (zone.radius_meters / 1000.0) + 0.3:
+                break
+
+        if min_zone_dist_km <= (zone.radius_meters / 1000.0) + 0.3:
+            dist_m = int(min_zone_dist_km * 1000)
+            accident_zones_along_route.append(
+                AccidentZoneItem(
+                    id=str(zone.id),
+                    zone_name=zone.zone_name_bn if is_bn and zone.zone_name_bn else zone.zone_name,
+                    zone_name_bn=zone.zone_name_bn,
+                    road_name=zone.road_name,
+                    district=zone.district,
+                    division=zone.division,
+                    latitude=zone.latitude,
+                    longitude=zone.longitude,
+                    radius_meters=zone.radius_meters,
+                    accident_count=zone.accident_count,
+                    observation_period=zone.observation_period,
+                    data_source=zone.data_source,
+                    source_url=zone.source_url,
+                    verification_status=zone.verification_status.value if hasattr(zone.verification_status, "value") else str(zone.verification_status),
+                    risk_level=zone.risk_level,
+                    description=zone.description_bn if is_bn and zone.description_bn else zone.description,
+                    distance_meters=dist_m,
+                )
+            )
+
+    # Sort accident zones by proximity
+    accident_zones_along_route.sort(key=lambda z: z.distance_meters or 0)
+
+    # 4. Fetch verified Emergency Services within 2.0 km of route
     svc_stmt = (
         select(EmergencyService)
         .where(
@@ -230,10 +280,9 @@ async def analyze_safe_route(
                 )
             )
 
-    # Sort emergency services by distance
     emergency_services_along_route.sort(key=lambda s: s.distance_meters)
 
-    # 4. Check known high-risk regional corridors crossed within 1.5 km of route
+    # 5. Check known high-risk regional corridors crossed within 1.5 km of route
     corridors_crossed: List[RoadSafetyHotspotItem] = []
     for anchor in BD_ACCIDENT_PRONE_CORRIDORS:
         min_anchor_dist = min(
@@ -241,7 +290,6 @@ async def analyze_safe_route(
             for pt in sampled_points
         )
         if min_anchor_dist <= 1.5:
-            # Count accidents near this anchor
             accidents_near_anchor = [
                 h for h in hazards_along_route
                 if calculate_haversine_distance(anchor["lat"], anchor["lng"], h.latitude, h.longitude) <= 3.0
@@ -263,15 +311,16 @@ async def analyze_safe_route(
                 )
             )
 
-    # 5. Deterministic Route Safety Score (0 - 100)
-    hazard_pts = min(40.0, len(hazards_along_route) * 8.0)
-    recent_pts = min(30.0, recent_30d_count * 10.0)
+    # 6. Deterministic Route Safety Score (0 - 100)
+    hazard_pts = min(30.0, len(hazards_along_route) * 6.0)
+    recent_pts = min(20.0, recent_30d_count * 8.0)
+    accident_zone_pts = min(40.0, sum(20.0 if z.risk_level == "CRITICAL" else 12.0 for z in accident_zones_along_route))
     high_risk_corridor_count = sum(
         1 for c in corridors_crossed if c.risk_level in (RoadSafetyRiskLevel.HIGH, RoadSafetyRiskLevel.CRITICAL)
     )
-    corridor_pts = min(30.0, high_risk_corridor_count * 15.0)
+    corridor_pts = min(20.0, high_risk_corridor_count * 10.0)
 
-    route_score = round(min(100.0, hazard_pts + recent_pts + corridor_pts), 1)
+    route_score = round(min(100.0, hazard_pts + recent_pts + accident_zone_pts + corridor_pts), 1)
 
     if route_score >= 70.0:
         route_level = RoadSafetyRiskLevel.CRITICAL
@@ -282,17 +331,142 @@ async def analyze_safe_route(
     else:
         route_level = RoadSafetyRiskLevel.LOW
 
-    # 6. Construct Grounded Safety Advisory
+    # 7. Vehicle Compliance & Verification
+    vehicle_type = (request.vehicle_type or "MOTORCYCLE").upper()
+    safety_confirmed = bool(request.safety_confirmed)
+    verification_status = "VERIFIED" if safety_confirmed else "PENDING_CONFIRMATION"
+
+    # 8. Evaluate Route Alternatives (Shortest vs Safest)
+    route_alternatives: List[RouteAlternativeComparison] = []
+    if request.alternative_geometries and len(request.alternative_geometries) > 0:
+        for idx, alt in enumerate(request.alternative_geometries):
+            alt_dist = float(alt.get("distance_km", request.route_distance_km or 5.0))
+            alt_dur = float(alt.get("duration_minutes", request.route_duration_minutes or 15.0))
+            alt_coords = alt.get("coordinates", [])
+
+            # Count hazards and zones along alternative
+            alt_hazards_count = 0
+            alt_zones_count = 0
+            if alt_coords:
+                step_a = max(1, len(alt_coords) // 40)
+                sub_pts = [[c[1], c[0]] for c in alt_coords[::step_a]]
+                for rep in candidate_reports:
+                    if rep.latitude and rep.longitude:
+                        if any(calculate_haversine_distance(p[0], p[1], rep.latitude, rep.longitude) <= 0.8 for p in sub_pts):
+                            alt_hazards_count += 1
+                for z in candidate_zones:
+                    if any(calculate_haversine_distance(p[0], p[1], z.latitude, z.longitude) <= (z.radius_meters / 1000.0) + 0.3 for p in sub_pts):
+                        alt_zones_count += 1
+
+            alt_score = round(min(100.0, (alt_hazards_count * 8.0) + (alt_zones_count * 20.0)), 1)
+            alt_level = (
+                RoadSafetyRiskLevel.CRITICAL if alt_score >= 70.0
+                else RoadSafetyRiskLevel.HIGH if alt_score >= 45.0
+                else RoadSafetyRiskLevel.MODERATE if alt_score >= 20.0
+                else RoadSafetyRiskLevel.LOW
+            )
+
+            route_alternatives.append(
+                RouteAlternativeComparison(
+                    route_id=f"route_{idx}",
+                    label=f"Route {idx + 1}" if idx > 0 else "Primary Route",
+                    distance_km=alt_dist,
+                    duration_minutes=alt_dur,
+                    risk_level=alt_level,
+                    risk_score=alt_score,
+                    accident_zones_count=alt_zones_count,
+                    hazards_count=alt_hazards_count,
+                    is_safest=False,
+                    is_shortest=False,
+                    recommendation_summary="",
+                )
+            )
+
+        if route_alternatives:
+            min_dist = min(r.distance_km for r in route_alternatives)
+            min_risk = min(r.risk_score for r in route_alternatives)
+
+            for r in route_alternatives:
+                if r.distance_km == min_dist:
+                    r.is_shortest = True
+                if r.risk_score == min_risk:
+                    r.is_safest = True
+
+                if r.is_safest and r.is_shortest:
+                    r.recommendation_summary = (
+                        "সর্বাধিক নিরাপদ ও ক্ষুদ্রতম রুট (সেরা বিকল্প)।" if is_bn
+                        else "Optimal Choice: Both the shortest distance and the lowest accident risk."
+                    )
+                elif r.is_safest:
+                    r.recommendation_summary = (
+                        f"নিরাপদ বিকল্প: দুর্ঘটনা জোন এড়িয়ে যায় (ঝুঁকি স্কোর: {r.risk_score}/১০০)।" if is_bn
+                        else f"Safest Choice: Avoids documented accident zones (Risk Score: {r.risk_score}/100)."
+                    )
+                elif r.is_shortest:
+                    r.recommendation_summary = (
+                        f"ক্ষুদ্রতম দূরত্ব: {r.distance_km} কিমি, তবে বেশি ট্রাফিক বা দুর্ঘটনার ঝুঁকি থাকতে পারে।" if is_bn
+                        else f"Shortest Route: {r.distance_km} km, but traverses higher accident hazard density."
+                    )
+                else:
+                    r.recommendation_summary = (
+                        "বিকল্প সড়ক রুট।" if is_bn else "Alternative road corridor."
+                    )
+
+    # 9. Road AI Grounded Safety Guidance
+    guidance_lines = []
+    if not safety_confirmed:
+        if vehicle_type == "MOTORCYCLE":
+            guidance_lines.append(
+                "সতর্কতা: মোটরসাইকেল চালক ও আরোহী উভয়ের হেলমেট পরিধান আইনিভাবে বাধ্যতামূলক। ড্রাইভ শুরুর আগে হেলমেট পরিধান নিশ্চিত করুন।"
+                if is_bn else
+                "Warning: Helmet wearing is legally mandatory for motorcycle riders. Please confirm helmet compliance before initiating drive."
+            )
+        else:
+            guidance_lines.append(
+                "সতর্কতা: গাড়ির সিটবেল্ট বাঁধা নিশ্চিত করুন। নিরাপদ ড্রাইভের জন্য সিটবেল্ট সুরক্ষা অত্যাবশ্যক।"
+                if is_bn else
+                "Warning: Please fasten your seatbelt. Seatbelt compliance is mandatory for safe driving."
+            )
+    else:
+        guidance_lines.append(
+            f"সুরক্ষা নিশ্চিতকরণ সম্পন্ন ({'হেলমেট ভেরিফাইড' if vehicle_type == 'MOTORCYCLE' else 'সিটবেল্ট নিশ্চিত'})।"
+            if is_bn else
+            f"Safety requirement confirmed ({'Helmet verified' if vehicle_type == 'MOTORCYCLE' else 'Seatbelt confirmed'})."
+        )
+
+    if accident_zones_along_route:
+        top_zone = accident_zones_along_route[0]
+        guidance_lines.append(
+            f"মনোযোগ: আপনার নির্বাচিত রুটটি বিআরটিএ ও হাইওয়ে পুলিশ চিহ্নিত দুর্ঘটনাপ্রবণ জোন '{top_zone.zone_name}' ({top_zone.road_name})-এর মধ্য দিয়ে অতিক্রম করছে। সতর্ক গতি বজায় রাখুন।"
+            if is_bn else
+            f"Attention: Your selected route traverses documented accident-prone zone '{top_zone.zone_name}' ({top_zone.road_name}, Source: {top_zone.data_source}). Maintain safe following distance."
+        )
+
+    if route_alternatives:
+        safest = next((r for r in route_alternatives if r.is_safest), None)
+        shortest = next((r for r in route_alternatives if r.is_shortest), None)
+        if safest and shortest and safest.route_id != shortest.route_id:
+            diff_km = round(safest.distance_km - shortest.distance_km, 1)
+            diff_time = int(safest.duration_minutes - shortest.duration_minutes)
+            guidance_lines.append(
+                f"পরামর্শ: বিকল্প নিরাপদ রুটটি {diff_km} কিমি দীর্ঘ (~{diff_time} মিনিট অতিরিক্ত), কিন্তু এটি প্রধান দুর্ঘটনা জোন এড়িয়ে যায়।"
+                if is_bn else
+                f"Advisory: The safest route is {diff_km} km longer (~{diff_time} min), but bypasses critical accident blackspots."
+            )
+
+    road_ai_guidance = " ".join(guidance_lines)
+
+    # 10. Construct Grounded Safety Advisory
     if is_bn:
         if route_level in (RoadSafetyRiskLevel.HIGH, RoadSafetyRiskLevel.CRITICAL):
             safety_advisory = (
-                f"সতর্কতা: রুটে {len(hazards_along_route)}টি অনুমোদিত নিরাপত্তা সতর্কতা এবং "
-                f"{len(corridors_crossed)}টি উচ্চ-ঝুঁকিপূর্ণ ট্রাফিক করিডোর রয়েছে। গতি নিয়ন্ত্রণে রাখুন।"
+                f"সতর্কতা: রুটে {len(hazards_along_route)}টি অনুমোদিত নাগরিক রিপোর্ট এবং "
+                f"{len(accident_zones_along_route)}টি নথিভুক্ত দুর্ঘটনা ব্ল্যাকস্পট রয়েছে। গতি নিয়ন্ত্রণে রাখুন।"
             )
         elif route_level == RoadSafetyRiskLevel.MODERATE:
             safety_advisory = (
-                f"মাঝারি ঝুঁকি (স্কোর: {route_score}/১০০)। রুটের আশপাশে {len(hazards_along_route)}টি ঘটনা রেকর্ড করা আছে। "
-                f"সতর্কভাবে ড্রাইভ করুন।"
+                f"মাঝারি ঝুঁকি (স্কোর: {route_score}/১০০)। রুটের আশপাশে {len(hazards_along_route)}টি ঘটনা ও "
+                f"{len(accident_zones_along_route)}টি চিহ্নিত জোন রয়েছে।"
             )
         else:
             safety_advisory = (
@@ -302,35 +476,33 @@ async def analyze_safe_route(
         if route_level in (RoadSafetyRiskLevel.HIGH, RoadSafetyRiskLevel.CRITICAL):
             safety_advisory = (
                 f"Caution: Route passes near {len(hazards_along_route)} recorded incident hazard(s) and "
-                f"{len(corridors_crossed)} high-risk corridor(s). Reduce speed and maintain safe stopping distance."
+                f"{len(accident_zones_along_route)} documented accident blackspot(s). Reduce speed and maintain safe stopping distance."
             )
         elif route_level == RoadSafetyRiskLevel.MODERATE:
             safety_advisory = (
-                f"Moderate Risk (Score: {route_score}/100). {len(hazards_along_route)} verified incident(s) recorded nearby. "
-                f"Maintain driving vigilance."
+                f"Moderate Risk (Score: {route_score}/100). {len(hazards_along_route)} verified incident(s) and "
+                f"{len(accident_zones_along_route)} documented zone(s) nearby. Maintain driving vigilance."
             )
         else:
             safety_advisory = (
                 "No repeated severe road hazard clusters detected along this route. Follow standard traffic guidelines."
             )
 
-    # 7. AI Interpretation (Clearly labeled and grounded)
     ai_interpretation = (
         f"[AI-Generated Assessment] Route between {orig_name} and {dest_name}: "
         f"Assigned Risk Level is {route_level.value} (Score: {route_score}/100). "
-        f"Grounded in {len(hazards_along_route)} approved database incident(s) within an 800m corridor. "
+        f"Grounded in {len(hazards_along_route)} approved database incident(s) and {len(accident_zones_along_route)} documented highway blackspot(s). "
         f"{len(emergency_services_along_route)} verified emergency facility/facilities identified along the path for rapid assistance."
     )
 
     data_limitations = (
-        "তথ্য সীমাবদ্ধতা বিজ্ঞপ্তি: সড়ক নিরাপত্তা বিশ্লেষণটি প্ল্যাটফর্মের যাচাইকৃত নাগরিক প্রতিবেদনের ভিত্তিতে সংকলিত। "
+        "তথ্য সীমাবদ্ধতা বিজ্ঞপ্তি: সড়ক নিরাপত্তা বিশ্লেষণটি প্ল্যাটফর্মের যাচাইকৃত নাগরিক প্রতিবেদন এবং বিআরটিএ/বিইউইটি এআরআই-এর ঐতিহাসিক দুর্ঘটনা রেকর্ডের ভিত্তিতে সংকলিত। "
         "কোনো সড়কে রিপোর্ট না থাকার অর্থ এই নয় যে সড়কটি সম্পূর্ণ বিপদমুক্ত। অপ্রত্যাশিত সড়ক বা আবহাওয়া পরিস্থিতি সর্বদা তৈরি হতে পারে।"
         if is_bn else
-        "Data Limitations Disclosure: Route safety scores are computed from verified citizen reports on Nirapotta. "
+        "Data Limitations Disclosure: Route safety scores are computed from verified citizen reports and documented ARI BUET/BRTA highway statistics. "
         "The absence of reported incidents does not prove an area is hazard-free. Road and weather conditions may change dynamically."
     )
 
-    # Distance and duration calculation
     dist_km = request.route_distance_km
     dur_min = None if is_fallback else request.route_duration_minutes
     if dist_km is None and is_fallback:
@@ -359,6 +531,11 @@ async def analyze_safe_route(
         hazards_along_route=hazards_along_route[:15],
         emergency_services_along_route=emergency_services_along_route[:8],
         high_risk_corridors_crossed=corridors_crossed,
+        accident_zones_along_route=accident_zones_along_route,
+        route_alternatives=route_alternatives,
+        vehicle_type=vehicle_type,
+        safety_verification_status=verification_status,
+        road_ai_guidance=road_ai_guidance,
         safety_advisory=safety_advisory,
         ai_interpretation=ai_interpretation,
         data_limitations=data_limitations,

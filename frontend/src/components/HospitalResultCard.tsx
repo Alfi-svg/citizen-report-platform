@@ -145,15 +145,28 @@ export default function HospitalResultCard({
               {hospital.matching_inventory.blood_group}
             </span>
             <div>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <span className={`h-2 w-2 rounded-full ${getStatusBadge(hospital.matching_inventory.availability_status, hospital.matching_inventory.available_units).dot}`} />
                 <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
                   {getStatusBadge(hospital.matching_inventory.availability_status, hospital.matching_inventory.available_units).text}
                 </span>
+                {hospital.matching_inventory.is_baseline_demo !== false ? (
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-900">
+                    {isBn ? "বেসলাইন ডেমো স্টক" : "Baseline Demo Stock"}
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900">
+                    {isBn ? "হাসপাতাল স্টাফ যাচাইকৃত" : "Staff Verified"}
+                  </span>
+                )}
               </div>
               <p className="text-[10px] text-zinc-500 flex items-center gap-1">
                 <Clock className="h-2.5 w-2.5" />
-                <span>{isBn ? "আপডেট:" : "Updated:"} {formatTime(hospital.matching_inventory.last_updated)}</span>
+                <span>
+                  {hospital.matching_inventory.last_staff_update
+                    ? `${isBn ? "স্টাফ আপডেট:" : "Staff Updated:"} ${formatTime(hospital.matching_inventory.last_staff_update)}`
+                    : (isBn ? "প্রাথমিক বেসলাইন ডেটা (ফোনে নিশ্চিত করুন)" : "Baseline demo estimate (Confirm by phone)")}
+                </span>
               </p>
             </div>
           </div>
@@ -186,6 +199,11 @@ export default function HospitalResultCard({
       {/* Expandable Full Inventory Drawer */}
       {showAllGroups && (
         <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
+          <div className="rounded-xl bg-amber-50/70 dark:bg-amber-950/30 p-2.5 border border-amber-200 dark:border-amber-900 text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
+            {isBn
+              ? "বিজ্ঞপ্তি: প্রদর্শিত পরিমাণগুলো ডেমো ও প্রাথমিক বেসলাইন স্টক। জরুরি প্রয়োজনের পূর্বে সরাসরি সংশ্লিষ্ট হাসপাতালের ব্লাড ব্যাংকে কল করে রিয়েল-টাইম স্টক নিশ্চিত করুন।"
+              : "Disclosure: Listed quantities represent baseline demo inventory. Contact the hospital blood bank directly to verify live availability before proceeding."}
+          </div>
           <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">
             {isBn ? "সকল গ্রুপের স্টক বিস্তারিত:" : "All Blood Group Inventories:"}
           </p>
@@ -202,7 +220,7 @@ export default function HospitalResultCard({
                     <span className="text-[10px] opacity-80">{inv.available_units} u</span>
                   </div>
                   <span className="text-[10px] font-medium truncate mt-0.5">
-                    {inv.availability_status}
+                    {inv.is_baseline_demo !== false ? (isBn ? "ডেমো স্টক" : "Demo Stock") : (isBn ? "স্টাফ যাচাইকৃত" : "Staff Verified")}
                   </span>
                 </div>
               );

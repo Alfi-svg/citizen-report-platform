@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Camera, ShieldCheck, HardHat, AlertCircle, X } from "lucide-react";
+import { Camera, ShieldCheck, AlertCircle, X } from "lucide-react";
 import { Button } from "./Button";
 
 export interface CameraPermissionDialogProps {

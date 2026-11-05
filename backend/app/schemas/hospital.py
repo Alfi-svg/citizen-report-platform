@@ -16,8 +16,11 @@ class BloodInventoryItem(BaseModel):
     blood_group: str
     available_units: int = 0
     availability_status: str = "UNKNOWN"
-    is_verified: bool = True
+    is_verified: bool = False
+    is_baseline_demo: bool = True
+    stock_source_label: str = "Baseline Demo Stock"
     last_updated: Optional[datetime] = None
+    last_staff_update: Optional[datetime] = None
     updated_by_name: Optional[str] = None
 
 

@@ -143,6 +143,38 @@ async def test_start_safe_ride_blocks_unverified(async_client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_start_safe_ride_blocks_missing_or_empty_token(async_client: AsyncClient):
+    # 1. Empty token string -> 403 Forbidden
+    res_empty = await async_client.post(
+        "/api/v1/safety/safe-ride/start",
+        json={"verification_token": ""}
+    )
+    assert res_empty.status_code == 403
+    assert "token is required" in res_empty.json()["detail"].lower()
+
+    # 2. Missing field in body -> 422 Unprocessable Entity
+    res_missing = await async_client.post(
+        "/api/v1/safety/safe-ride/start",
+        json={}
+    )
+    assert res_missing.status_code in (400, 422)
+
+
+@pytest.mark.asyncio
+async def test_verify_helmet_invalid_base64_payload(async_client: AsyncClient):
+    # Malformed base64
+    res = await async_client.post(
+        "/api/v1/safety/safe-ride/verify-helmet",
+        json={"image_base64": "not_a_valid_base64_image_data!@#$%^&*()"}
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["is_verified"] is False
+    assert data["status"] == "ERROR"
+    assert data["verification_token"] is None
+
+
+@pytest.mark.asyncio
 async def test_verification_token_expiration(async_client: AsyncClient):
     # Inject expired token
     expired_token = "test_expired_token_abc"

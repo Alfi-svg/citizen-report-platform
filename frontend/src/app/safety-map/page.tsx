@@ -17,7 +17,20 @@ import {
 } from "@/lib/location";
 import { useBackClose } from "@/lib/useBackClose";
 import { isAppActive } from "@/lib/appLifecycle";
-import { Milestone, CarFront, X, AlertTriangle, MapPin, Check, Link2 } from "lucide-react";
+import {
+  MapPin,
+  X,
+  AlertTriangle,
+  Search,
+  ExternalLink,
+  ChevronRight,
+  ShieldCheck,
+  LocateFixed,
+  Box,
+  Map as MapIcon,
+  List,
+  RotateCcw,
+} from "lucide-react";
 
 export default function SafetyMapPage() {
   const [lang, setLang] = useState<Language>("en");
@@ -47,10 +60,13 @@ export default function SafetyMapPage() {
   const [viewMode, setViewMode] = useState<"ALL" | "CLUSTERS" | "MISSING">("ALL");
   const [search, setSearch] = useState<string>("");
   const [dateFilter, setDateFilter] = useState<string>("");
-  const [isListView, setIsListView] = useState<boolean>(false);
+  const [mobileTab, setMobileTab] = useState<"MAP" | "LIST">("MAP");
+  const [is3DMode, setIs3DMode] = useState<boolean>(true);
+
+  // Selected marker or cluster for synchronized inspection
   const [selectedPoint, setSelectedPoint] = useState<PublicMapIncidentPoint | PublicMapClusterPoint | null>(null);
 
-  // Android hardware back & browser popstate support for closing selected marker panel
+  // Android hardware back & browser popstate support for closing selected point
   useBackClose(Boolean(selectedPoint), () => setSelectedPoint(null), "safetyMapSelectedPoint");
 
   // Locate Me state
@@ -62,8 +78,8 @@ export default function SafetyMapPage() {
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
-  const markersLayerRef = useRef<any>(null);
-  const userLocationLayerRef = useRef<any>(null);
+  const markersRef = useRef<any[]>([]);
+  const userMarkerRef = useRef<any>(null);
 
   // Fetch categories
   useEffect(() => {
@@ -130,235 +146,353 @@ export default function SafetyMapPage() {
     return () => clearInterval(interval);
   }, [loadMapData]);
 
-  // Render markers whenever data or viewMode changes
-  const renderMarkers = useCallback(() => {
+  // Filtered list of incidents for the right panel
+  const filteredIncidents = React.useMemo(() => {
+    if (!data) return [];
+    let list = data.incidents;
+    if (viewMode === "MISSING") {
+      list = list.filter((i) => i.is_missing_person);
+    } else if (viewMode === "CLUSTERS" && selectedPoint && "member_count" in selectedPoint) {
+      list = list.filter((i) => i.cluster_id === selectedPoint.id || (i.cluster_title && i.cluster_title === selectedPoint.title));
+    }
+    return list;
+  }, [data, viewMode, selectedPoint]);
+
+  // Fly/pan map to incident coordinates
+  const highlightAndFocusIncident = useCallback((incident: PublicMapIncidentPoint) => {
+    setSelectedPoint(incident);
+    setMobileTab("MAP");
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    if (map.flyTo) {
+      // MapLibre
+      map.flyTo({
+        center: [incident.approximate_longitude, incident.approximate_latitude],
+        zoom: Math.max(map.getZoom(), 14),
+        pitch: is3DMode ? 50 : 0,
+        essential: true,
+      });
+    } else if (map.setView) {
+      // Leaflet
+      map.setView([incident.approximate_latitude, incident.approximate_longitude], 14, { animate: true });
+    }
+  }, [is3DMode]);
+
+  // Fly/pan map to cluster coordinates
+  const highlightAndFocusCluster = useCallback((cluster: PublicMapClusterPoint) => {
+    setSelectedPoint(cluster);
+    setMobileTab("MAP");
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    if (map.flyTo) {
+      map.flyTo({
+        center: [cluster.approximate_longitude, cluster.approximate_latitude],
+        zoom: Math.max(map.getZoom() + 2, 13.5),
+        pitch: is3DMode ? 50 : 0,
+        essential: true,
+      });
+    } else if (map.setView) {
+      map.setView([cluster.approximate_latitude, cluster.approximate_longitude], 13.5, { animate: true });
+    }
+  }, [is3DMode]);
+
+  // Clear existing markers
+  const clearMapMarkers = useCallback(() => {
+    markersRef.current.forEach((m) => {
+      try {
+        if (m.remove) m.remove();
+      } catch {}
+    });
+    markersRef.current = [];
+  }, []);
+
+  // Render 3D and 2D markers onto map
+  const renderMapMarkers = useCallback(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !data) return;
+
+    clearMapMarkers();
+
+    const maplibregl = (window as any).maplibregl;
     const L = (window as any).L;
-    if (!L || !markersLayerRef.current || !data) return;
 
-    markersLayerRef.current.clearLayers();
+    // A. MAPLIBRE GL MARKER RENDERING (Vector 3D Map)
+    if (maplibregl && map.getCanvas) {
+      // 1. Clusters
+      if (viewMode === "ALL" || viewMode === "CLUSTERS") {
+        data.clusters.forEach((cluster) => {
+          const el = document.createElement("div");
+          el.className = "group cursor-pointer select-none";
+          const count = cluster.member_count;
+          const size = Math.min(52, Math.max(38, 36 + count * 1.5));
 
-    // 1. Render Clusters
-    if (viewMode === "ALL" || viewMode === "CLUSTERS") {
-      data.clusters.forEach((cluster) => {
-        // High-contrast vector cluster badge with layered shadow
-        const clusterIcon = L.divIcon({
-          className: "custom-cluster-icon",
-          html: `<div style="
-            width: 42px;
-            height: 42px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-          ">
-            <div style="
+          el.innerHTML = `
+            <div style="position: relative; width: ${size}px; height: ${size}px; display: flex; items-center; justify-content: center;">
+              <!-- 3D Radar Pulse Ring -->
+              <span style="position: absolute; inset: -4px; border-radius: 9999px; background: rgba(234, 88, 12, 0.35); animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></span>
+              
+              <!-- 3D Cylinder Cluster Body -->
+              <div style="
+                position: relative;
+                width: 100%;
+                height: 100%;
+                border-radius: 9999px;
+                background: linear-gradient(135deg, #f97316 0%, #c2410c 100%);
+                color: #ffffff;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 900;
+                font-size: ${count > 99 ? "11px" : "13px"};
+                border: 3px solid #ffffff;
+                box-shadow: 0 8px 16px -2px rgba(194, 65, 12, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.25);
+                transform: translateY(${is3DMode ? "-6px" : "0px"});
+                transition: transform 0.2s ease;
+              ">
+                ${count}
+              </div>
+            </div>
+          `;
+
+          el.addEventListener("click", (e) => {
+            e.stopPropagation();
+            highlightAndFocusCluster(cluster);
+          });
+
+          const marker = new maplibregl.Marker({ element: el })
+            .setLngLat([cluster.approximate_longitude, cluster.approximate_latitude])
+            .addTo(map);
+
+          markersRef.current.push(marker);
+        });
+      }
+
+      // 2. Individual Incidents
+      if (viewMode === "ALL" || viewMode === "MISSING") {
+        const incidents = viewMode === "MISSING"
+          ? data.incidents.filter((i) => i.is_missing_person)
+          : data.incidents;
+
+        incidents.forEach((inc) => {
+          const isMissing = inc.is_missing_person;
+          const color = isMissing ? "#dc2626" : inc.cluster_id ? "#f59e0b" : "#059669";
+          const halo = isMissing ? "rgba(220, 38, 38, 0.35)" : inc.cluster_id ? "rgba(245, 158, 11, 0.35)" : "rgba(5, 150, 105, 0.35)";
+
+          const el = document.createElement("div");
+          el.className = "cursor-pointer";
+          el.innerHTML = `
+            <div style="position: relative; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+              <div style="
+                width: 18px;
+                height: 18px;
+                border-radius: 9999px;
+                background: ${color};
+                border: 2.5px solid #ffffff;
+                box-shadow: 0 0 0 3px ${halo}, 0 4px 8px rgba(0,0,0,0.3);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transform: translateY(${is3DMode ? "-4px" : "0px"});
+              ">
+                ${isMissing ? `<div style="width: 4px; height: 4px; background: white; border-radius: 9999px;"></div>` : ""}
+              </div>
+            </div>
+          `;
+
+          el.addEventListener("click", (e) => {
+            e.stopPropagation();
+            highlightAndFocusIncident(inc);
+          });
+
+          const marker = new maplibregl.Marker({ element: el })
+            .setLngLat([inc.approximate_longitude, inc.approximate_latitude])
+            .addTo(map);
+
+          markersRef.current.push(marker);
+        });
+      }
+      return;
+    }
+
+    // B. LEAFLET FALLBACK
+    if (L && map.setView) {
+      if (viewMode === "ALL" || viewMode === "CLUSTERS") {
+        data.clusters.forEach((cluster) => {
+          const clusterIcon = L.divIcon({
+            className: "custom-cluster-icon",
+            html: `<div style="
+              width: 38px;
+              height: 38px;
               background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
               color: white;
               border-radius: 9999px;
-              width: 36px;
-              height: 36px;
               display: flex;
               align-items: center;
               justify-content: center;
               font-weight: 900;
               font-size: 13px;
               border: 3px solid #ffffff;
-              box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.3), 0 4px 10px rgba(0, 0, 0, 0.35);
-              letter-spacing: -0.5px;
-            ">
-              ${cluster.member_count}
-            </div>
-          </div>`,
-          iconSize: [42, 42],
-          iconAnchor: [21, 21],
+              box-shadow: 0 4px 10px rgba(0,0,0,0.35);
+              cursor: pointer;
+            ">${cluster.member_count}</div>`,
+            iconSize: [38, 38],
+            iconAnchor: [19, 19],
+          });
+
+          const marker = L.marker([cluster.approximate_latitude, cluster.approximate_longitude], {
+            icon: clusterIcon,
+          });
+
+          marker.on("click", () => highlightAndFocusCluster(cluster));
+          marker.addTo(map);
+          markersRef.current.push(marker);
         });
+      }
 
-        const marker = L.marker([cluster.approximate_latitude, cluster.approximate_longitude], {
-          icon: clusterIcon,
-        });
-
-        const popupContent = `
-          <div style="font-family: inherit; font-size: 12px; max-width: 240px; padding: 4px;">
-            <div style="display: flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 800; color: #ea580c; text-transform: uppercase;">
-              <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #ea580c;"></span>
-              <span>${t.incident_cluster_badge}</span>
-            </div>
-            <div style="font-weight: 800; font-size: 13px; color: #18181b; margin-top: 2px; line-height: 1.3;">
-              ${lang === "bn" && cluster.title_bn ? cluster.title_bn : cluster.title}
-            </div>
-            <div style="font-size: 11px; color: #71717a; margin-top: 4px;">
-              <strong>${cluster.member_count}</strong> ${t.cluster_reports_count}.
-            </div>
-            ${cluster.area ? `<div style="font-size: 10px; color: #a1a1aa; margin-top: 2px;">${cluster.area}</div>` : ""}
-            <div style="margin-top: 8px; border-top: 1px solid #f4f4f5; padding-top: 6px;">
-              <span style="color: #ea580c; font-weight: 700; font-size: 11px;">
-                ${lang === "bn" ? "বিস্তারিত দেখতে ট্যাপ করুন →" : "Tap for details →"}
-              </span>
-            </div>
-          </div>
-        `;
-
-        marker.bindPopup(popupContent);
-        marker.on("click", () => {
-          setSelectedPoint(cluster);
-          if (mapInstanceRef.current) {
-            const currentZoom = mapInstanceRef.current.getZoom();
-            const targetZoom = Math.max(currentZoom + 2, 13);
-            mapInstanceRef.current.setView([cluster.approximate_latitude, cluster.approximate_longitude], targetZoom, {
-              animate: true,
-            });
-          }
-        });
-        markersLayerRef.current.addLayer(marker);
-      });
-    }
-
-    // 2. Render Incident Points
-    if (viewMode === "ALL" || viewMode === "MISSING") {
-      const incidentsToRender =
-        viewMode === "MISSING"
+      if (viewMode === "ALL" || viewMode === "MISSING") {
+        const incidents = viewMode === "MISSING"
           ? data.incidents.filter((i) => i.is_missing_person)
           : data.incidents;
 
-      incidentsToRender.forEach((inc) => {
-        const isMissing = inc.is_missing_person;
-        const color = isMissing ? "#dc2626" : inc.cluster_id ? "#f59e0b" : "#059669";
-        const ringColor = isMissing ? "rgba(220, 38, 38, 0.25)" : inc.cluster_id ? "rgba(245, 158, 11, 0.25)" : "rgba(5, 150, 105, 0.25)";
+        incidents.forEach((inc) => {
+          const isMissing = inc.is_missing_person;
+          const color = isMissing ? "#dc2626" : inc.cluster_id ? "#f59e0b" : "#059669";
+          const pointIcon = L.divIcon({
+            className: "custom-point-icon",
+            html: `<div style="width: 20px; height: 20px; border-radius: 50%; background: ${color}; border: 2.5px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3); cursor: pointer;"></div>`,
+            iconSize: [20, 20],
+            iconAnchor: [10, 10],
+          });
 
-        // Mobile-accessible touch target: 38x38px with centered icon badge
-        const pointIcon = L.divIcon({
-          className: "custom-point-icon",
-          html: `<div style="width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-            <div style="
-              background: ${color};
-              width: 18px;
-              height: 18px;
-              border-radius: 50%;
-              border: 2.5px solid white;
-              box-shadow: 0 0 0 3px ${ringColor}, 0 3px 6px rgba(0,0,0,0.35);
-              display: flex;
-              align-items: center;
-              justify-content: center;
-            ">
-              ${isMissing ? `<div style="width: 4px; height: 4px; background: white; border-radius: 50%;"></div>` : ""}
-            </div>
-          </div>`,
-          iconSize: [38, 38],
-          iconAnchor: [19, 19],
+          const marker = L.marker([inc.approximate_latitude, inc.approximate_longitude], { icon: pointIcon });
+          marker.on("click", () => highlightAndFocusIncident(inc));
+          marker.addTo(map);
+          markersRef.current.push(marker);
         });
+      }
+    }
+  }, [data, viewMode, is3DMode, clearMapMarkers, highlightAndFocusCluster, highlightAndFocusIncident]);
 
-        const marker = L.marker([inc.approximate_latitude, inc.approximate_longitude], {
-          icon: pointIcon,
-        });
-
-        const linkUrl = isMissing && inc.missing_person_alert_id
-          ? `/missing-person/${inc.missing_person_alert_id}`
-          : `/reports/${inc.id}`;
-
-        const popupContent = `
-          <div style="font-family: inherit; font-size: 12px; max-width: 250px; padding: 4px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px; gap: 4px;">
-              <span style="font-size: 10px; font-weight: 800; color: ${color}; text-transform: uppercase;">
-                ${isMissing ? (lang === "bn" ? "নিখোঁজ ব্যক্তি সতর্কতা" : "MISSING PERSON") : inc.category_name}
-              </span>
-              <span style="font-size: 9px; background: #ecfdf5; color: #059669; padding: 2px 6px; border-radius: 6px; font-weight: 800;">
-                ${t.platform_reviewed}
-              </span>
-            </div>
-            <div style="font-weight: 800; font-size: 13px; color: #18181b; margin-top: 2px; line-height: 1.3;">
-              ${inc.title}
-            </div>
-            <div style="font-size: 11px; color: #71717a; margin-top: 4px;">
-              <strong>${inc.location_text}</strong>
-            </div>
-            ${inc.cluster_title ? `<div style="font-size: 10px; color: #d97706; margin-top: 2px; font-weight: 600;">${lang === "bn" ? "সম্পর্কিত ক্লাস্টার:" : "Part of cluster:"} ${inc.cluster_title}</div>` : ""}
-            <div style="margin-top: 8px; border-top: 1px solid #f4f4f5; padding-top: 6px;">
-              <a href="${linkUrl}" style="color: #059669; font-weight: 700; font-size: 11px; text-decoration: none;">
-                ${t.view_incident_detail} →
-              </a>
-            </div>
-          </div>
-        `;
-
-        marker.bindPopup(popupContent);
-        marker.on("click", () => {
-          setSelectedPoint(inc);
-          if (mapInstanceRef.current) {
-            mapInstanceRef.current.panTo([inc.approximate_latitude, inc.approximate_longitude]);
-          }
-        });
-        markersLayerRef.current.addLayer(marker);
+  // Toggle 3D Perspective Mode
+  const toggle3DMode = () => {
+    const nextMode = !is3DMode;
+    setIs3DMode(nextMode);
+    const map = mapInstanceRef.current;
+    if (map && map.easeTo) {
+      map.easeTo({
+        pitch: nextMode ? 52 : 0,
+        bearing: nextMode ? -15 : 0,
+        duration: 900,
       });
     }
-  }, [data, viewMode, lang, t]);
+  };
 
-  // Leaflet dynamic injection & map initialization
+  // Initialize Map (MapLibre GL Vector with 3D buildings, Leaflet fallback)
   useEffect(() => {
-    if (typeof window === "undefined" || isListView) return;
+    if (typeof window === "undefined" || !mapContainerRef.current) return;
 
-    // Check if Leaflet stylesheet is already in head
-    if (!document.getElementById("leaflet-css")) {
+    let isMounted = true;
+
+    // Load MapLibre stylesheet
+    if (!document.getElementById("maplibre-gl-css")) {
       const link = document.createElement("link");
-      link.id = "leaflet-css";
+      link.id = "maplibre-gl-css";
       link.rel = "stylesheet";
-      link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+      link.href = "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css";
       document.head.appendChild(link);
     }
 
-    const initLeafletMap = () => {
-      const L = (window as any).L;
-      if (!L || !mapContainerRef.current) return;
+    const initMapLibre = () => {
+      const maplibregl = (window as any).maplibregl;
+      if (!maplibregl || !mapContainerRef.current || !isMounted) return;
 
-      if (!mapInstanceRef.current) {
-        // Center on Bangladesh
-        const map = L.map(mapContainerRef.current, {
-          center: [23.8103, 90.4125],
-          zoom: 7.5,
-          minZoom: 6,
-          maxZoom: 18,
-          zoomControl: true,
-        });
-
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-          maxZoom: 19,
-        }).addTo(map);
-
-        const markersLayer = L.layerGroup().addTo(map);
-        mapInstanceRef.current = map;
-        markersLayerRef.current = markersLayer;
-
-        setTimeout(() => {
-          if (mapInstanceRef.current) {
-            mapInstanceRef.current.invalidateSize();
-          }
-        }, 250);
+      if (mapInstanceRef.current) {
+        try {
+          mapInstanceRef.current.remove();
+        } catch {}
       }
 
-      renderMarkers();
+      const map = new maplibregl.Map({
+        container: mapContainerRef.current,
+        style: "https://tiles.openfreemap.org/styles/liberty",
+        center: [90.4125, 23.8103], // Dhaka, Bangladesh
+        zoom: 7.2,
+        minZoom: 5.5,
+        maxZoom: 18.5,
+        pitch: is3DMode ? 52 : 0,
+        bearing: is3DMode ? -15 : 0,
+        antialias: true,
+      });
+
+      map.on("load", () => {
+        if (!isMounted) return;
+        mapInstanceRef.current = map;
+
+        // Add 3D building extrusions
+        try {
+          if (!map.getLayer("3d-buildings")) {
+            map.addLayer({
+              id: "3d-buildings",
+              source: "openmaptiles",
+              "source-layer": "building",
+              type: "fill-extrusion",
+              minzoom: 14,
+              paint: {
+                "fill-extrusion-color": [
+                  "interpolate",
+                  ["linear"],
+                  ["get", "render_height"],
+                  0, "#e2e8f0",
+                  20, "#cbd5e1",
+                  50, "#94a3b8",
+                ],
+                "fill-extrusion-height": ["get", "render_height"],
+                "fill-extrusion-base": ["get", "render_min_height"],
+                "fill-extrusion-opacity": 0.65,
+              },
+            });
+          }
+        } catch {}
+
+        renderMapMarkers();
+      });
+
+      map.on("click", () => {
+        setSelectedPoint(null);
+      });
     };
 
-    if (!(window as any).L) {
+    if (!(window as any).maplibregl) {
       const script = document.createElement("script");
-      script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+      script.id = "maplibre-gl-js";
+      script.src = "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js";
       script.async = true;
-      script.onload = () => initLeafletMap();
+      script.onload = () => {
+        if (isMounted) initMapLibre();
+      };
       document.body.appendChild(script);
     } else {
-      initLeafletMap();
+      initMapLibre();
     }
 
     return () => {
+      isMounted = false;
       if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
+        try {
+          mapInstanceRef.current.remove();
+        } catch {}
         mapInstanceRef.current = null;
       }
     };
-  }, [isListView, renderMarkers]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
+  // Re-render markers when data, filter, or 3D mode changes
   useEffect(() => {
-    renderMarkers();
-  }, [renderMarkers]);
+    renderMapMarkers();
+  }, [renderMapMarkers]);
 
   // Center on query parameters if present (e.g. from report details)
   useEffect(() => {
@@ -372,7 +506,12 @@ export default function SafetyMapPage() {
       const lat = parseFloat(qLat);
       const lng = parseFloat(qLng);
       if (!isNaN(lat) && !isNaN(lng)) {
-        mapInstanceRef.current.setView([lat, lng], 15);
+        const map = mapInstanceRef.current;
+        if (map.flyTo) {
+          map.flyTo({ center: [lng, lat], zoom: 15, pitch: is3DMode ? 50 : 0 });
+        } else if (map.setView) {
+          map.setView([lat, lng], 15);
+        }
       }
     }
 
@@ -382,7 +521,7 @@ export default function SafetyMapPage() {
         setSelectedPoint(matched);
       }
     }
-  }, [data]);
+  }, [data, is3DMode]);
 
   // Handle Privacy-Aware "Locate Me"
   const handleLocateMe = async () => {
@@ -414,64 +553,39 @@ export default function SafetyMapPage() {
       return;
     }
 
-    const { approximateLatitude, approximateLongitude, suggestedAreaName } = coordinates;
-    const L = (window as any).L;
+    const { approximateLatitude, approximateLongitude } = coordinates;
     const map = mapInstanceRef.current;
-    if (!L || !map) return;
+    if (!map) return;
 
-    if (userLocationLayerRef.current) {
-      map.removeLayer(userLocationLayerRef.current);
+    if (userMarkerRef.current) {
+      try {
+        userMarkerRef.current.remove();
+      } catch {}
     }
 
-    const userGroup = L.layerGroup();
-
-    // 120m radius privacy circle (~110m 3-decimal grid buffer)
-    const circle = L.circle([approximateLatitude, approximateLongitude], {
-      radius: 120,
-      color: "#059669",
-      fillColor: "#10b981",
-      fillOpacity: 0.18,
-      weight: 2,
-      dashArray: "4, 4",
-    });
-
-    const userIcon = L.divIcon({
-      className: "custom-user-location-marker",
-      html: `<div style="position: relative; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;">
-        <span style="position: absolute; width: 100%; height: 100%; border-radius: 9999px; background-color: #10b981; opacity: 0.75; animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></span>
-        <span style="position: relative; width: 14px; height: 14px; border-radius: 9999px; background-color: #059669; border: 2.5px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></span>
-      </div>`,
-      iconSize: [26, 26],
-      iconAnchor: [13, 13],
-    });
-
-    const marker = L.marker([approximateLatitude, approximateLongitude], { icon: userIcon });
-    const popupHtml = `
-      <div style="font-family: inherit; font-size: 12px; padding: 4px; min-width: 160px;">
-        <div style="font-weight: 800; color: #059669; font-size: 13px;">
-          ${lang === "bn" ? "আপনার আনুমানিক অবস্থান" : "Your Approximate Location"}
+    const maplibregl = (window as any).maplibregl;
+    if (maplibregl && map.flyTo) {
+      const el = document.createElement("div");
+      el.innerHTML = `
+        <div style="position: relative; width: 28px; height: 28px; display: flex; items-center; justify-content: center;">
+          <span style="position: absolute; inset: 0; border-radius: 9999px; background: rgba(16, 185, 129, 0.4); animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></span>
+          <span style="position: relative; width: 14px; height: 14px; border-radius: 9999px; background: #059669; border: 2.5px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></span>
         </div>
-        <div style="font-size: 11px; color: #4b5563; margin-top: 4px; line-height: 1.4;">
-          ${suggestedAreaName ? `<strong>${suggestedAreaName}</strong><br/>` : ""}
-          <span style="font-size: 10px; color: #6b7280;">~110m privacy buffer applied</span>
-        </div>
-      </div>
-    `;
-    marker.bindPopup(popupHtml);
+      `;
 
-    userGroup.addLayer(circle);
-    userGroup.addLayer(marker);
-    userGroup.addTo(map);
-    userLocationLayerRef.current = userGroup;
+      const marker = new maplibregl.Marker({ element: el })
+        .setLngLat([approximateLongitude, approximateLatitude])
+        .addTo(map);
 
-    map.flyTo([approximateLatitude, approximateLongitude], 14, {
-      animate: true,
-      duration: 1.2,
-    });
+      userMarkerRef.current = marker;
 
-    setTimeout(() => {
-      marker.openPopup();
-    }, 1300);
+      map.flyTo({
+        center: [approximateLongitude, approximateLatitude],
+        zoom: 14.5,
+        pitch: is3DMode ? 50 : 0,
+        essential: true,
+      });
+    }
   };
 
   const clearAllFilters = () => {
@@ -479,24 +593,21 @@ export default function SafetyMapPage() {
     setDateFilter("");
     setSearch("");
     setViewMode("ALL");
+    setSelectedPoint(null);
   };
 
   return (
     <div className="mx-auto max-w-7xl px-3 py-4 sm:px-6 lg:px-8 space-y-4">
       {/* ========================================================= */}
-      {/* 1. Sleek Header Bar & Bilingual Switcher */}
+      {/* 1. Header Bar & Controls (Phase 3: Clean, No Duplicates)  */}
       {/* ========================================================= */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-sm shadow-emerald-600/20">
-            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
-              <line x1="8" y1="2" x2="8" y2="18" />
-              <line x1="16" y1="6" x2="16" y2="22" />
-            </svg>
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-xs shrink-0">
+            <MapIcon className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight flex items-center gap-2">
+            <h1 className="text-lg sm:text-xl font-extrabold text-zinc-900 dark:text-zinc-100 tracking-tight flex items-center gap-2">
               <span>{t.safety_map_title}</span>
               {data && (
                 <span className="rounded-full bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-0.5 text-xs text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-200/60 dark:border-emerald-900/60">
@@ -505,94 +616,52 @@ export default function SafetyMapPage() {
               )}
             </h1>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-1">
-              {t.safety_map_subtitle}
+              {lang === "bn"
+                ? "যাচাইকৃত হ্যাজার্ড ক্লাস্টার ও রিয়েল-টাইম ঘটনা গোয়েন্দা ড্যাশবোর্ড।"
+                : "Verified incident clusters and real-time community safety intelligence dashboard."}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Live Sync Button */}
+          {/* Refresh Map Data */}
           <button
             onClick={() => loadMapData(false)}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-2 text-xs font-bold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition shadow-2xs cursor-pointer"
-            title="Refresh Live Data"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-850 px-3 py-2 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition shadow-2xs cursor-pointer"
+            title={lang === "bn" ? "মানচিত্র ডেটা রিফ্রেশ করুন" : "Refresh Map Data"}
           >
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Live Sync</span>
+            <RotateCcw className={`h-3.5 w-3.5 text-zinc-500 ${loading ? "animate-spin" : ""}`} />
+            <span>{lang === "bn" ? "রিফ্রেশ" : "Refresh"}</span>
           </button>
 
-          {/* Road Safety Intelligence Link */}
-          <Link
-            href="/safety/road-intelligence"
-            className="inline-flex items-center gap-1.5 rounded-xl border border-blue-600/40 bg-blue-50 dark:bg-blue-950/60 px-3.5 py-2 text-xs font-bold text-blue-700 dark:text-blue-300 shadow-2xs hover:bg-blue-100 dark:hover:bg-blue-900/50 transition cursor-pointer"
-          >
-            <Milestone className="h-4 w-4 text-blue-600" />
-            <span>{lang === "bn" ? "সড়ক ইন্টেলিজেন্স" : "Road Safety AI"}</span>
-          </Link>
-
-          {/* 3D Live Map (Uber Mode) Link */}
-          <Link
-            href="/safety/road-intelligence/live-map"
-            className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-600/40 bg-cyan-50 dark:bg-cyan-950/60 px-3.5 py-2 text-xs font-bold text-cyan-700 dark:text-cyan-300 shadow-2xs hover:bg-cyan-100 dark:hover:bg-cyan-900/50 transition cursor-pointer"
-          >
-            <CarFront className="h-4 w-4 text-cyan-600" />
-            <span>{lang === "bn" ? "৩ডি লাইভ ম্যাপ" : "3D Live Map"}</span>
-          </Link>
-
-          {/* View Mode Toggle: Map vs List */}
+          {/* 3D Perspective Mode Toggle */}
           <button
-            onClick={() => setIsListView(!isListView)}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3.5 py-2 text-xs font-bold text-zinc-700 dark:text-zinc-300 shadow-2xs hover:bg-zinc-50 dark:hover:bg-zinc-750 transition cursor-pointer"
+            onClick={toggle3DMode}
+            className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition shadow-2xs cursor-pointer ${
+              is3DMode
+                ? "border-cyan-600/50 bg-cyan-50 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-300"
+                : "border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+            }`}
+            title="Toggle 3D Perspective & Building Extrusions"
           >
-            {isListView ? (
-              <>
-                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
-                </svg>
-                <span>{t.map_view_toggle}</span>
-              </>
-            ) : (
-              <>
-                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="8" y1="6" x2="21" y2="6" />
-                  <line x1="8" y1="12" x2="21" y2="12" />
-                  <line x1="8" y1="18" x2="21" y2="18" />
-                  <line x1="3" y1="6" x2="3.01" y2="6" />
-                  <line x1="3" y1="12" x2="3.01" y2="12" />
-                  <line x1="3" y1="18" x2="3.01" y2="18" />
-                </svg>
-                <span>{t.list_view_toggle}</span>
-              </>
-            )}
+            <Box className="h-3.5 w-3.5" />
+            <span>{is3DMode ? "3D Buildings" : "2D Flat"}</span>
           </button>
 
-          {/* Locate Me Action Button */}
-          {!isListView && (
-            <button
-              onClick={handleLocateMe}
-              disabled={locating}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-600 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white px-3.5 py-2 text-xs font-bold shadow-sm transition disabled:opacity-50 cursor-pointer"
-              title="Locate Me on Map (~110m privacy protection)"
-            >
-              {locating ? (
-                <>
-                  <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  <span>{lang === "bn" ? "খোঁজা হচ্ছে..." : "Locating..."}</span>
-                </>
-              ) : (
-                <>
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <circle cx="12" cy="12" r="7" />
-                    <polyline points="12 1 12 5" />
-                    <polyline points="12 19 12 23" />
-                    <polyline points="1 12 5 12" />
-                    <polyline points="19 12 23 12" />
-                  </svg>
-                  <span>{t.locate_me}</span>
-                </>
-              )}
-            </button>
-          )}
+          {/* Locate Me Button */}
+          <button
+            onClick={handleLocateMe}
+            disabled={locating}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-600 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white px-3 py-2 text-xs font-bold shadow-sm transition disabled:opacity-50 cursor-pointer"
+            title="Locate Me on Map (~110m privacy protection)"
+          >
+            {locating ? (
+              <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            ) : (
+              <LocateFixed className="h-3.5 w-3.5" />
+            )}
+            <span>{t.locate_me}</span>
+          </button>
 
           {/* Bilingual Language Switcher */}
           <div className="inline-flex rounded-xl bg-zinc-100 dark:bg-zinc-800 p-0.5 border border-zinc-200 dark:border-zinc-700">
@@ -622,15 +691,10 @@ export default function SafetyMapPage() {
         </div>
       </div>
 
-      {/* ========================================================= */}
-      {/* 2. Privacy Notice Banner */}
-      {/* ========================================================= */}
+      {/* Privacy Notice Banner */}
       <div className="rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/30 p-3 border border-emerald-200/60 dark:border-emerald-900/50 text-xs text-emerald-800 dark:text-emerald-300 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <svg className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-          </svg>
+          <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
           <span className="leading-snug">{t.map_privacy_notice}</span>
         </div>
         {data && (
@@ -641,27 +705,60 @@ export default function SafetyMapPage() {
             </span>
             <span className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400">
               <span className="h-2 w-2 rounded-full bg-amber-500" />
-              <span>{data.total_clusters} {lang === "bn" ? "ক্লাস্টার" : "Clusters"}</span>
+              <span>{data.total_clusters} {lang === "bn" ? "ক্লাস্টার" : "3D Clusters"}</span>
             </span>
           </div>
         )}
       </div>
 
-      {/* ========================================================= */}
-      {/* 3. Compact Filter Bar */}
-      {/* ========================================================= */}
+      {/* Location Notice / Error Alert */}
+      {locationNotice && (
+        <div className="rounded-2xl bg-amber-50 dark:bg-amber-950/40 p-3 border border-amber-200 dark:border-amber-900 text-xs text-amber-800 dark:text-amber-300 flex items-center justify-between gap-3">
+          <span>{locationNotice.message}</span>
+          {locationNotice.action === "app_settings" && (
+            <button
+              onClick={() => openNativeAppSettings()}
+              className="px-2.5 py-1 bg-amber-600 text-white font-bold rounded-lg hover:bg-amber-700 cursor-pointer text-xs"
+            >
+              Settings
+            </button>
+          )}
+          {locationNotice.action === "location_settings" && (
+            <button
+              onClick={() => openNativeLocationSettings()}
+              className="px-2.5 py-1 bg-amber-600 text-white font-bold rounded-lg hover:bg-amber-700 cursor-pointer text-xs"
+            >
+              Turn on GPS
+            </button>
+          )}
+        </div>
+      )}
+
+      {error && (
+        <div className="rounded-2xl bg-red-50 dark:bg-red-950/40 p-3 border border-red-200 dark:border-red-900 text-xs text-red-800 dark:text-red-300 flex items-center justify-between gap-3">
+          <span className="flex items-center gap-1.5">
+            <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />
+            <span>{error}</span>
+          </span>
+          <button
+            onClick={() => loadMapData(false)}
+            className="px-2.5 py-1 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 cursor-pointer text-xs"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* Compact Filter Bar */}
       <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 bg-white dark:bg-zinc-900 p-3 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xs text-xs">
-        {/* Search */}
-        <div className="sm:col-span-4 relative">
+        {/* Search Input */}
+        <div className="sm:col-span-5 relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400">
-            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
+            <Search className="w-3.5 h-3.5" />
           </div>
           <input
             type="text"
-            placeholder={lang === "bn" ? "শিরোনাম বা এলাকা দিয়ে খুঁজুন..." : "Search by title or area..."}
+            placeholder={lang === "bn" ? "শিরোনাম বা এলাকা দিয়ে খুঁজুন..." : "Search by incident or area..."}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 pl-8.5 pr-8 py-2 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -677,7 +774,7 @@ export default function SafetyMapPage() {
         </div>
 
         {/* Category Filter */}
-        <div className="sm:col-span-3">
+        <div className="sm:col-span-4">
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
@@ -692,21 +789,7 @@ export default function SafetyMapPage() {
           </select>
         </div>
 
-        {/* Date Filter */}
-        <div className="sm:col-span-2">
-          <select
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
-            className="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-          >
-            <option value="">{lang === "bn" ? "সব সময়" : "All Time"}</option>
-            <option value="7d">{lang === "bn" ? "গত ৭ দিন" : "Last 7 Days"}</option>
-            <option value="30d">{lang === "bn" ? "গত ৩০ দিন" : "Last 30 Days"}</option>
-            <option value="90d">{lang === "bn" ? "গত ৯০ দিন" : "Last 90 Days"}</option>
-          </select>
-        </div>
-
-        {/* Map View Mode Segmented Controls */}
+        {/* View Mode Segmented Controls */}
         <div className="sm:col-span-3 flex gap-1 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl">
           <button
             onClick={() => setViewMode("ALL")}
@@ -741,98 +824,49 @@ export default function SafetyMapPage() {
         </div>
       </div>
 
-      {error && (
-        <div className="rounded-2xl bg-red-50 dark:bg-red-950/40 p-3.5 border border-red-200 dark:border-red-900 text-xs text-red-700 dark:text-red-300 flex items-center justify-between">
-          <span className="flex items-center gap-1.5">
-            <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />
-            <span>{error}</span>
+      {/* Mobile Tab Switcher (Visible only on small screens) */}
+      <div className="lg:hidden flex rounded-xl bg-zinc-100 dark:bg-zinc-800 p-1 border border-zinc-200 dark:border-zinc-700">
+        <button
+          onClick={() => setMobileTab("MAP")}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition ${
+            mobileTab === "MAP"
+              ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xs"
+              : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+          }`}
+        >
+          <MapIcon className="h-4 w-4" />
+          <span>{lang === "bn" ? "৩ডি ম্যাপ ভিউ" : "3D Safety Map"}</span>
+        </button>
+        <button
+          onClick={() => setMobileTab("LIST")}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition ${
+            mobileTab === "LIST"
+              ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xs"
+              : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+          }`}
+        >
+          <List className="h-4 w-4" />
+          <span>
+            {lang === "bn" ? "ঘটনা গোয়েন্দা তথ্য" : "Incident Intelligence"} ({filteredIncidents.length})
           </span>
-          <button
-            onClick={() => loadMapData(false)}
-            className="px-3 py-1 font-bold text-xs bg-red-600 text-white rounded-lg hover:bg-red-700 cursor-pointer"
-          >
-            Retry
-          </button>
-        </div>
-      )}
+        </button>
+      </div>
 
       {/* ========================================================= */}
-      {/* 4. Main Content: Map or List View */}
+      {/* 2-PANEL RESPONSIVE INTELLIGENCE DASHBOARD (Phase 2)        */}
       {/* ========================================================= */}
-      {isListView ? (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-extrabold text-zinc-900 dark:text-zinc-100">
-              {lang === "bn" ? "যাচাইকৃত ঘটনার তালিকা" : "Verified Incident List"}
-            </h2>
-            <span className="text-xs text-zinc-500 font-medium">
-              {data ? `${data.incidents.length} items` : ""}
-            </span>
-          </div>
-
-          {!data || data.incidents.length === 0 ? (
-            <div className="rounded-3xl border border-dashed border-zinc-300 dark:border-zinc-700 p-12 text-center text-xs text-zinc-500 space-y-3">
-              <p>{lang === "bn" ? "কোনো ঘটনার প্রতিবেদন খুঁজে পাওয়া যায়নি।" : "No incidents found matching the selected filters."}</p>
-              <button
-                onClick={clearAllFilters}
-                className="px-4 py-2 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 cursor-pointer"
-              >
-                {t.reset_map_filters}
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {data.incidents.map((inc) => (
-                <div
-                  key={inc.id}
-                  className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 shadow-2xs space-y-3 flex flex-col justify-between"
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className={`font-bold px-2 py-0.5 rounded-md text-[10px] ${
-                        inc.is_missing_person ? "bg-red-100 dark:bg-red-950/60 text-red-800 dark:text-red-300" : "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300"
-                      }`}>
-                        {inc.is_missing_person ? (lang === "bn" ? "নিখোঁজ ব্যক্তি" : "MISSING PERSON") : inc.category_name}
-                      </span>
-                      <span className="text-[10px] text-zinc-400">
-                        {new Date(inc.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
-
-                    <h3 className="font-extrabold text-sm text-zinc-900 dark:text-zinc-100 line-clamp-2">
-                      {inc.title}
-                    </h3>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
-                      <MapPin className="h-3 w-3 text-zinc-400 shrink-0" />
-                      <span>{inc.location_text}</span>
-                    </p>
-                    {inc.cluster_title && (
-                      <div className="text-[11px] text-amber-600 font-semibold flex items-center gap-1">
-                        <span style={{ display: "inline-block", width: "6px", height: "6px", borderRadius: "50%", background: "#ea580c" }}></span>
-                        <span>{inc.cluster_title}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 text-xs">
-                    <Link
-                      href={inc.is_missing_person && inc.missing_person_alert_id ? `/missing-person/${inc.missing_person_alert_id}` : `/reports/${inc.id}`}
-                      className="font-bold text-emerald-600 hover:text-emerald-700 dark:hover:text-emerald-400 inline-flex items-center gap-1"
-                    >
-                      <span>{t.view_incident_detail}</span>
-                      <span>→</span>
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="relative rounded-3xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-sm bg-zinc-100 dark:bg-zinc-900 h-[calc(100vh-16rem)] min-h-[460px] sm:min-h-[560px] lg:min-h-[620px]">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+        {/* ======================================================= */}
+        {/* LEFT PANEL: 3D SAFETY MAP (lg:col-span-7)               */}
+        {/* ======================================================= */}
+        <div
+          className={`lg:col-span-7 relative rounded-3xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-sm bg-zinc-100 dark:bg-zinc-900 h-[520px] sm:h-[620px] lg:h-[720px] ${
+            mobileTab === "LIST" ? "hidden lg:block" : "block"
+          }`}
+        >
           <div ref={mapContainerRef} className="w-full h-full z-10" />
 
-          {/* Map Loading Overlay */}
+          {/* Loading Indicator */}
           {loading && (
             <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xs">
               <div className="flex items-center gap-2.5 rounded-2xl bg-white dark:bg-zinc-800 px-5 py-3 shadow-lg border border-zinc-200 dark:border-zinc-700 text-xs font-bold text-zinc-800 dark:text-zinc-200">
@@ -842,13 +876,39 @@ export default function SafetyMapPage() {
             </div>
           )}
 
-          {/* ========================================================= */}
-          {/* Selected Point Responsive Bottom Sheet / Overlay Panel */}
-          {/* ========================================================= */}
-          {selectedPoint && (
-            <div className="absolute bottom-20 sm:bottom-auto sm:top-4 left-3 right-3 sm:left-auto sm:right-4 z-30 sm:max-w-sm sm:w-85 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-3xl p-4.5 border border-zinc-200 dark:border-zinc-800 shadow-2xl space-y-3 animate-in fade-in slide-in-from-bottom-3 duration-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
+          {/* Map Legend Overlay */}
+          <div className="absolute bottom-3 left-3 z-20 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md rounded-2xl p-2.5 border border-zinc-200/80 dark:border-zinc-800 text-[11px] space-y-1.5 shadow-sm pointer-events-auto">
+            <div className="font-bold text-zinc-700 dark:text-zinc-300 text-[10px] uppercase tracking-wider">
+              {lang === "bn" ? "ম্যাপ নির্দেশিকা" : "3D Map Legend"}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="h-3 w-3 rounded-full bg-emerald-600" />
+              <span className="text-zinc-600 dark:text-zinc-400">{lang === "bn" ? "যাচাইকৃত ঘটনা" : "Verified Incident"}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="h-3.5 w-3.5 rounded-full bg-amber-500 font-bold text-[9px] text-white flex items-center justify-center">3</span>
+              <span className="text-zinc-600 dark:text-zinc-400">{lang === "bn" ? "৩ডি ক্লাস্টার" : "3D Hazard Cluster"}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="h-3 w-3 rounded-full bg-red-600" />
+              <span className="text-zinc-600 dark:text-zinc-400">{lang === "bn" ? "নিখোঁজ ব্যক্তি" : "Missing Alert"}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* ======================================================= */}
+        {/* RIGHT PANEL: INCIDENT INTELLIGENCE FEED (lg:col-span-5) */}
+        {/* ======================================================= */}
+        <div
+          className={`lg:col-span-5 space-y-3.5 h-[520px] sm:h-[620px] lg:h-[720px] flex flex-col justify-between ${
+            mobileTab === "MAP" ? "hidden lg:flex" : "flex"
+          }`}
+        >
+          {/* Panel Top Card: Synchronized Incident/Cluster Spotlight */}
+          <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+            {selectedPoint ? (
+              <div className="rounded-3xl border-2 border-emerald-500/50 bg-white dark:bg-zinc-900 p-4.5 shadow-md space-y-3 animate-in fade-in duration-200">
+                <div className="flex items-center justify-between">
                   <span className={`inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${
                     "member_count" in selectedPoint
                       ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
@@ -857,162 +917,151 @@ export default function SafetyMapPage() {
                       : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
                   }`}>
                     {"member_count" in selectedPoint
-                      ? `Cluster (${selectedPoint.member_count} reports)`
+                      ? `Hazard Cluster (${selectedPoint.member_count} incidents)`
                       : "is_missing_person" in selectedPoint && selectedPoint.is_missing_person
-                      ? "Missing Person"
+                      ? "Missing Person Alert"
                       : "category_name" in selectedPoint
                       ? selectedPoint.category_name
                       : "Incident"}
                   </span>
-                  <span className="text-[9px] bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 px-1.5 py-0.5 rounded-md font-bold flex items-center gap-1">
-                    <Check className="h-2.5 w-2.5" />
-                    <span>Verified</span>
-                  </span>
+                  <button
+                    onClick={() => setSelectedPoint(null)}
+                    className="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs font-bold h-7 w-7 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
+
+                <h3 className="font-extrabold text-sm sm:text-base text-zinc-900 dark:text-zinc-100 leading-snug">
+                  {selectedPoint.title}
+                </h3>
+
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
+                  <span>{"location_text" in selectedPoint ? selectedPoint.location_text : selectedPoint.area || "Identified Region"}</span>
+                </p>
+
+                {"member_count" in selectedPoint ? (
+                  <div className="rounded-2xl bg-amber-50 dark:bg-amber-950/40 p-3 border border-amber-200 dark:border-amber-900/60 text-xs text-amber-900 dark:text-amber-200 space-y-1">
+                    <p className="font-bold flex items-center gap-1">
+                      <span>{selectedPoint.member_count} {t.cluster_reports_count}</span>
+                    </p>
+                    <p className="text-[11px] text-amber-800 dark:text-amber-300">
+                      {lang === "bn"
+                        ? "এই এলাকায় একাধিক নাগরিক রিপোর্ট অনুমোদিত হয়েছে। বিস্তারিত রিপোর্টগুলো নিচে প্রদর্শিত।"
+                        : "Multiple citizen reports have been verified in this vicinity. Member reports are shown in the feed below."}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-xs">
+                    <span className="text-[11px] text-zinc-400">
+                      {new Date(selectedPoint.created_at).toLocaleDateString()}
+                    </span>
+                    <Link
+                      href={
+                        "is_missing_person" in selectedPoint && selectedPoint.is_missing_person && selectedPoint.missing_person_alert_id
+                          ? `/missing-person/${selectedPoint.missing_person_alert_id}`
+                          : `/reports/${selectedPoint.id}`
+                      }
+                      className="inline-flex items-center gap-1 font-bold text-emerald-600 hover:text-emerald-700 dark:hover:text-emerald-400"
+                    >
+                      <span>{t.view_incident_detail}</span>
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </Link>
+                  </div>
+                )}
+              </div>
+            ) : null}
+
+            {/* List Header */}
+            <div className="flex items-center justify-between px-1">
+              <span className="text-xs font-black uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                {lang === "bn" ? "যাচাইকৃত ঘটনার তালিকা" : "Verified Incidents"} ({filteredIncidents.length})
+              </span>
+              {selectedPoint && (
                 <button
                   onClick={() => setSelectedPoint(null)}
-                  className="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs font-bold h-9 w-9 flex items-center justify-center cursor-pointer rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
-                  aria-label="Close details"
+                  className="text-[11px] text-emerald-600 font-bold hover:underline"
                 >
-                  <X className="h-4 w-4" />
+                  {lang === "bn" ? "সবগুলো দেখান" : "Show All"}
                 </button>
-              </div>
-
-              <h4 className="text-sm font-extrabold text-zinc-900 dark:text-zinc-100 line-clamp-2 leading-snug">
-                {selectedPoint.title}
-              </h4>
-
-              <div className="space-y-1 text-xs text-zinc-600 dark:text-zinc-400">
-                <p className="flex items-center gap-1.5">
-                  <MapPin className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
-                  <span className="line-clamp-1">
-                    {"location_text" in selectedPoint ? selectedPoint.location_text : selectedPoint.area || "Approximate area"}
-                  </span>
-                </p>
-                {"member_count" in selectedPoint && (
-                  <p className="text-[11px] text-zinc-500">
-                    {selectedPoint.member_count} {t.cluster_reports_count}.
-                  </p>
-                )}
-                {"cluster_title" in selectedPoint && selectedPoint.cluster_title && (
-                  <p className="text-[11px] text-amber-600 font-semibold flex items-center gap-1.5">
-                    <Link2 className="h-3 w-3 text-amber-600 shrink-0" />
-                    <span>Part of cluster: {selectedPoint.cluster_title}</span>
-                  </p>
-                )}
-              </div>
-
-              {"id" in selectedPoint && (
-                <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800">
-                  <Link
-                    href={
-                      "member_count" in selectedPoint
-                        ? `/reports?cluster_id=${selectedPoint.id}`
-                        : "is_missing_person" in selectedPoint && selectedPoint.is_missing_person && selectedPoint.missing_person_alert_id
-                        ? `/missing-person/${selectedPoint.missing_person_alert_id}`
-                        : `/reports/${selectedPoint.id}`
-                    }
-                    className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 px-4 transition shadow-xs cursor-pointer text-center"
-                  >
-                    <span>
-                      {"member_count" in selectedPoint
-                        ? lang === "bn"
-                          ? "ক্লাস্টারের রিপোর্টগুলো দেখুন"
-                          : "View cluster reports"
-                        : t.view_incident_detail}
-                    </span>
-                    <span>→</span>
-                  </Link>
-                </div>
               )}
             </div>
-          )}
 
-          {/* Location Notice Banner */}
-          {locationNotice && (
-            <div className="absolute top-4 left-4 right-4 sm:left-auto sm:right-4 z-30 max-w-sm bg-amber-50 dark:bg-amber-950/90 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 rounded-2xl p-3 text-xs shadow-xl flex items-center justify-between gap-2.5 animate-in fade-in duration-150">
-              <div className="flex items-center gap-2 min-w-0 flex-1">
-                <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
-                <span className="leading-snug break-words">{locationNotice.message}</span>
-              </div>
-              <div className="flex items-center gap-1.5 shrink-0">
-                {locationNotice.action === "app_settings" && (
-                  <button
-                    type="button"
-                    onClick={() => openNativeAppSettings()}
-                    className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-amber-600 text-white hover:bg-amber-700 active:scale-95 transition cursor-pointer"
-                  >
-                    {lang === "bn" ? "সেটিংস" : "Settings"}
-                  </button>
-                )}
-                {locationNotice.action === "location_settings" && (
-                  <button
-                    type="button"
-                    onClick={() => openNativeLocationSettings()}
-                    className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-amber-600 text-white hover:bg-amber-700 active:scale-95 transition cursor-pointer"
-                  >
-                    {lang === "bn" ? "GPS সেটিংস" : "GPS Settings"}
-                  </button>
-                )}
+            {/* Incident Cards Feed */}
+            {filteredIncidents.length === 0 ? (
+              <div className="rounded-3xl border border-dashed border-zinc-300 dark:border-zinc-700 p-8 text-center text-xs text-zinc-500 space-y-2">
+                <p>{lang === "bn" ? "কোনো ঘটনার প্রতিবেদন খুঁজে পাওয়া যায়নি।" : "No incidents found matching the selected filters."}</p>
                 <button
-                  type="button"
-                  onClick={() => setLocationNotice(null)}
-                  className="text-amber-700 dark:text-amber-300 hover:text-amber-900 dark:hover:text-amber-100 p-1 font-bold min-h-[28px] min-w-[28px] flex items-center justify-center cursor-pointer"
-                  aria-label="Dismiss notice"
+                  onClick={clearAllFilters}
+                  className="px-3.5 py-1.5 bg-emerald-600 text-white font-bold rounded-xl text-xs hover:bg-emerald-700 cursor-pointer"
                 >
-                  <X className="h-4 w-4" />
+                  {t.reset_map_filters}
                 </button>
               </div>
-            </div>
-          )}
-
-          {/* Floating Map GPS Locate Button (Positioned above mobile nav) */}
-          <button
-            onClick={handleLocateMe}
-            disabled={locating}
-            aria-label="Locate me on map"
-            className="absolute bottom-20 right-4 sm:bottom-4 sm:right-4 z-20 flex h-11 w-11 items-center justify-center rounded-2xl bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-100 shadow-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-750 active:scale-95 transition disabled:opacity-50 cursor-pointer"
-            title={lang === "bn" ? "আমার অবস্থান" : "Locate Me"}
-          >
-            {locating ? (
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-600 border-t-transparent" />
             ) : (
-              <svg className="w-5 h-5 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <circle cx="12" cy="12" r="7" />
-                <polyline points="12 1 12 5" />
-                <polyline points="12 19 12 23" />
-                <polyline points="1 12 5 12" />
-                <polyline points="19 12 23 12" />
-              </svg>
-            )}
-          </button>
+              <div className="space-y-2.5">
+                {filteredIncidents.map((inc) => {
+                  const isSelected = selectedPoint && "id" in selectedPoint && selectedPoint.id === inc.id;
+                  return (
+                    <div
+                      key={inc.id}
+                      onClick={() => highlightAndFocusIncident(inc)}
+                      className={`group rounded-2xl border p-3.5 transition cursor-pointer flex flex-col justify-between space-y-2 ${
+                        isSelected
+                          ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-xs"
+                          : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-zinc-300 dark:hover:border-zinc-700"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2 text-xs">
+                        <span className={`font-bold px-2 py-0.5 rounded-md text-[10px] ${
+                          inc.is_missing_person
+                            ? "bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300"
+                            : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+                        }`}>
+                          {inc.is_missing_person ? (lang === "bn" ? "নিখোঁজ ব্যক্তি" : "MISSING PERSON") : inc.category_name}
+                        </span>
+                        <span className="text-[10px] text-zinc-400">
+                          {new Date(inc.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
 
-          {/* Map Legend (Bottom-Left on Desktop, Clean Floating Card) */}
-          <div className="absolute bottom-20 left-4 sm:bottom-4 sm:left-4 z-20 rounded-2xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md p-3 border border-zinc-200 dark:border-zinc-800 shadow-md text-[11px] space-y-1.5 hidden sm:block">
-            <div className="font-extrabold text-zinc-800 dark:text-zinc-200 uppercase text-[9px] tracking-wider">
-              {lang === "bn" ? "ম্যাপ নির্দেশিকা" : "Map Legend"}
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="h-3 w-3 rounded-full bg-emerald-600 inline-block border border-white shadow-2xs" />
-              <span className="text-zinc-700 dark:text-zinc-300">{lang === "bn" ? "যাচাইকৃত রিপোর্ট" : "Verified Report"}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="h-3 w-3 rounded-full bg-amber-500 inline-block border border-white shadow-2xs" />
-              <span className="text-zinc-700 dark:text-zinc-300">{lang === "bn" ? "ক্লাস্টার সদস্য রিপোর্ট" : "Related Cluster Member"}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="h-3.5 w-3.5 rounded-full bg-orange-600 inline-flex items-center justify-center border border-white shadow-2xs text-[8px] text-white font-black">
-                #
+                      <h4 className="font-extrabold text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 line-clamp-2 leading-tight group-hover:text-emerald-600 transition">
+                        {inc.title}
+                      </h4>
+
+                      <div className="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400 pt-1">
+                        <span className="line-clamp-1 text-[11px] flex items-center gap-1">
+                          <MapPin className="h-3 w-3 shrink-0 text-zinc-400" />
+                          <span>{inc.location_text}</span>
+                        </span>
+                        <ChevronRight className="h-3.5 w-3.5 text-zinc-400 shrink-0 group-hover:translate-x-0.5 transition" />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Area Safety Grounded Intelligence Summary */}
+          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/80 p-3.5 space-y-2 shrink-0">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-zinc-700 dark:text-zinc-300">
+                {lang === "bn" ? "এলাকা সুরক্ষা পর্যবেক্ষণ" : "Area Safety Summary"}
               </span>
-              <span className="text-zinc-700 dark:text-zinc-300">{lang === "bn" ? "ঘটনা ক্লাস্টার এলাকা" : "Incident Cluster Area"}</span>
+              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full">
+                {data ? `${data.total_incidents} Reports Verified` : "Syncing"}
+              </span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="h-3 w-3 rounded-full bg-red-600 inline-block border border-white shadow-2xs" />
-              <span className="text-zinc-700 dark:text-zinc-300">{lang === "bn" ? "নিখোঁজ ব্যক্তি সতর্কতা" : "Missing Person Alert"}</span>
-            </div>
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-snug">
+              {lang === "bn"
+                ? "রিপোর্ট না থাকা মানেই এলাকাটি সম্পূর্ণ নিরাপদ নয়। সমস্ত উপাত্ত প্ল্যাটফর্মের নিরীক্ষিত তথ্যের ওপর ভিত্তি করে প্রদর্শিত।"
+                : "No reported incidents does not prove an area is hazard-free. Density is strictly calculated from moderation-reviewed civic submissions."}
+            </p>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
