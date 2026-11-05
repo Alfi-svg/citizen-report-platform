@@ -172,6 +172,18 @@ export default function Navbar() {
 
   return (
     <>
+      {/* ========================================================= */}
+      {/* Official Buildathon Banner Bar (Desktop, Tablet & Mobile)  */}
+      {/* ========================================================= */}
+      <div className="bg-gradient-to-r from-emerald-950 via-zinc-950 to-emerald-950 text-white text-[11px] sm:text-xs py-1.5 px-3 sm:px-6 border-b border-emerald-500/25 flex items-center justify-center select-none">
+        <div className="mx-auto max-w-7xl flex items-center justify-center gap-2 w-full text-center font-medium">
+          <Shield className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+          <span className="font-semibold tracking-wide text-emerald-200">
+            Built For Ostad Presents YUNet AIgnite Buildathon 2026
+          </span>
+        </div>
+      </div>
+
       <header className="sticky top-0 z-40 border-b border-slate-200/70 dark:border-zinc-800/70 glass-nav transition-colors pt-safe">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-3 sm:px-6 lg:px-8 h-14 sm:h-16">
           {/* ========================================================= */}
@@ -515,6 +527,14 @@ export default function Navbar() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
+              </div>
+
+              {/* Official Buildathon Identity Badge (Mobile Drawer) */}
+              <div className="mx-4 mt-3 mb-1 p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-600/30 text-center">
+                <p className="text-[11px] font-bold text-emerald-900 dark:text-emerald-200 flex items-center justify-center gap-1.5 leading-snug">
+                  <Shield className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span>Built For Ostad Presents YUNet AIgnite Buildathon 2026</span>
+                </p>
               </div>
 
               {/* Grouped Drawer Links */}

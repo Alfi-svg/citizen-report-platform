@@ -33,6 +33,8 @@ from app.services.road_safety import (
     is_road_incident,
     BD_ACCIDENT_PRONE_CORRIDORS,
 )
+from app.core.config import settings
+from app.services.agentic_road_ai import AgenticRoadAI
 
 
 def _interpolate_waypoints(
@@ -516,6 +518,21 @@ async def analyze_safe_route(
             1,
         )
 
+    # 11. Agentic AI Route Planning & Optimization
+    agentic_ai = AgenticRoadAI(
+        safety_weight=settings.AGENTIC_SAFETY_WEIGHT,
+        time_weight=settings.AGENTIC_TIME_WEIGHT,
+    )
+    agentic_rec = await agentic_ai.plan_agentic_route(
+        db=db,
+        request=request,
+        candidate_reports=candidate_reports,
+        candidate_zones=candidate_zones,
+        primary_waypoints=sampled_points,
+        primary_distance_km=dist_km or 5.0,
+        primary_duration_minutes=dur_min or 15.0,
+    )
+
     return SafeRouteAnalysisResponse(
         origin_name=orig_name,
         destination_name=dest_name,
@@ -533,6 +550,7 @@ async def analyze_safe_route(
         high_risk_corridors_crossed=corridors_crossed,
         accident_zones_along_route=accident_zones_along_route,
         route_alternatives=route_alternatives,
+        agentic_recommendation=agentic_rec,
         vehicle_type=vehicle_type,
         safety_verification_status=verification_status,
         road_ai_guidance=road_ai_guidance,

@@ -106,7 +106,23 @@ class HelmetDetectionService:
             if cv2.boundingRect(c)[2] >= 20 and cv2.boundingRect(c)[3] >= 20
         ]
 
-        if not has_haar_face and len(detected_boxes) < 2:
+        # Determine whether a person silhouette / face is genuinely present
+        person_detected = has_haar_face
+        aligned_boxes = []
+
+        if not has_haar_face:
+            if len(detected_boxes) >= 2:
+                torso = max(detected_boxes, key=lambda b: b[2] * b[3])
+                # A valid human torso contour must have significant size in frame (width >= 50, height >= 60, area >= 4000)
+                if torso[2] >= 50 and torso[3] >= 60 and (torso[2] * torso[3]) >= 4000:
+                    torso_cx = torso[0] + torso[2] / 2.0
+                    aligned_boxes = [b for b in detected_boxes if abs((b[0] + b[2]/2.0) - torso_cx) < 50]
+                    aligned_boxes.sort(key=lambda b: b[1])
+                    # Person requires torso + cranial/head feature vertically aligned
+                    if len(aligned_boxes) >= 2:
+                        person_detected = True
+
+        if not person_detected:
             return {
                 "status": "PERSON_NOT_DETECTED",
                 "is_verified": False,
@@ -158,11 +174,6 @@ class HelmetDetectionService:
                                 break
         else:
             # Fallback for synthetic / non-photographic structural contour stack
-            torso = max(detected_boxes, key=lambda b: b[2] * b[3])
-            torso_cx = torso[0] + torso[2] / 2.0
-            aligned_boxes = [b for b in detected_boxes if abs((b[0] + b[2]/2.0) - torso_cx) < 50]
-            aligned_boxes.sort(key=lambda b: b[1])
-
             if len(aligned_boxes) >= 3:
                 b_top, b_mid = aligned_boxes[0], aligned_boxes[1]
                 if b_top[1] + b_top[3] <= b_mid[1] + 20:
@@ -178,6 +189,15 @@ class HelmetDetectionService:
                         )
                     )
             elif len(aligned_boxes) >= 1:
+                bounding_boxes.append(
+                    BoundingBox(
+                        x=aligned_boxes[0][0],
+                        y=aligned_boxes[0][1],
+                        width=aligned_boxes[0][2],
+                        height=aligned_boxes[0][3],
+                        label="person",
+                    )
+                )
                 bounding_boxes.append(
                     BoundingBox(
                         x=aligned_boxes[0][0],

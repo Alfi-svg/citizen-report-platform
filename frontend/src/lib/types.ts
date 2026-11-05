@@ -1900,6 +1900,7 @@ export interface SafeRouteAnalysisRequest {
   route_duration_minutes?: number | null;
   vehicle_type?: "MOTORCYCLE" | "CAR" | string;
   safety_confirmed?: boolean;
+  preference?: "RECOMMENDED" | "FASTEST" | "SAFEST" | string;
   alternative_geometries?: Array<{
     distance_km: number;
     duration_minutes: number;
@@ -1925,6 +1926,7 @@ export interface SafeRouteAnalysisResponse {
   high_risk_corridors_crossed: RoadSafetyHotspotItem[];
   accident_zones_along_route?: AccidentZoneItem[];
   route_alternatives?: RouteAlternativeComparison[];
+  agentic_recommendation?: AgenticRouteRecommendation | null;
   vehicle_type?: string | null;
   safety_verification_status?: "VERIFIED" | "PENDING_CONFIRMATION" | string | null;
   road_ai_guidance?: string | null;
@@ -1933,6 +1935,36 @@ export interface SafeRouteAnalysisResponse {
   data_limitations: string;
   emergency_notice: string;
   disclaimer: string;
+}
+
+export interface AgenticRouteCandidate {
+  route_id: string;
+  label: string;
+  distance_km: number;
+  duration_minutes: number;
+  risk_level: RoadSafetyRiskLevel;
+  risk_score: number;
+  risk_confidence: string;
+  accident_zones_count: number;
+  hazards_count: number;
+  is_recommended: boolean;
+  is_fastest: boolean;
+  is_safest: boolean;
+  tradeoff_rationale: string;
+  tradeoff_score?: number;
+  waypoints?: number[][];
+  summary_road_names?: string | null;
+}
+
+export interface AgenticRouteRecommendation {
+  recommended_route_id: string;
+  primary_reason: string;
+  time_vs_safety_tradeoff: string;
+  fastest_route_id: string;
+  safest_route_id: string;
+  candidates: AgenticRouteCandidate[];
+  confidence_assessment: string;
+  data_freshness_label: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -1969,6 +2001,12 @@ export interface HospitalSummary {
   verification_status: "VERIFIED" | "UNVERIFIED" | string;
   has_blood_bank: boolean;
   distance_km?: number | null;
+  road_distance_km?: number | null;
+  estimated_travel_minutes?: number | null;
+  distance_type?: "ROAD" | "STRAIGHT_LINE" | "UNAVAILABLE" | string;
+  hospital_type?: string;
+  emergency_department?: string;
+  google_maps_url?: string | null;
   matching_inventory?: BloodInventoryItem | null;
   available_groups: string[];
   all_inventories: BloodInventoryItem[];

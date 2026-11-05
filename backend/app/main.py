@@ -43,6 +43,30 @@ async def lifespan(app: FastAPI):
             except Exception:
                 pass
         logger.info("Database schema synchronized on startup.")
+
+        # Ensure verified hospital network and ARI BUET accident zones are seeded if empty
+        try:
+            from sqlalchemy import select, func
+            from app.db.session import async_session_factory
+            from app.models.hospital import Hospital
+            from app.db.seed_hospitals import seed_hospitals_and_inventory
+            from app.models.accident_zone import AccidentZone
+            from app.db.seed_accident_zones import seed_accident_zones
+
+            async with async_session_factory() as session:
+                hosp_count_res = await session.execute(select(func.count(Hospital.id)))
+                hosp_count = hosp_count_res.scalar() or 0
+                if hosp_count == 0:
+                    logger.info("Empty hospitals table detected; seeding verified hospital network...")
+                    await seed_hospitals_and_inventory(session)
+
+                az_count_res = await session.execute(select(func.count(AccidentZone.id)))
+                az_count = az_count_res.scalar() or 0
+                if az_count == 0:
+                    logger.info("Empty accident zones table detected; seeding ARI BUET blackspots...")
+                    await seed_accident_zones(session)
+        except Exception as seed_err:
+            logger.warning(f"Startup initial seed notice: {seed_err}")
     except Exception as e:
         logger.warning(f"Startup schema sync notice: {e}")
 

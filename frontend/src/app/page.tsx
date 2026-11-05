@@ -90,6 +90,16 @@ export default function HomePage() {
 
         {/* Hero Content */}
         <div className="relative z-10 mx-auto max-w-5xl px-4 py-12 sm:py-20 text-center space-y-6">
+          {/* Official Buildathon Sticker */}
+          <div>
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold bg-gradient-to-r from-emerald-600/30 via-emerald-500/20 to-teal-600/30 text-emerald-200 border border-emerald-400/40 shadow-sm backdrop-blur-xs">
+              <Shield className="h-4 w-4 text-emerald-400 shrink-0" />
+              <span className="tracking-wide">
+                Built For Ostad Presents YUNet AIgnite Buildathon 2026
+              </span>
+            </div>
+          </div>
+
           {/* Trust Pill */}
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 backdrop-blur-xs">
             <ShieldCheck className="h-4 w-4 text-emerald-400" />

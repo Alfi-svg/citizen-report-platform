@@ -40,6 +40,12 @@ class HospitalSummary(BaseModel):
     verification_status: str = "VERIFIED"
     has_blood_bank: bool = True
     distance_km: Optional[float] = None
+    road_distance_km: Optional[float] = None
+    estimated_travel_minutes: Optional[float] = None
+    distance_type: Optional[str] = "STRAIGHT_LINE"  # "ROAD" | "STRAIGHT_LINE" | "UNAVAILABLE"
+    hospital_type: Optional[str] = "General / Specialized Hospital"
+    emergency_department: Optional[str] = "24/7 Emergency & Trauma"
+    google_maps_url: Optional[str] = None
     matching_inventory: Optional[BloodInventoryItem] = None
     available_groups: List[str] = []
     all_inventories: List[BloodInventoryItem] = []

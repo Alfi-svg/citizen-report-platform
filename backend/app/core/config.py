@@ -73,6 +73,15 @@ class Settings(BaseSettings):
     AI_REQUEST_TIMEOUT_SECONDS: float = 12.0
     AI_FALLBACK_DETERMINISTIC: bool = True
 
+    # Routing & Mapping Providers
+    OSRM_BASE_URL: str = "https://router.project-osrm.org"
+    GOOGLE_MAPS_API_KEY: Optional[str] = None
+    GOOGLE_PLACES_API_KEY: Optional[str] = None
+
+    # Agentic Safety Road AI Tradeoff Weights
+    AGENTIC_SAFETY_WEIGHT: float = 0.6
+    AGENTIC_TIME_WEIGHT: float = 0.4
+
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
     def assemble_database_url(cls, v: str) -> str:

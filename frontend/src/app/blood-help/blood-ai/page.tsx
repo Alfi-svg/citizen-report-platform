@@ -11,6 +11,7 @@ import {
 } from "@/lib/types";
 import { Language } from "@/lib/i18n";
 import HospitalResultCard from "@/components/HospitalResultCard";
+import HospitalDetailModal from "@/components/HospitalDetailModal";
 import {
   Bot,
   Send,
@@ -103,6 +104,8 @@ export default function BloodAIPage() {
   const [hospitals, setHospitals] = useState<HospitalSummary[]>([]);
   const [loadingHospitals, setLoadingHospitals] = useState(false);
   const [hospitalError, setHospitalError] = useState<string | null>(null);
+  const [selectedHospitalForModal, setSelectedHospitalForModal] = useState<HospitalSummary | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   // Chat conversation state
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -720,11 +723,27 @@ export default function BloodAIPage() {
                   hospital={h}
                   selectedBloodGroup={selectedBloodGroup !== "ALL" ? selectedBloodGroup : null}
                   lang={lang}
+                  onSelectHospital={(hosp) => {
+                    setSelectedHospitalForModal(hosp);
+                    setIsDetailModalOpen(true);
+                  }}
                 />
               ))}
           </div>
         </div>
       </main>
+
+      {/* Hospital Detail Modal */}
+      <HospitalDetailModal
+        hospital={selectedHospitalForModal}
+        isOpen={isDetailModalOpen}
+        onClose={() => {
+          setIsDetailModalOpen(false);
+          setSelectedHospitalForModal(null);
+        }}
+        lang={lang}
+        userCoords={userCoords}
+      />
     </div>
   );
 }

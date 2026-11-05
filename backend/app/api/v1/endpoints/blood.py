@@ -803,6 +803,7 @@ async def get_nearby_hospitals_endpoint(
     blood_group: Optional[str] = Query(None, description="Filter/prioritize by blood group (e.g. O+, B+)"),
     q: Optional[str] = Query(None, description="Text search by hospital name, area, or address"),
     verified_only: bool = Query(False, description="Filter only verified hospitals"),
+    sort_by: Optional[str] = Query("distance", description="Sort by: distance, travel_time, stock, or verified"),
     limit: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
 ):
@@ -815,6 +816,7 @@ async def get_nearby_hospitals_endpoint(
         blood_group=blood_group,
         query=q,
         verified_only=verified_only,
+        sort_by=sort_by,
         limit=limit,
     )
     return HospitalListResponse(items=items, total=len(items))
@@ -849,9 +851,16 @@ async def search_hospitals_endpoint(
 )
 async def get_hospital_details_endpoint(
     hospital_id: uuid.UUID,
+    lat: Optional[float] = Query(None, description="User latitude for distance calculation"),
+    lng: Optional[float] = Query(None, description="User longitude for distance calculation"),
     db: AsyncSession = Depends(get_db),
 ):
-    res = await hospital_service.get_hospital_details(db=db, hospital_id=hospital_id)
+    res = await hospital_service.get_hospital_details(
+        db=db,
+        hospital_id=hospital_id,
+        user_lat=lat,
+        user_lng=lng,
+    )
     if not res:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

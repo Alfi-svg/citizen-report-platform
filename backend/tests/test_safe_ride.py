@@ -34,6 +34,14 @@ def _create_synthetic_image(mode: str) -> str:
         cv2.ellipse(img, (200, 150), (45, 55), 0, 0, 360, (120, 160, 210), -1)
         # Helmet located in lower right quadrant (held in hand)
         cv2.ellipse(img, (340, 310), (40, 38), 0, 0, 360, (0, 215, 255), -1)
+    elif mode == "person_without_helmet":
+        img = np.ones((400, 400, 3), dtype=np.uint8) * 230
+        # Torso and head/face only - no helmet anywhere in frame
+        cv2.rectangle(img, (100, 220), (300, 390), (40, 40, 180), -1)
+        cv2.ellipse(img, (200, 150), (45, 55), 0, 0, 360, (120, 160, 210), -1)
+    elif mode == "solid_white_empty":
+        # Blank canvas without any human silhouette or face
+        img = np.ones((400, 400, 3), dtype=np.uint8) * 200
     else:
         img = np.ones((400, 400, 3), dtype=np.uint8) * 128
 
@@ -191,3 +199,35 @@ async def test_verification_token_expiration(async_client: AsyncClient):
     )
     assert res.status_code == 400
     assert "expired" in res.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_verify_helmet_person_detected_without_helmet(async_client: AsyncClient):
+    img_b64 = _create_synthetic_image("person_without_helmet")
+    res = await async_client.post(
+        "/api/v1/safety/safe-ride/verify-helmet",
+        json={"image_base64": img_b64}
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "HELMET_NOT_DETECTED"
+    assert data["is_verified"] is False
+    assert data["person_detected"] is True
+    assert data["helmet_detected"] is False
+    assert data["verification_token"] is None
+
+
+@pytest.mark.asyncio
+async def test_verify_helmet_solid_white_empty_frame(async_client: AsyncClient):
+    img_b64 = _create_synthetic_image("solid_white_empty")
+    res = await async_client.post(
+        "/api/v1/safety/safe-ride/verify-helmet",
+        json={"image_base64": img_b64}
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "PERSON_NOT_DETECTED"
+    assert data["is_verified"] is False
+    assert data["person_detected"] is False
+    assert data["verification_token"] is None
+

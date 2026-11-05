@@ -1,18 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { HospitalSummary, BloodInventoryItem } from "@/lib/types";
 import {
   Phone,
   MapPin,
   ShieldCheck,
   ShieldAlert,
-  ChevronDown,
-  ChevronUp,
   Clock,
   Navigation,
   Droplet,
   ExternalLink,
+  Info,
 } from "lucide-react";
 
 interface HospitalResultCardProps {
@@ -28,12 +27,11 @@ export default function HospitalResultCard({
   lang = "en",
   onSelectHospital,
 }: HospitalResultCardProps) {
-  const [showAllGroups, setShowAllGroups] = useState(false);
   const isBn = lang === "bn";
 
   const isVerified = hospital.verification_status === "VERIFIED";
 
-  // Safe standard date formatting (pure during render)
+  // Safe date formatting
   const formatTime = (ts?: string | null) => {
     if (!ts) return isBn ? "যাচাই প্রক্রিয়াধীন" : "Pending update";
     try {
@@ -56,38 +54,42 @@ export default function HospitalResultCard({
           bg: "bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300",
           dot: "bg-emerald-500",
           text: isBn ? `${units} ব্যাগ উপলব্ধ (Available)` : `${units} Units Available`,
+          chip: "bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
         };
       case "LOW_STOCK":
         return {
           bg: "bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300",
           dot: "bg-amber-500",
           text: isBn ? `সীমিত স্টক (${units} ব্যাগ)` : `Low Stock (${units} Units)`,
+          chip: "bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800",
         };
       case "OUT_OF_STOCK":
         return {
           bg: "bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300",
           dot: "bg-rose-500",
-          text: isBn ? "স্টক খালি (Out of Stock)" : "Out of Stock",
+          text: isBn ? "স্টক খালি" : "Out of Stock",
+          chip: "bg-rose-100 dark:bg-rose-900/60 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-800",
         };
       default:
         return {
           bg: "bg-zinc-100 dark:bg-zinc-800/80 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300",
           dot: "bg-zinc-400",
-          text: isBn ? "অনিশ্চিত স্টক (Unknown)" : "Unknown Stock",
+          text: isBn ? "স্টক তথ্য অনুপলব্ধ" : "Stock Unavailable",
+          chip: "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700",
         };
     }
   };
 
-  const mapUrl = hospital.latitude && hospital.longitude
+  const mapUrl = hospital.google_maps_url || (hospital.latitude && hospital.longitude
     ? `https://www.google.com/maps/search/?api=1&query=${hospital.latitude},${hospital.longitude}`
-    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${hospital.name}, ${hospital.address}`)}`;
+    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${hospital.name}, ${hospital.address}`)}`);
 
   const hasPhone = Boolean(hospital.emergency_phone && hospital.emergency_phone.trim() !== "");
 
   return (
     <div
       onClick={() => onSelectHospital?.(hospital)}
-      className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 sm:p-5 shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition space-y-3.5"
+      className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 sm:p-5 shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition space-y-3.5 cursor-pointer"
     >
       {/* Top Header */}
       <div className="flex items-start justify-between gap-3">
@@ -117,7 +119,24 @@ export default function HospitalResultCard({
           )}
         </div>
 
-        {hospital.distance_km !== null && hospital.distance_km !== undefined && (
+        {/* Distance Badge */}
+        {hospital.distance_type === "ROAD" && hospital.road_distance_km !== null ? (
+          <div className="px-2.5 py-1 rounded-xl bg-sky-50 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-800 text-right shrink-0">
+            <div className="flex items-baseline justify-end gap-0.5">
+              <span className="text-xs font-black text-sky-700 dark:text-sky-300">
+                {hospital.road_distance_km}
+              </span>
+              <span className="text-[10px] text-sky-600 dark:text-sky-400 font-bold">
+                {isBn ? "কিমি (সড়ক)" : "km (road)"}
+              </span>
+            </div>
+            {hospital.estimated_travel_minutes && (
+              <p className="text-[10px] text-zinc-500 font-medium">
+                ~{hospital.estimated_travel_minutes} {isBn ? "মিনিট ড্রাইভ" : "mins drive"}
+              </p>
+            )}
+          </div>
+        ) : hospital.distance_km !== null && hospital.distance_km !== undefined ? (
           <div className="px-2.5 py-1 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 text-right shrink-0">
             <span className="text-xs font-black text-zinc-900 dark:text-zinc-100">
               {hospital.distance_km}
@@ -125,21 +144,30 @@ export default function HospitalResultCard({
             <span className="text-[10px] text-zinc-500 font-bold ml-0.5">
               {isBn ? "কিমি" : "km"}
             </span>
+            <p className="text-[9px] text-zinc-400">
+              {isBn ? "রৈখিক দূরত্ব" : "straight-line"}
+            </p>
+          </div>
+        ) : (
+          <div className="px-2 py-1 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/60 text-right shrink-0">
+            <span className="text-[10px] text-zinc-500 font-bold">
+              {isBn ? "দূরত্ব অনুপলব্ধ" : "Distance N/A"}
+            </span>
           </div>
         )}
       </div>
 
       {/* Address & Location */}
       <div className="flex items-start gap-1.5 text-xs text-zinc-600 dark:text-zinc-400">
-        <MapPin className="h-3.5 w-3.5 text-zinc-400 shrink-0 mt-0.5" />
-        <span className="line-clamp-2">
-          {isBn && hospital.address_bn ? hospital.address_bn : hospital.address}
+        <MapPin className="h-3.5 w-3.5 shrink-0 mt-0.5 text-zinc-400" />
+        <span className="line-clamp-1">
+          {isBn && hospital.address_bn ? hospital.address_bn : hospital.address} ({hospital.area}, {hospital.district})
         </span>
       </div>
 
-      {/* Matching Blood Inventory Banner */}
+      {/* Matching Blood Inventory Highlight */}
       {hospital.matching_inventory && (
-        <div className="p-2.5 rounded-xl border bg-zinc-50 dark:bg-zinc-900/60 flex items-center justify-between gap-2">
+        <div className="p-2.5 rounded-xl border bg-rose-50/50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <span className="h-7 w-7 rounded-lg bg-rose-600 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-2xs">
               {hospital.matching_inventory.blood_group}
@@ -150,101 +178,79 @@ export default function HospitalResultCard({
                 <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
                   {getStatusBadge(hospital.matching_inventory.availability_status, hospital.matching_inventory.available_units).text}
                 </span>
-                {hospital.matching_inventory.is_baseline_demo !== false ? (
+                {hospital.matching_inventory.is_verified ? (
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900">
+                    {isBn ? "স্টাফ যাচাইকৃত" : "Staff Verified"}
+                  </span>
+                ) : (
                   <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-900">
                     {isBn ? "বেসলাইন ডেমো স্টক" : "Baseline Demo Stock"}
                   </span>
-                ) : (
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900">
-                    {isBn ? "হাসপাতাল স্টাফ যাচাইকৃত" : "Staff Verified"}
-                  </span>
                 )}
               </div>
-              <p className="text-[10px] text-zinc-500 flex items-center gap-1">
-                <Clock className="h-2.5 w-2.5" />
-                <span>
-                  {hospital.matching_inventory.last_staff_update
-                    ? `${isBn ? "স্টাফ আপডেট:" : "Staff Updated:"} ${formatTime(hospital.matching_inventory.last_staff_update)}`
-                    : (isBn ? "প্রাথমিক বেসলাইন ডেটা (ফোনে নিশ্চিত করুন)" : "Baseline demo estimate (Confirm by phone)")}
-                </span>
-              </p>
             </div>
           </div>
 
           <span className="text-[10px] font-semibold text-zinc-500 hidden sm:inline">
-            {isBn ? "ফোনে নিশ্চিত করুন" : "Confirm by phone"}
+            {isBn ? "সরাসরি নিশ্চিত করুন" : "Confirm with hospital"}
           </span>
         </div>
       )}
 
-      {/* Quick Available Groups Overview */}
-      {hospital.available_groups && hospital.available_groups.length > 0 && (
-        <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
-          <span className="text-zinc-500 font-semibold">{isBn ? "মজুদ গ্রুপ:" : "In Stock:"}</span>
-          {hospital.available_groups.map((bg) => (
-            <span
-              key={bg}
-              className={`px-1.5 py-0.5 rounded-md font-extrabold text-[11px] ${
-                selectedBloodGroup && selectedBloodGroup.toUpperCase() === bg.toUpperCase()
-                  ? "bg-rose-600 text-white ring-2 ring-rose-400"
-                  : "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900"
-              }`}
-            >
-              {bg}
+      {/* Blood Groups Grid (Overview of All 8 Groups) */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between text-[11px] text-zinc-500">
+          <span className="font-bold flex items-center gap-1">
+            <Droplet className="h-3 w-3 text-rose-500" />
+            <span>{isBn ? "রক্তের গ্রুপ স্টক সারসংক্ষেপ:" : "Blood Stock Inventory:"}</span>
+          </span>
+          {hospital.last_inventory_update && (
+            <span className="text-[10px] flex items-center gap-1">
+              <Clock className="h-2.5 w-2.5" />
+              <span>{formatTime(hospital.last_inventory_update)}</span>
             </span>
-          ))}
+          )}
         </div>
-      )}
 
-      {/* Expandable Full Inventory Drawer */}
-      {showAllGroups && (
-        <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
-          <div className="rounded-xl bg-amber-50/70 dark:bg-amber-950/30 p-2.5 border border-amber-200 dark:border-amber-900 text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
-            {isBn
-              ? "বিজ্ঞপ্তি: প্রদর্শিত পরিমাণগুলো ডেমো ও প্রাথমিক বেসলাইন স্টক। জরুরি প্রয়োজনের পূর্বে সরাসরি সংশ্লিষ্ট হাসপাতালের ব্লাড ব্যাংকে কল করে রিয়েল-টাইম স্টক নিশ্চিত করুন।"
-              : "Disclosure: Listed quantities represent baseline demo inventory. Contact the hospital blood bank directly to verify live availability before proceeding."}
-          </div>
-          <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">
-            {isBn ? "সকল গ্রুপের স্টক বিস্তারিত:" : "All Blood Group Inventories:"}
-          </p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {hospital.all_inventories.map((inv: BloodInventoryItem) => {
-              const badge = getStatusBadge(inv.availability_status, inv.available_units);
-              return (
-                <div
-                  key={inv.blood_group}
-                  className={`p-2 rounded-xl border ${badge.bg} flex flex-col justify-between text-xs`}
-                >
-                  <div className="flex items-center justify-between font-black">
-                    <span>{inv.blood_group}</span>
-                    <span className="text-[10px] opacity-80">{inv.available_units} u</span>
-                  </div>
-                  <span className="text-[10px] font-medium truncate mt-0.5">
-                    {inv.is_baseline_demo !== false ? (isBn ? "ডেমো স্টক" : "Demo Stock") : (isBn ? "স্টাফ যাচাইকৃত" : "Staff Verified")}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+        {/* 8 Blood Groups Pill Grid */}
+        <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5">
+          {hospital.all_inventories.map((inv: BloodInventoryItem) => {
+            const isMatch = selectedBloodGroup && selectedBloodGroup.toUpperCase() === inv.blood_group.toUpperCase();
+            const badge = getStatusBadge(inv.availability_status, inv.available_units);
+            return (
+              <div
+                key={inv.blood_group}
+                className={`p-1.5 rounded-xl border text-center transition flex flex-col justify-between ${
+                  isMatch ? "ring-2 ring-rose-500 border-rose-300 dark:border-rose-700 bg-rose-50/70 dark:bg-rose-950/50" : badge.bg
+                }`}
+              >
+                <span className="text-xs font-black text-zinc-900 dark:text-zinc-100">
+                  {inv.blood_group}
+                </span>
+                <span className="text-[10px] font-extrabold mt-0.5">
+                  {inv.availability_status === "UNKNOWN"
+                    ? (isBn ? "অনুপলব্ধ" : "N/A")
+                    : `${inv.available_units} u`}
+                </span>
+              </div>
+            );
+          })}
         </div>
-      )}
+      </div>
 
-      {/* Actions Bar */}
-      <div className="pt-2.5 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between gap-2">
+      {/* Action Buttons Bar */}
+      <div className="pt-2.5 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
         <button
           type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowAllGroups(!showAllGroups);
-          }}
-          className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 inline-flex items-center gap-1 cursor-pointer"
+          onClick={() => onSelectHospital?.(hospital)}
+          className="text-xs font-bold text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 inline-flex items-center gap-1 cursor-pointer"
         >
-          <span>{showAllGroups ? (isBn ? "সংক্ষেপ" : "Hide Inventory") : (isBn ? "সকল গ্রুপ" : "All Groups")}</span>
-          {showAllGroups ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+          <Info className="h-3.5 w-3.5" />
+          <span>{isBn ? "বিস্তারিত ও স্টক দেখুন" : "View Details & Stock"}</span>
         </button>
 
-        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-          {/* Map Link */}
+        <div className="flex items-center gap-2">
+          {/* Map Directions Link */}
           <a
             href={mapUrl}
             target="_blank"
@@ -252,18 +258,18 @@ export default function HospitalResultCard({
             className="px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 text-xs font-bold transition inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
           >
             <Navigation className="h-3.5 w-3.5 text-zinc-600 dark:text-zinc-400" />
-            <span className="hidden sm:inline">{isBn ? "ম্যাপ দেখুন" : "View Map"}</span>
+            <span className="hidden sm:inline">{isBn ? "ম্যাপ" : "Directions"}</span>
             <ExternalLink className="h-3 w-3 opacity-60 sm:hidden" />
           </a>
 
-          {/* Call Hospital */}
+          {/* Direct Phone Call */}
           {hasPhone ? (
             <a
               href={`tel:${hospital.emergency_phone}`}
               className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold transition inline-flex items-center gap-1.5 shadow-2xs"
             >
               <Phone className="h-3.5 w-3.5" />
-              <span>{isBn ? "কল করুন" : "Call Hospital"}</span>
+              <span>{isBn ? "কল করুন" : "Call"}</span>
             </a>
           ) : (
             <button
@@ -272,7 +278,7 @@ export default function HospitalResultCard({
               className="px-3 py-1.5 rounded-xl bg-zinc-200 dark:bg-zinc-800 text-zinc-400 text-xs font-bold cursor-not-allowed inline-flex items-center gap-1"
             >
               <Phone className="h-3.5 w-3.5 opacity-50" />
-              <span>{isBn ? "নম্বর অনুপলব্ধ" : "No Phone"}</span>
+              <span>{isBn ? "নম্বর নেই" : "No Phone"}</span>
             </button>
           )}
         </div>

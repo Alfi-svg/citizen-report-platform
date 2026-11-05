@@ -968,6 +968,36 @@ class RouteAlternativeComparison(BaseModel):
     recommendation_summary: str
 
 
+class AgenticRouteCandidate(BaseModel):
+    route_id: str  # "route_0", "route_1", etc.
+    label: str  # "AI Recommended Route", "Fastest Route", "Safest Route"
+    distance_km: float
+    duration_minutes: float
+    risk_level: RoadSafetyRiskLevel
+    risk_score: float  # 0 to 100
+    risk_confidence: str = "HIGH"  # "HIGH", "MODERATE", "LOW", "UNKNOWN"
+    accident_zones_count: int
+    hazards_count: int
+    is_recommended: bool = False
+    is_fastest: bool = False
+    is_safest: bool = False
+    tradeoff_rationale: str
+    tradeoff_score: float = 0.0
+    waypoints: List[List[float]] = Field(default_factory=list)
+    summary_road_names: Optional[str] = None
+
+
+class AgenticRouteRecommendation(BaseModel):
+    recommended_route_id: str
+    primary_reason: str
+    time_vs_safety_tradeoff: str
+    fastest_route_id: str
+    safest_route_id: str
+    candidates: List[AgenticRouteCandidate] = Field(default_factory=list)
+    confidence_assessment: str = "High confidence grounded in official ARI BUET and verified community reports"
+    data_freshness_label: str = "Real-time & Verified Records"
+
+
 class SafeRouteAnalysisRequest(BaseModel):
     origin_latitude: float = Field(..., ge=-90.0, le=90.0, description="Origin latitude")
     origin_longitude: float = Field(..., ge=-180.0, le=180.0, description="Origin longitude")
@@ -983,6 +1013,7 @@ class SafeRouteAnalysisRequest(BaseModel):
     route_duration_minutes: Optional[float] = Field(None, ge=0.0, le=10000.0)
     vehicle_type: Optional[str] = Field("MOTORCYCLE", description="MOTORCYCLE or CAR")
     safety_confirmed: Optional[bool] = Field(False, description="Helmet or seatbelt safety confirmation")
+    preference: Optional[str] = Field("RECOMMENDED", description="RECOMMENDED, FASTEST, or SAFEST")
     alternative_geometries: Optional[List[Dict[str, Any]]] = Field(
         None,
         description="List of alternative routes geometry and metrics from OSRM",
@@ -1007,6 +1038,7 @@ class SafeRouteAnalysisResponse(BaseModel):
     high_risk_corridors_crossed: List[RoadSafetyHotspotItem] = Field(default_factory=list)
     accident_zones_along_route: List[AccidentZoneItem] = Field(default_factory=list)
     route_alternatives: List[RouteAlternativeComparison] = Field(default_factory=list)
+    agentic_recommendation: Optional[AgenticRouteRecommendation] = None
     vehicle_type: Optional[str] = None
     safety_verification_status: Optional[str] = None  # "VERIFIED" | "PENDING" | "WARNING"
     road_ai_guidance: Optional[str] = None
