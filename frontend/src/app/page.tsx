@@ -10,7 +10,6 @@ import EmergencyCallModal from "@/components/EmergencyCallModal";
 import { Capacitor } from "@capacitor/core";
 import {
   Shield,
-  ShieldCheck,
   HeartPulse,
   FileText,
   Map as MapIcon,
@@ -98,16 +97,6 @@ export default function HomePage() {
                 Built For Ostad Presents YUNet AIgnite Buildathon 2026
               </span>
             </div>
-          </div>
-
-          {/* Trust Pill */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 backdrop-blur-xs">
-            <ShieldCheck className="h-4 w-4 text-emerald-400" />
-            <span>
-              {lang === "bn"
-                ? "নিরাপত্তা — যাচাইকৃত নাগরিক সুরক্ষা ও জরুরি নেটওয়ার্ক • বাংলাদেশ"
-                : "NIRAPOTTA — Verified Citizen Safety & Emergency Network • Bangladesh"}
-            </span>
           </div>
 
           {/* White Card Emblem Frame */}
